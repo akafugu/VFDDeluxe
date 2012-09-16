@@ -67,12 +67,12 @@ int get_digits(void)
 // detect which shield is connected
 void detect_shield(void)
 {
-  if (true) {
+  if (false) {
     shield = SHIELD_IV17;
     digits = 4;
     g_has_dots = true;
   }
-  else if (true) {
+  else if (false) {
     shield = SHIELD_IV18;
     digits = 8;
     g_has_dots = true;    
@@ -98,7 +98,6 @@ void display_init(uint8_t brightness)
 
 	detect_shield();
 
-  /*
   // TIMER 3 overflow interrupt
   cli();             // disable global interrupts
   TCCR3A = 0;        // set entire TCCR1A register to 0
@@ -110,7 +109,6 @@ void display_init(uint8_t brightness)
   TCCR3B |= (1 << CS30);
   // enable global interrupts:
   sei();
-  */
     
   /*
   // TIMER 3 OVERFLOW COMPARE INTERRUPT
@@ -152,6 +150,7 @@ void set_brightness(uint8_t brightness) {
 	if (brightness > 10) brightness = 10;
 	brightness = (10 - brightness) * 25; // translate to PWM value
 
+/*
 	// Brightness is set by setting the PWM duty cycle for the blank
 	// pin of the VFD driver.
 	// 255 = min brightness, 0 = max brightness 
@@ -161,6 +160,7 @@ void set_brightness(uint8_t brightness) {
 	TCCR0A = _BV(WGM00) | _BV(WGM01);  
  
 	TCCR0A |= _BV(COM0A1);
+*/
 }
 
 void set_blink(bool on)
@@ -358,12 +358,12 @@ ISR(TIMER3_OVF_vect)
 	}
 	
 	// display multiplex
-	if (++interrupt_counter == 9) {
+	if (++interrupt_counter == 6) {
 		display_multiplex();
 		interrupt_counter = 0;
 	}
 
-	TCNT3 = 0xf0; // Initialize counter
+	TCNT3 = 0xff00; // Initialize counter
 }
 
 // utility functions

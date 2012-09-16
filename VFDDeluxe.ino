@@ -46,8 +46,6 @@ uint8_t g_alarming = false; // alarm is going off
 uint8_t g_alarm_switch;
 WireRtcLib::tm* tt = NULL; // for holding RTC values
 
-WireRtcLib::tm tx;
-
 volatile uint16_t g_rotary_moved_timer;
 
 extern enum shield_t shield;
@@ -162,10 +160,6 @@ void setup()
   Serial.begin(9600);
   Serial.println("VFD Deluxe");
   initialize();
-  
-  tx.hour = 19;
-  tx.min = 2;
-  tx.sec = 0;
 }
 
 void loop()
@@ -193,7 +187,6 @@ void loop()
   tt = rtc.getTime();
 
   if (1) {
-    /*
     Serial.print(tt->hour);
     Serial.print(":");
     Serial.print(tt->min);
@@ -201,22 +194,6 @@ void loop()
     Serial.println(tt->sec);
 
     show_time(tt, true, 0);
-    */
-
-    Serial.print(tx.hour);
-    Serial.print(":");
-    Serial.print(tx.min);
-    Serial.print(":");
-    Serial.println(tx.sec);
-
-    show_time(&tx, true, 0);
-  }
-  
-  tx.sec++;
-  
-  if (tx.sec == 60) {
-    tx.sec = 0;
-    tx.min++;
   }
   
   delay(1000);
