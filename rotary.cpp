@@ -1,6 +1,6 @@
 /*
- * The Akafugu Nixie Clock
- * (C) 2012 Akafugu Corporation
+ * VFD Deluxe
+ * (C) 2011-12 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -24,13 +24,20 @@ extern volatile bool g_blink_on;
 extern volatile uint16_t g_rotary_moved_timer;
 
 // rotary encoder
-#define ROTARY_DDR  PORTB
-#define ROTARY_PORT PORTB
-#define ROTARY_1 PORTB6
-#define ROTARY_2 PORTB7
-#define ROTARY_1_BIT PINB6
-#define ROTARY_2_BIT PINB7
-#define BUTTON PORTB5
+#define ROTARY_1_DDR  DDRE
+#define ROTARY_1_PORT PORTE
+#define ROTARY_1 PORTE6 // INT6
+#define ROTARY_1_BIT PINE6
+
+#define ROTARY_2_DDR  DDRD
+#define ROTARY_2_PORT PORTD
+#define ROTARY_2 PORTD7 // no interrupt!!!
+#define ROTARY_2_BIT PIND7
+
+#define BUTTON_DDR  DDRD
+#define BUTTON_PORT PORTD
+#define BUTTON PORTD4
+#define BUTTON_BIT PIND4
 
 // Rotary encoder singleton
 Rotary rotary;
@@ -83,14 +90,15 @@ ISR( PCINT0_vect )
 void Rotary::begin()
 {
   // rotary encoder
-  ROTARY_DDR &= ~(_BV(ROTARY_1));
-  ROTARY_DDR &= ~(_BV(ROTARY_2));
+  ROTARY_1_DDR &= ~(_BV(ROTARY_1));
+  ROTARY_2_DDR &= ~(_BV(ROTARY_2));
 
   // rotary encoder button
-  ROTARY_DDR &= ~(_BV(BUTTON)); // button as input
+  BUTTON_DDR &= ~(_BV(BUTTON)); // button as input
 
   // enable pullups for all rotary encoder pins
-  ROTARY_PORT |= _BV(BUTTON) | _BV(ROTARY_1) | _BV(ROTARY_2); // enable pullup  
+  ROTARY_1_PORT |= _BV(ROTARY_1); // enable pullup  
+  ROTARY_2_PORT |= _BV(BUTTON) | _BV(ROTARY_2);
   
   // set up interrupt for rotary encoder pins
   PCICR |= (1 << PCIE0);

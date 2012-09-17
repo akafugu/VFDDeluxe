@@ -27,6 +27,7 @@
 
 #include <Wire.h>
 #include <WireRtcLib.h>
+#include <MPL115A2.h>
 
 WireRtcLib rtc;
 
@@ -35,7 +36,7 @@ WireRtcLib rtc;
 
 // Cached settings
 uint8_t g_24h_clock = true;
-uint8_t g_show_temp = false;
+uint8_t g_show_temp = true;
 uint8_t g_show_dots = true;
 uint8_t g_brightness = 5;
 uint8_t g_volume = 0;
@@ -109,22 +110,37 @@ ISR( PCINT2_vect )
 
 void read_rtc(bool show_extra_info)
 {
-	static uint16_t counter = 0;
+  static uint16_t counter = 0;
 	
-	if(g_show_temp && rtc.isDS3231() && counter > 125) {
-		int8_t t;
-		uint8_t f;
-		rtc.getTemp(&t, &f);
-		show_temp(t, f);
-	}
-	else {
-		tt = rtc.getTime();
-		if (tt == NULL) return;
-		show_time(tt, g_24h_clock, show_extra_info);
-	}
+  if (g_show_temp && rtc.isDS3231() && counter > 5) {
+    MPL115A2.ReadSensor();
+    MPL115A2.shutdown();
 
-	counter++;
-	if (counter == 250) counter = 0;
+    float temp = MPL115A2.GetTemperature();
+    
+    int8_t t;
+    uint8_t f;
+    
+    t = (int)temp;
+    f = (int)((temp-t)*100);
+
+    show_temp(t, f);
+
+    /*
+    int8_t t;
+    uint8_t f;
+    rtc.getTemp(&t, &f);
+    show_temp(t, f);
+    */
+  }
+  else {
+    tt = rtc.getTime();
+    if (tt == NULL) return;
+    show_time(tt, g_24h_clock, show_extra_info);
+  }
+
+  counter++;
+  if (counter == 10) counter = 0;
 }
 
 struct BUTTON_STATE buttons;
@@ -159,6 +175,10 @@ void setup()
 {
   Serial.begin(9600);
   Serial.println("VFD Deluxe");
+  
+  MPL115A2.begin();
+  MPL115A2.shutdown();
+
   initialize();
 }
 
@@ -184,6 +204,7 @@ void loop()
   }
   */
   
+  /*
   tt = rtc.getTime();
 
   if (1) {
@@ -195,7 +216,9 @@ void loop()
 
     show_time(tt, true, 0);
   }
+  */
   
+  read_rtc(true);
   delay(1000);
 }
 

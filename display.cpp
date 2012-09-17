@@ -1,6 +1,6 @@
 /*
- * VFD Modular Clock
- * (C) 2011 Akafugu Corporation
+ * VFD Deluxe
+ * (C) 2011-12 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -20,6 +20,8 @@
 #include <Wire.h>
 #include <WireRtcLib.h>
 
+void write_vfd_7seg(uint8_t digit, uint8_t segments);
+
 void write_vfd_iv6(uint8_t digit, uint8_t segments);
 void write_vfd_iv17(uint8_t digit, uint16_t segments);
 void write_vfd_iv18(uint8_t digit, uint8_t segments);
@@ -38,7 +40,7 @@ uint8_t calculate_segments_7(uint8_t character);
 
 enum shield_t shield = SHIELD_NONE;
 uint8_t digits = 6;
-volatile char data[8]; // Digit data
+volatile char data[16]; // Digit data
 uint8_t us_counter = 0; // microsecond counter
 uint8_t multiplex_counter = 0;
 
@@ -67,7 +69,12 @@ int get_digits(void)
 // detect which shield is connected
 void detect_shield(void)
 {
-  if (false) {
+  if (true) {
+    shield = SHIELD_7SEG;
+    digits = 8;
+    g_has_dots = true;
+  }
+  else if (false) {
     shield = SHIELD_IV17;
     digits = 4;
     g_has_dots = true;
@@ -170,6 +177,59 @@ void set_blink(bool on)
 }
 
 //bool led = true;
+
+void display_multiplex_7seg(void)
+{
+	if (multiplex_counter == 0) {
+		clear_display();
+		write_vfd_7seg(0, calculate_segments_7(display_on ? data[7] : ' '));
+	}
+	else if (multiplex_counter == 1) {
+		clear_display();
+		write_vfd_7seg(1, calculate_segments_7(display_on ? data[6] : ' '));
+	}
+	else if (multiplex_counter == 2) {
+		clear_display();
+		write_vfd_7seg(2, calculate_segments_7(display_on ? data[5] : ' '));
+	}
+	else if (multiplex_counter == 3) {
+		clear_display();
+		write_vfd_7seg(3, calculate_segments_7(display_on ? data[4] : ' '));
+	}
+	else if (multiplex_counter == 4) {
+		clear_display();
+		write_vfd_7seg(4, calculate_segments_7(display_on ? data[3] : ' '));
+	}
+	else if (multiplex_counter == 5) {
+		clear_display();
+		write_vfd_7seg(5, calculate_segments_7(display_on ? data[2] : ' '));
+	}
+	else if (multiplex_counter == 6) {
+		clear_display();
+		write_vfd_7seg(6, calculate_segments_7(display_on ? data[1] : ' '));
+	}
+	else if (multiplex_counter == 7) {
+		clear_display();
+		write_vfd_7seg(7, calculate_segments_7(display_on ? data[0] : ' '));
+	}
+        /*
+	else if (multiplex_counter == 8) {
+		clear_display();
+
+		if (g_alarm_switch)
+			write_vfd_iv18(8, (1<<7));
+		else
+			write_vfd_iv18(8, 0);
+	}
+        */
+	else {
+		clear_display();
+	}
+	
+	multiplex_counter++;
+	
+	if (multiplex_counter == 8) multiplex_counter = 0;
+}
 
 // display multiplexing routine for 4 digits: run once every 5us
 void display_multiplex_iv17(void)
@@ -323,7 +383,9 @@ void display_multiplex_iv22(void)
 
 void display_multiplex(void)
 {  
-	if (shield == SHIELD_IV6)
+	if (shield == SHIELD_7SEG)
+		display_multiplex_7seg();
+	else if (shield == SHIELD_IV6)
 		display_multiplex_iv6();
 	else if (shield == SHIELD_IV17)
 		display_multiplex_iv17();
@@ -399,7 +461,11 @@ extern uint8_t g_volume;
 void print_dots(uint8_t mode, uint8_t seconds)
 {
 	if (g_show_dots) {
-		if (digits == 8 && mode == 0) {
+  		if (digits == 10 && mode == 0) {
+			sbi(dots, 3);
+			sbi(dots, 5);
+		}
+  		else if (digits == 8 && mode == 0) {
 			sbi(dots, 3);
 			sbi(dots, 5);
 		}
@@ -509,6 +575,30 @@ void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec)
 void show_temp(int8_t t, uint8_t f)
 {
 	dots = 0;
+	uint8_t offset = 0;
+	
+	switch (digits) {
+	case 8:
+		offset = print_ch(' ', offset);
+		offset = print_ch(' ', offset);
+		// fall-through
+	case 6:
+		offset = print_ch(' ', offset);
+		offset = print_digits(t, offset);
+		offset = print_digits(f, offset);
+		offset = print_ch('C', offset);
+		break;
+	case 4:
+		offset = print_digits(t, offset);
+		offset = print_digits(f, offset);		
+	}
+
+  if (digits == 8) dots = (1<<3);
+  else if (digits == 6) dots = (1<<2);
+  else if (digits == 4) dots = (1<<1);
+  
+/*
+	dots = 0;
 	
 	if (digits == 6) {
 		data[5] = 'C';
@@ -539,6 +629,7 @@ void show_temp(int8_t t, uint8_t f)
 		num /= 10;
 		data[0] = num % 10;
 	}
+*/
 }
 
 void set_string(const char* str)
@@ -676,6 +767,37 @@ void write_vfd_iv17(uint8_t digit, uint16_t segments)
 }
 
 uint32_t t;
+
+void write_vfd_7seg(uint8_t digit, uint8_t segments)
+{
+	// temporary correction for incorrectly wired display
+	uint8_t x = 0;
+  
+	if (segments & (1<<0)) x |= (1<<0);
+	if (segments & (1<<1)) x |= (1<<1);
+	if (segments & (1<<5)) x |= (1<<2);
+	if (segments & (1<<6)) x |= (1<<3);
+	if (segments & (1<<2)) x |= (1<<4);
+	if (segments & (1<<4)) x |= (1<<5);
+	if (segments & (1<<3)) x |= (1<<6);
+	if (segments & (1<<7)) x |= (1<<7);
+  
+	segments = x;
+
+	uint8_t segments_hi = 0;
+  
+	if (dots & (1<<digit))
+		segments_hi |= (1<<0);
+		//segments |= (1<<7); // DP is at bit 7
+  
+	write_vfd_8bit(0); // unused upper byte: for HV518P only
+	write_vfd_8bit(segments);
+	write_vfd_8bit(0);
+	write_vfd_8bit(1<<digit);
+	
+	LATCH_DISABLE;
+	LATCH_ENABLE;
+}
 
 // Writes to the HV5812 driver for IV-6
 // HV1~10:  Digit grids, 10 bits

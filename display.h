@@ -1,6 +1,6 @@
 /*
- * VFD Modular Clock
- * (C) 2011 Akafugu Corporation
+ * VFD Deluxe
+ * (C) 2011-12 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -76,6 +76,7 @@ void set_blink(bool on);
 
 enum shield_t {
 	SHIELD_NONE = 0,
+	SHIELD_7SEG,
 	SHIELD_IV6,
 	SHIELD_IV17,
 	SHIELD_IV18,
