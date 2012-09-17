@@ -54,7 +54,6 @@
 
 void display_init(uint8_t brightness);
 int get_digits(void);
-void detect_shield(void);
 
 // functions for showing current time and temperature
 void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode);
@@ -76,11 +75,15 @@ void set_blink(bool on);
 
 enum shield_t {
 	SHIELD_NONE = 0,
-	SHIELD_7SEG,
-	SHIELD_IV6,
-	SHIELD_IV17,
-	SHIELD_IV18,
-	SHIELD_IV22,
+	SHIELD_7SEG,  // generic 7-seg display
+	SHIELD_14SEG, // generic 14-seg display
+	SHIELD_16SEG, // generic 16-seg display
+	SHIELD_IV6,   // VFD Modular Clock IV-6 shield
+	SHIELD_IV17,  // VFD Modular Clock IV-17 shield
+	SHIELD_IV18,  // VFD Modular Clock IV-18 shield
+	SHIELD_IV22,  // VFD Modular Clock IV-22 shield
 };
+
+void set_shield(shield_t shield_type, uint8_t digits = 4);
 
 #endif // DISPLAY_H_

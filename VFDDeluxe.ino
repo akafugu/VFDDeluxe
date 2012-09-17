@@ -86,6 +86,7 @@ void initialize(void)
   //rtc_set_time_s(16, 59, 50);
   //rtc_set_alarm_s(17,0,0);
 
+  set_shield(SHIELD_7SEG, 10);
   display_init(g_brightness);
 
   //g_alarm_switch = get_alarm_switch();

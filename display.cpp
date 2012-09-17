@@ -66,28 +66,43 @@ int get_digits(void)
 	return digits;
 }
 
-// detect which shield is connected
-void detect_shield(void)
+
+void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
 {
-  if (true) {
+  if (shield_type == SHIELD_7SEG) {
     shield = SHIELD_7SEG;
-    digits = 8;
+    digits = _digits;
     g_has_dots = true;
   }
-  else if (false) {
+  else if (shield_type == SHIELD_14SEG) {
+    shield = SHIELD_14SEG;
+    digits = _digits;
+    g_has_dots = true;
+  }
+  else if (shield_type == SHIELD_16SEG) {
+    shield = SHIELD_16SEG;
+    digits = _digits;
+    g_has_dots = true;
+  }
+  else if (shield_type == SHIELD_IV6) {
+    shield = SHIELD_IV6;
+    digits = 6;
+    g_has_dots = true;
+  }
+  else if (shield_type == SHIELD_IV17) {
     shield = SHIELD_IV17;
     digits = 4;
     g_has_dots = true;
   }
-  else if (false) {
+  else if (shield_type == SHIELD_IV18) {
     shield = SHIELD_IV18;
     digits = 8;
     g_has_dots = true;    
   }
-  else {
-    shield = SHIELD_IV6;
-    digits = 6;
-    g_has_dots = true;
+  else if (shield_type == SHIELD_IV22) {
+    shield = SHIELD_IV22;
+    digits = 4;
+    g_has_dots = true;    
   }
 }
 
@@ -102,8 +117,6 @@ void display_init(uint8_t brightness)
 	LATCH_ENABLE;
 
 	clear_display();
-
-	detect_shield();
 
   // TIMER 3 overflow interrupt
   cli();             // disable global interrupts
@@ -182,35 +195,43 @@ void display_multiplex_7seg(void)
 {
 	if (multiplex_counter == 0) {
 		clear_display();
-		write_vfd_7seg(0, calculate_segments_7(display_on ? data[7] : ' '));
+		write_vfd_7seg(0, calculate_segments_7(display_on ? data[9] : ' '));
 	}
 	else if (multiplex_counter == 1) {
 		clear_display();
-		write_vfd_7seg(1, calculate_segments_7(display_on ? data[6] : ' '));
+		write_vfd_7seg(1, calculate_segments_7(display_on ? data[8] : ' '));
 	}
 	else if (multiplex_counter == 2) {
 		clear_display();
-		write_vfd_7seg(2, calculate_segments_7(display_on ? data[5] : ' '));
+		write_vfd_7seg(2, calculate_segments_7(display_on ? data[7] : ' '));
 	}
 	else if (multiplex_counter == 3) {
 		clear_display();
-		write_vfd_7seg(3, calculate_segments_7(display_on ? data[4] : ' '));
+		write_vfd_7seg(3, calculate_segments_7(display_on ? data[6] : ' '));
 	}
 	else if (multiplex_counter == 4) {
 		clear_display();
-		write_vfd_7seg(4, calculate_segments_7(display_on ? data[3] : ' '));
+		write_vfd_7seg(4, calculate_segments_7(display_on ? data[5] : ' '));
 	}
 	else if (multiplex_counter == 5) {
 		clear_display();
-		write_vfd_7seg(5, calculate_segments_7(display_on ? data[2] : ' '));
+		write_vfd_7seg(5, calculate_segments_7(display_on ? data[4] : ' '));
 	}
 	else if (multiplex_counter == 6) {
 		clear_display();
-		write_vfd_7seg(6, calculate_segments_7(display_on ? data[1] : ' '));
+		write_vfd_7seg(6, calculate_segments_7(display_on ? data[3] : ' '));
 	}
 	else if (multiplex_counter == 7) {
 		clear_display();
-		write_vfd_7seg(7, calculate_segments_7(display_on ? data[0] : ' '));
+		write_vfd_7seg(7, calculate_segments_7(display_on ? data[2] : ' '));
+	}
+	else if (multiplex_counter == 8) {
+		clear_display();
+		write_vfd_7seg(8, calculate_segments_7(display_on ? data[1] : ' '));
+	}
+	else if (multiplex_counter == 9) {
+		clear_display();
+		write_vfd_7seg(9, calculate_segments_7(display_on ? data[0] : ' '));
 	}
         /*
 	else if (multiplex_counter == 8) {
@@ -228,7 +249,17 @@ void display_multiplex_7seg(void)
 	
 	multiplex_counter++;
 	
-	if (multiplex_counter == 8) multiplex_counter = 0;
+	if (multiplex_counter == 10) multiplex_counter = 0;
+}
+
+void display_multiplex_14seg(void)
+{
+  
+}
+
+void display_multiplex_16seg(void)
+{
+  
 }
 
 // display multiplexing routine for 4 digits: run once every 5us
@@ -385,6 +416,10 @@ void display_multiplex(void)
 {  
 	if (shield == SHIELD_7SEG)
 		display_multiplex_7seg();
+	if (shield == SHIELD_14SEG)
+		display_multiplex_14seg();
+	if (shield == SHIELD_16SEG)
+		display_multiplex_16seg();
 	else if (shield == SHIELD_IV6)
 		display_multiplex_iv6();
 	else if (shield == SHIELD_IV17)
@@ -493,7 +528,21 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 	print_dots(mode, t->sec);
 
 	if (mode == 0) { // normal display mode
-		if (digits == 8) { // " HH.MM.SS "
+		if (digits == 10) { // "  HH.MM.SS  "
+			offset = print_ch('-', offset); 
+
+			if (!_24h_clock && !t->am)
+				offset = print_ch('P', offset);
+			else
+				offset = print_ch(' ', offset); 
+
+			offset = print_digits(hour, offset);
+			offset = print_digits(t->min, offset);
+			offset = print_digits(t->sec, offset);
+			offset = print_ch(' ', offset);
+			offset = print_ch(' ', offset);
+		}
+		else if (digits == 8) { // " HH.MM.SS "
 			if (!_24h_clock && !t->am)
 				offset = print_ch('P', offset);
 			else
@@ -514,7 +563,17 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 		}
 	}
 	else if (mode == 1) { // extra display mode
-		if (digits == 8) { // "HH-MM-SS"
+		if (digits == 10) { // " HH-MM-SS "
+			offset = print_ch(' ', offset);
+			offset = print_digits(hour, offset);
+			offset = print_ch('-', offset);
+			offset = print_digits(t->min, offset);
+			offset = print_ch('-', offset);
+			offset = print_digits(t->sec, offset);
+			offset = print_ch(' ', offset);
+
+		}
+		else if (digits == 8) { // "HH-MM-SS"
 			offset = print_digits(hour, offset);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->min, offset);
@@ -578,6 +637,10 @@ void show_temp(int8_t t, uint8_t f)
 	uint8_t offset = 0;
 	
 	switch (digits) {
+	case 10:
+		offset = print_ch(' ', offset);
+		offset = print_ch(' ', offset);
+		// fall-through
 	case 8:
 		offset = print_ch(' ', offset);
 		offset = print_ch(' ', offset);
@@ -593,7 +656,8 @@ void show_temp(int8_t t, uint8_t f)
 		offset = print_digits(f, offset);		
 	}
 
-  if (digits == 8) dots = (1<<3);
+  if (digits == 10) dots = (1<<3);
+  else if (digits == 8) dots = (1<<3);
   else if (digits == 6) dots = (1<<2);
   else if (digits == 4) dots = (1<<1);
   
@@ -790,10 +854,17 @@ void write_vfd_7seg(uint8_t digit, uint8_t segments)
 		segments_hi |= (1<<0);
 		//segments |= (1<<7); // DP is at bit 7
   
-	write_vfd_8bit(0); // unused upper byte: for HV518P only
+	write_vfd_8bit(segments_hi);
 	write_vfd_8bit(segments);
-	write_vfd_8bit(0);
-	write_vfd_8bit(1<<digit);
+
+	if (digit > 7) {
+		write_vfd_8bit(1<<(digit-8));  
+		write_vfd_8bit(0);
+	}
+	else {
+		write_vfd_8bit(0);
+		write_vfd_8bit(1<<digit);
+	}
 	
 	LATCH_DISABLE;
 	LATCH_ENABLE;
