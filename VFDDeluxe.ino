@@ -29,7 +29,10 @@
 #include <WireRtcLib.h>
 #include <MPL115A2.h>
 
+#include "gps.h"
+
 WireRtcLib rtc;
+GPS gps;
 
 // Piezo
 #define PIEZO 11
@@ -86,7 +89,9 @@ void initialize(void)
   //rtc_set_time_s(16, 59, 50);
   //rtc_set_alarm_s(17,0,0);
 
-  set_shield(SHIELD_7SEG, 10);
+  //set_shield(SHIELD_7SEG, 10);
+  set_shield(SHIELD_14SEG, 8);
+  
   display_init(g_brightness);
 
   //g_alarm_switch = get_alarm_switch();
@@ -181,6 +186,8 @@ void setup()
   MPL115A2.shutdown();
 
   initialize();
+  
+  gps.begin();
 }
 
 void loop()
@@ -220,6 +227,9 @@ void loop()
   */
   
   read_rtc(true);
-  delay(1000);
+  
+  gps.tick();
+  //delay(1000);
+  delay(10);
 }
 

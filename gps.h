@@ -16,6 +16,45 @@
 #ifndef GPS_H_
 #define GPS_H_
 
+#include <Wire.h>
+#include <WireRtcLib.h>
+
+#define BUFFSIZ 90 // plenty big
+
+class GPS
+{
+public:
+  class gps_data {
+    public:
+      WireRtcLib::tm tm;
+      int8_t timezone;
+
+     uint32_t latitude, longitude;
+     uint8_t groundspeed, trackangle;
+
+      char latdir, longdir;
+      char status;
+  
+      bool fix;
+      uint8_t satellites;
+  };
+
+private:
+  char buffer[BUFFSIZ];
+  char *parseptr;
+  char buffidx;
+  
+  GPS::gps_data gps;
+  
+  uint32_t parsedecimal(char *str);
+  void readline(void);
+
+public:
+  void begin();
+  GPS::gps_data* getData();
+  
+  void tick();
+};
 
 
 #endif // GPS_H_
