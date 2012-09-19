@@ -32,7 +32,7 @@
 
 #define  FEATURE_LOWERCASE
 
-uint16_t calculate_segments(uint8_t character)
+uint16_t calculate_segments_14(uint8_t character)
 {
 	uint16_t segments = 0;
 

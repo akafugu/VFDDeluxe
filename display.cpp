@@ -21,6 +21,8 @@
 #include <WireRtcLib.h>
 
 void write_vfd_7seg(uint8_t digit, uint8_t segments);
+void write_vfd_standard(uint8_t digit, uint16_t segments);
+void write_vfd_16seg(uint8_t digit, uint16_t segments);
 
 void write_vfd_iv6(uint8_t digit, uint8_t segments);
 void write_vfd_iv17(uint8_t digit, uint16_t segments);
@@ -29,11 +31,15 @@ void write_vfd_iv22(uint8_t digit, uint8_t segments);
 
 void write_vfd_8bit(uint8_t data);
 void clear_display(void);
+void clear_data();
 
 bool get_alarm_switch(void);
 
 // see font-16seg.c
 uint16_t calculate_segments_16(uint8_t character);
+
+// see font-14seg.c
+uint16_t calculate_segments_14(uint8_t character);
 
 // see font-7seg.c
 uint8_t calculate_segments_7(uint8_t character);
@@ -117,6 +123,7 @@ void display_init(uint8_t brightness)
 	LATCH_ENABLE;
 
 	clear_display();
+	clear_data();
 
   // TIMER 3 overflow interrupt
   cli();             // disable global interrupts
@@ -183,6 +190,12 @@ void set_brightness(uint8_t brightness) {
 */
 }
 
+void clear_data()
+{
+  data[0] = data[1] =  data[2] =  data[3] =  data[4] =  data[5] =  data[6] = data[7]  = ' '; 
+  data[8] = data[9] = data[10] = data[11] = data[12] = data[13] = data[14] = data[15] = ' '; 
+}
+
 void set_blink(bool on)
 {
 	blink = on;
@@ -193,68 +206,26 @@ void set_blink(bool on)
 
 void display_multiplex_7seg(void)
 {
-	if (multiplex_counter == 0) {
-		clear_display();
-		write_vfd_7seg(0, calculate_segments_7(display_on ? data[9] : ' '));
-	}
-	else if (multiplex_counter == 1) {
-		clear_display();
-		write_vfd_7seg(1, calculate_segments_7(display_on ? data[8] : ' '));
-	}
-	else if (multiplex_counter == 2) {
-		clear_display();
-		write_vfd_7seg(2, calculate_segments_7(display_on ? data[7] : ' '));
-	}
-	else if (multiplex_counter == 3) {
-		clear_display();
-		write_vfd_7seg(3, calculate_segments_7(display_on ? data[6] : ' '));
-	}
-	else if (multiplex_counter == 4) {
-		clear_display();
-		write_vfd_7seg(4, calculate_segments_7(display_on ? data[5] : ' '));
-	}
-	else if (multiplex_counter == 5) {
-		clear_display();
-		write_vfd_7seg(5, calculate_segments_7(display_on ? data[4] : ' '));
-	}
-	else if (multiplex_counter == 6) {
-		clear_display();
-		write_vfd_7seg(6, calculate_segments_7(display_on ? data[3] : ' '));
-	}
-	else if (multiplex_counter == 7) {
-		clear_display();
-		write_vfd_7seg(7, calculate_segments_7(display_on ? data[2] : ' '));
-	}
-	else if (multiplex_counter == 8) {
-		clear_display();
-		write_vfd_7seg(8, calculate_segments_7(display_on ? data[1] : ' '));
-	}
-	else if (multiplex_counter == 9) {
-		clear_display();
-		write_vfd_7seg(9, calculate_segments_7(display_on ? data[0] : ' '));
-	}
-        /*
-	else if (multiplex_counter == 8) {
-		clear_display();
-
-		if (g_alarm_switch)
-			write_vfd_iv18(8, (1<<7));
-		else
-			write_vfd_iv18(8, 0);
-	}
-        */
-	else {
-		clear_display();
-	}
+  clear_display();
+  write_vfd_7seg(multiplex_counter, calculate_segments_7(display_on ? data[digits-multiplex_counter-1] : ' '));
 	
-	multiplex_counter++;
-	
-	if (multiplex_counter == 10) multiplex_counter = 0;
+  multiplex_counter++;	
+  if (multiplex_counter == 10) multiplex_counter = 0;
 }
 
 void display_multiplex_14seg(void)
 {
+  clear_display();
   
+  uint16_t segments = calculate_segments_14(display_on ? data[digits-multiplex_counter-1] : ' ');
+  
+  if ((segments & 1<<6) || (segments & 1<<8) || (segments & 1<<10)) // left dash is set (segment G1)
+    segments |= 1<<12;
+  
+  write_vfd_standard(multiplex_counter, segments);
+	
+  multiplex_counter++;	
+  if (multiplex_counter == digits+1) multiplex_counter = 0;  
 }
 
 void display_multiplex_16seg(void)
@@ -416,9 +387,9 @@ void display_multiplex(void)
 {  
 	if (shield == SHIELD_7SEG)
 		display_multiplex_7seg();
-	if (shield == SHIELD_14SEG)
+	else if (shield == SHIELD_14SEG)
 		display_multiplex_14seg();
-	if (shield == SHIELD_16SEG)
+	else if (shield == SHIELD_16SEG)
 		display_multiplex_16seg();
 	else if (shield == SHIELD_IV6)
 		display_multiplex_iv6();
@@ -529,7 +500,7 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 
 	if (mode == 0) { // normal display mode
 		if (digits == 10) { // "  HH.MM.SS  "
-			offset = print_ch('-', offset); 
+			offset = print_ch(' ', offset); 
 
 			if (!_24h_clock && !t->am)
 				offset = print_ch('P', offset);
@@ -564,13 +535,13 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 	}
 	else if (mode == 1) { // extra display mode
 		if (digits == 10) { // " HH-MM-SS "
-			offset = print_ch(' ', offset);
+			offset = print_ch('-', offset);
 			offset = print_digits(hour, offset);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->min, offset);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->sec, offset);
-			offset = print_ch(' ', offset);
+			offset = print_ch('-', offset);
 
 		}
 		else if (digits == 8) { // "HH-MM-SS"
@@ -786,52 +757,6 @@ void write_vfd_8bit(uint8_t data)
   }
 }
 
-// Writes to the HV5812 driver for IV-6
-// HV1~6:   Digit grids, 6 bits
-// HV7~14:  VFD segments, 8 bits
-// HV15~20: NC
-void write_vfd_iv6(uint8_t digit, uint8_t segments)
-{
-	if (dots & (1<<digit))
-		segments |= (1<<7); // DP is at bit 7
-	
-	uint32_t val = (1 << digit) | ((uint32_t)segments << 6);
-	
-	write_vfd_8bit(0); // unused upper byte: for HV518P only
-	write_vfd_8bit(val >> 16);
-	write_vfd_8bit(val >> 8);
-	write_vfd_8bit(val);
-	
-	LATCH_DISABLE;
-	LATCH_ENABLE;	
-}
-
-#define IV17_LEFT_DOT  0b00010000
-#define IV17_RIGHT_DOT 0b00100000
-
-// Writes to the HV5812 driver for IV-17
-// HV1~4:  Digit grids, 4 bits
-// HV 5~2: VFD segments, 16-bits
-void write_vfd_iv17(uint8_t digit, uint16_t segments)
-{  
-	uint32_t val = (1 << digit) | ((uint32_t)segments << 4);
-
-	//write_vfd_8bit(val >> 24);
-        write_vfd_8bit(0);
-        
-        if (dots & (1<<digit))
-	  write_vfd_8bit(val >> 16 | IV17_RIGHT_DOT);
-        else
-          write_vfd_8bit(val >> 16);
-	write_vfd_8bit(val >> 8);
-	write_vfd_8bit(val);
-
-	LATCH_DISABLE;
-	LATCH_ENABLE;
-}
-
-uint32_t t;
-
 void write_vfd_7seg(uint8_t digit, uint8_t segments)
 {
 	// temporary correction for incorrectly wired display
@@ -869,6 +794,67 @@ void write_vfd_7seg(uint8_t digit, uint8_t segments)
 	LATCH_DISABLE;
 	LATCH_ENABLE;
 }
+
+// fixme: need to determine placement of dots
+// fixme: need to determine placement of second dot (if present)
+void write_vfd_standard(uint8_t digit, uint16_t segments)
+{
+	uint16_t d = 1<<digit;
+
+	write_vfd_8bit(segments >> 8);
+        write_vfd_8bit(segments);
+	write_vfd_8bit(d >> 8);
+	write_vfd_8bit(d);
+
+	LATCH_DISABLE;
+	LATCH_ENABLE;
+}
+
+// Writes to the HV5812 driver for IV-6
+// HV1~6:   Digit grids, 6 bits
+// HV7~14:  VFD segments, 8 bits
+// HV15~20: NC
+void write_vfd_iv6(uint8_t digit, uint8_t segments)
+{
+	if (dots & (1<<digit))
+		segments |= (1<<7); // DP is at bit 7
+	
+	uint32_t val = (1 << digit) | ((uint32_t)segments << 6);
+	
+	write_vfd_8bit(0); // unused upper byte: for HV518P only
+	write_vfd_8bit(val >> 16);
+	write_vfd_8bit(val >> 8);
+	write_vfd_8bit(val);
+	
+	LATCH_DISABLE;
+	LATCH_ENABLE;	
+}
+
+#define IV17_LEFT_DOT  0b00010000
+#define IV17_RIGHT_DOT 0b00100000
+
+// Writes to the HV5812 driver for IV-17
+// HV1~4:  Digit grids, 4 bits
+// HV 5~2: VFD segments, 16-bits
+void write_vfd_iv17(uint8_t digit, uint16_t segments)
+{
+	uint32_t val = (1 << digit) | ((uint32_t)segments << 4);
+
+	//write_vfd_8bit(val >> 24);
+        write_vfd_8bit(0);
+        
+        if (dots & (1<<digit))
+	  write_vfd_8bit(val >> 16 | IV17_RIGHT_DOT);
+        else
+          write_vfd_8bit(val >> 16);
+	write_vfd_8bit(val >> 8);
+	write_vfd_8bit(val);
+
+	LATCH_DISABLE;
+	LATCH_ENABLE;
+}
+
+uint32_t t;
 
 // Writes to the HV5812 driver for IV-6
 // HV1~10:  Digit grids, 10 bits
