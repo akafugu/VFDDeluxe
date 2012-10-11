@@ -13,6 +13,8 @@
  *
  */
 
+#include "features.h"
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -28,7 +30,9 @@
 
 #include <Wire.h>
 #include <WireRtcLib.h>
+#ifdef HAVE_MPL115A2
 #include <MPL115A2.h>
+#endif
 
 #include "gps.h"
 
@@ -49,15 +53,44 @@ uint8_t g_volume = 0;
 uint8_t g_has_dots = false; // can current shield show dot (decimal points)
 uint8_t g_alarming = false; // alarm is going off
 uint8_t g_alarm_switch;
+uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
 WireRtcLib::tm* tt = NULL; // for holding RTC values
 
 volatile uint16_t g_rotary_moved_timer;
 
 extern enum shield_t shield;
-
 Rotary rot;
-
 #define TEMP_CORR -1
+
+struct BUTTON_STATE buttons;
+
+// menu states
+typedef enum {
+	// basic states
+	STATE_CLOCK = 0,
+	STATE_SET_CLOCK,
+	STATE_SET_ALARM,
+	// menu
+	STATE_MENU_BRIGHTNESS,
+	STATE_MENU_24H,
+	STATE_MENU_VOL,
+	STATE_MENU_TEMP,
+	STATE_MENU_DOTS,
+	STATE_MENU_LAST,
+} menu_state_t;
+
+menu_state_t menu_state = STATE_CLOCK;
+
+// display modes
+typedef enum {
+	MODE_NORMAL = 0, // normal mode: show time/seconds
+	MODE_AMPM, // shows time AM/PM
+	MODE_LAST,
+	MODE_ALARM_TEXT,  // show "alarm" (wm)
+	MODE_ALARM_TIME,  // show alarm time (wm)
+} display_mode_t;
+
+display_mode_t display_mode = MODE_NORMAL;
 
 void initialize(void)
 {
@@ -91,16 +124,16 @@ void initialize(void)
   Wire.begin();
 
   rtc.begin();
-  rtc.runClock(true);
-  
+  rtc.runClock(true);  
 
   //rtc.setTime_s(16, 9, 0);
   //rtc_set_alarm_s(17,0,0);
 
-  //set_shield(SHIELD_IV17, 4);
-  set_shield(SHIELD_IV18, 8);
-  //set_shield(SHIELD_7SEG, 10);
-  //set_shield(SHIELD_14SEG, 8);
+#ifdef HAVE_SHIELD_AUTODETECT
+  autodetect_shield();
+#else
+  set_shield(SHIELD, SHIELD_DIGITS); 
+#endif
   
   display_init(g_brightness);
 
@@ -130,8 +163,11 @@ void clear_data(void);
 void read_rtc(bool show_extra_info)
 {
   static uint16_t counter = 0;
-	
-  if (g_show_temp && rtc.isDS3231() && counter > 5) {
+
+#ifdef HAVE_MPL115A2      
+  // Show temperature from boards that have a MPL115A temp sensor
+  if (g_show_temp && counter > 5) {
+      
     MPL115A2.ReadSensor();
     MPL115A2.shutdown();
 
@@ -144,15 +180,18 @@ void read_rtc(bool show_extra_info)
     f = (int)((temp-t)*100);
 
     show_temp(t, f);
-
-    /*
+  }
+#else
+  // Otherwise, use the onboard temp sensor on the DS3231(M) RTC for boards that have it
+  if (g_show_temp && rtc.isDS3231() && counter > 5) {
     int8_t t;
     uint8_t f;
     rtc.getTemp(&t, &f);
     show_temp(t, f);
-    */
   }
+#endif // HAVE_MPL115A2
   else {
+  // show time
     tt = rtc.getTime();
     if (tt == NULL) return;
     show_time(tt, g_24h_clock, show_extra_info);
@@ -162,41 +201,15 @@ void read_rtc(bool show_extra_info)
   if (counter == 10) counter = 0;
 }
 
-struct BUTTON_STATE buttons;
-
-// menu states
-typedef enum {
-	// basic states
-	STATE_CLOCK = 0,
-	STATE_SET_CLOCK,
-	STATE_SET_ALARM,
-	// menu
-	STATE_MENU_BRIGHTNESS,
-	STATE_MENU_24H,
-	STATE_MENU_VOL,
-	STATE_MENU_TEMP,
-	STATE_MENU_DOTS,
-	STATE_MENU_LAST,
-} state_t;
-
-state_t clock_state = STATE_CLOCK;
-
-// display modes
-typedef enum {
-	MODE_NORMAL = 0, // normal mode: show time/seconds
-	MODE_AMPM, // shows time AM/PM
-	MODE_LAST,
-} display_mode_t;
-
-display_mode_t clock_mode = MODE_NORMAL;
-
 void setup()
 {
   Serial.begin(9600);
   Serial.println("VFD Deluxe");
   
+#ifdef HAVE_MPL115A2
   MPL115A2.begin();
   MPL115A2.shutdown();
+#endif // HAVE_MPL115A2
 
   initialize();
   
@@ -225,26 +238,280 @@ void loop()
   }
   */
   
+  uint8_t hour = 0, min = 0, sec = 0;
+
+  // Counters used when setting time
+  int16_t time_to_set = 0;
+  uint16_t button_released_timer = 0;
+  uint16_t button_speed = 25;
+	
+  switch (shield) {
+    case(SHIELD_IV6):
+      set_string("IV-6");
+      break;
+    case(SHIELD_IV17):
+      set_string("IV17");
+      break;
+    case(SHIELD_IV18):
+      set_string("IV18");
+      break;
+    case(SHIELD_IV22):
+      set_string("IV22");
+      break;
+    default:
+      break;
+   }
+
+  delay(500);
+  set_string("--------");
+
   /*
-  tt = rtc.getTime();
-
-  if (1) {
-    Serial.print(tt->hour);
-    Serial.print(":");
-    Serial.print(tt->min);
-    Serial.print(":");
-    Serial.println(tt->sec);
-
-    show_time(tt, true, 0);
+  while (1) { 
+    read_rtc(true);
+    //clear_data();
+    //print_digits(rot.getRawPosition(), 4);
+  
+    delay(1000);
+    //gps.tick();
+    //delay(10);
   }
   */
   
-  read_rtc(true);
-  //clear_data();
-  //print_digits(rot.getRawPosition(), 4);
-  
-  delay(1000);
-  //gps.tick();
-  //delay(10);
+	while (1) {
+		get_button_state(&buttons);
+		
+		// When alarming:
+		// any button press cancels alarm
+		if (g_alarming) {
+			read_rtc(display_mode);  // read and display time (??)
+
+			// fixme: if keydown is detected here, wait for keyup and clear state
+			// this prevents going into the menu when disabling the alarm
+			if (buttons.b1_keydown || buttons.b1_keyup || buttons.b2_keydown || buttons.b2_keyup) {
+				buttons.b1_keyup = 0; // clear state
+				buttons.b2_keyup = 0; // clear state
+				g_alarming = false;
+			}
+			else {
+				//alarm();	
+			}
+		}
+		// If both buttons are held:
+		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
+		//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
+		else if (menu_state == STATE_CLOCK && buttons.both_held) {
+			if (g_alarm_switch) {
+				menu_state = STATE_SET_ALARM;
+				show_set_alarm();
+				rtc.getAlarm_s(&hour, &min, &sec);
+				time_to_set = hour*60 + min;
+			}
+			else {
+				menu_state = STATE_SET_CLOCK;
+				show_set_time();		
+				rtc.getTime_s(&hour, &min, &sec);
+				time_to_set = hour*60 + min;
+			}
+
+			set_blink(true);
+			
+			// wait until both buttons are released
+			while (1) {
+				_delay_ms(50);
+				get_button_state(&buttons);
+				if (buttons.none_held)
+					break;
+			}
+		}
+		// Set time or alarm
+		else if (menu_state == STATE_SET_CLOCK || menu_state == STATE_SET_ALARM) {
+			// Check if we should exit STATE_SET_CLOCK or STATE_SET_ALARM
+			if (buttons.none_held) {
+				set_blink(true);
+				button_released_timer++;
+				button_speed = 1;
+			}
+			else {
+				set_blink(false);
+				button_released_timer = 0;
+				button_speed++;
+			}
+
+			// exit mode after no button has been touched for a while
+			if (button_released_timer >= 160) {
+				set_blink(false);
+				button_released_timer = 0;
+				button_speed = 1;
+				
+				// fixme: should be different in 12h mode
+				if (menu_state == STATE_SET_CLOCK)
+					rtc.setTime_s(time_to_set / 60, time_to_set % 60, 0);
+				else
+					rtc.setAlarm_s(time_to_set / 60, time_to_set % 60, 0);
+
+				menu_state = STATE_CLOCK;
+			}
+			
+			// Increase / Decrease time counter
+			if (buttons.b1_repeat) time_to_set+=(button_speed/100);
+			if (buttons.b1_keyup)  time_to_set++;
+			if (buttons.b2_repeat) time_to_set-=(button_speed/100);
+			if (buttons.b2_keyup)  time_to_set--;
+
+			if (time_to_set  >= 1440) time_to_set = 0;
+			if (time_to_set  < 0) time_to_set = 1439;
+
+			show_time_setting(time_to_set / 60, time_to_set % 60, 0);
+		}
+		// Left button enters menu
+		else if (menu_state == STATE_CLOCK && buttons.b2_keyup) {
+			menu_state = STATE_MENU_BRIGHTNESS;
+			show_setting_int("BRIT", "BRITE", g_brightness, false);
+			buttons.b2_keyup = 0; // clear state
+		}
+		// Right button toggles display mode
+		else if (menu_state == STATE_CLOCK && buttons.b1_keyup) {
+			display_mode = (display_mode_t)((int)display_mode + 1);
+//			if (display_mode == MODE_ALARM_TEXT)  g_show_special_cnt = 100;  // show alarm text for 1 second
+//			if (display_mode == MODE_ALARM_TIME)  g_show_special_cnt = 100;  // show alarm time for 1 second
+			if (display_mode == MODE_LAST) display_mode = MODE_NORMAL;
+			buttons.b1_keyup = 0; // clear state
+		}
+		else if (menu_state >= STATE_MENU_BRIGHTNESS) {
+			if (buttons.none_held)
+				button_released_timer++;
+			else
+				button_released_timer = 0;
+			
+//			if (button_released_timer >= 80) {
+			if (button_released_timer >= 200) {  // 2 seconds (wm)
+				button_released_timer = 0;
+				menu_state = STATE_CLOCK;
+			}
+			
+			switch (menu_state) {
+				case STATE_MENU_BRIGHTNESS:
+					if (buttons.b1_keyup) {
+						g_brightness++;
+						buttons.b1_keyup = false;
+					
+						if (g_brightness > 10) g_brightness = 1;
+					
+						//eeprom_update_byte(&b_brightness, g_brightness);
+					
+//						if (shield == SHIELD_IV17)  // wm ???
+//							show_setting_string("BRIT", "BRITE", (g_brightness % 2 == 0) ? "  lo" : "  hi", true);
+//						else
+						show_setting_int("BRIT", "BRITE", g_brightness, true);
+						set_brightness(g_brightness);
+					}
+					break;
+				case STATE_MENU_24H:
+					if (buttons.b1_keyup) {
+						g_24h_clock = !g_24h_clock;
+						//eeprom_update_byte(&b_24h_clock, g_24h_clock);
+						
+						show_setting_string("24H", "24H", g_24h_clock ? " on" : " off", true);
+						buttons.b1_keyup = false;
+					}
+					break;
+				case STATE_MENU_VOL:
+					if (buttons.b1_keyup) {
+						g_volume = !g_volume;
+						//eeprom_update_byte(&b_volume, g_volume);
+						
+						show_setting_string("VOL", "VOL", g_volume ? " hi" : " lo", true);
+						//piezo_init();
+						//beep(1000, 1);
+						buttons.b1_keyup = false;
+					}
+					break;
+				case STATE_MENU_TEMP:
+					if (buttons.b1_keyup) {
+						g_show_temp = !g_show_temp;
+						//eeprom_update_byte(&b_show_temp, g_show_temp);
+						
+						show_setting_string("TEMP", "TEMP", g_show_temp ? " on" : " off", true);
+						buttons.b1_keyup = false;
+					}
+					break;
+				case STATE_MENU_DOTS:
+					if (buttons.b1_keyup) {
+						g_show_dots = !g_show_dots;
+						//eeprom_update_byte(&b_show_dots, g_show_dots);
+						
+						show_setting_string("DOTS", "DOTS", g_show_dots ? " on" : " off", true);
+						buttons.b1_keyup = false;
+					}
+					break;
+				default:
+					break; // do nothing
+			}
+
+			if (buttons.b2_keyup) {
+				menu_state = (menu_state_t)((int)menu_state + 1);
+				
+				// show temperature setting only when running on a DS3231
+				if (menu_state == STATE_MENU_TEMP && !rtc.isDS3231()) menu_state = (menu_state_t)((int)menu_state + 1);
+
+				// don't show dots settings for shields that have no dots
+				if (menu_state == STATE_MENU_DOTS && !g_has_dots) menu_state = (menu_state_t)((int)menu_state + 1);
+
+				if (menu_state == STATE_MENU_LAST) menu_state = STATE_MENU_BRIGHTNESS;
+				
+				switch (menu_state) {
+					case STATE_MENU_BRIGHTNESS:
+						show_setting_int("BRIT", "BRITE", g_brightness, false);
+						break;
+					case STATE_MENU_VOL:
+						show_setting_string("VOL", "VOL", g_volume ? " hi" : " lo", false);
+						break;
+					case STATE_MENU_24H:
+						show_setting_string("24H", "24H", g_24h_clock ? " on" : " off", false);
+						break;
+					case STATE_MENU_DOTS:
+						show_setting_string("DOTS", "DOTS", g_show_dots ? " on" : " off", false);
+						break;
+					case STATE_MENU_TEMP:
+						show_setting_string("TEMP", "TEMP", g_show_temp ? " on" : " off", false);
+						break;
+					default:
+						break; // do nothing
+				}
+				
+				buttons.b2_keyup = 0; // clear state
+			}
+		}
+		else {
+			if (g_show_special_cnt>0) {
+				g_show_special_cnt--;
+				if (g_show_special_cnt == 0)
+					switch (display_mode) {
+						case MODE_ALARM_TEXT:
+							display_mode = MODE_ALARM_TIME;
+							g_show_special_cnt = 100;
+							break;
+						case MODE_ALARM_TIME:
+							display_mode = MODE_NORMAL;
+							break;
+						default:
+							display_mode = MODE_NORMAL;
+					}
+			}
+			// read RTC approx every 200ms  (wm)
+			static uint16_t cnt = 0;
+			if (cnt++ > 19) {
+				read_rtc(display_mode);  // read RTC and display time
+				cnt = 0;
+				}
+		}
+		
+		// fixme: alarm should not be checked when setting time or alarm
+		if (g_alarm_switch && rtc.checkAlarm())
+			g_alarming = true;
+
+		_delay_ms(7);  // roughly 10 ms per loop
+	}
+
 }
 

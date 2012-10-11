@@ -16,6 +16,7 @@
 #ifndef GPS_H_
 #define GPS_H_
 
+#include "features.h"
 #include <Wire.h>
 #include <WireRtcLib.h>
 

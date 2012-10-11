@@ -72,6 +72,47 @@ int get_digits(void)
 	return digits;
 }
 
+#ifdef HAVE_SHIELD_AUTODETECT
+// detect which shield is connected
+void detect_shield(void)
+{
+	// read shield bits
+	uint8_t sig = 	
+		(((SIGNATURE_PIN & _BV(SIGNATURE_BIT_0)) ? 0b1   : 0) |
+		 ((SIGNATURE_PIN & _BV(SIGNATURE_BIT_1)) ? 0b10  : 0) |
+		 ((SIGNATURE_PIN & _BV(SIGNATURE_BIT_2)) ? 0b100 : 0 ));
+
+	switch (sig) {
+		case(1):  // IV-17 shield
+			shield = SHIELD_IV17;
+			digits = 4;
+			mpx_count = 4;
+			g_has_dots = false;
+			break;
+		case(2):  // IV-6 shield
+			shield = SHIELD_IV6;
+			digits = 6;
+			mpx_count = 8;
+			g_has_dots = true;
+			break;
+		case(6):  // IV-22 shield
+			shield = SHIELD_IV22;
+			digits = 4;
+			mpx_count = 8;
+			g_has_dots = true;
+			break;
+		case(7):  // IV-18 shield (note: save value as no shield - all bits on)
+			shield = SHIELD_IV18;
+			digits = 8;
+			mpx_count = 7; 
+			g_has_dots = true;
+			break;
+		default:
+			shield = SHIELD_NONE;
+			break;
+	}
+}
+#endif // HAVE_SHIELD_AUTODETECT
 
 void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
 {
@@ -420,10 +461,10 @@ ISR(TIMER3_OVF_vect)
 	}
 	
 	// button polling
-	if (++button_counter == 71) {
+	//if (++button_counter == 71) {
 		button_timer();
-		button_counter = 0;
-	}
+	//	button_counter = 0;
+	//}
 	
 	// display multiplex
 	if (++interrupt_counter == 6) {

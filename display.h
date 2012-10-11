@@ -16,6 +16,7 @@
 #ifndef DISPLAY_H_
 #define DISPLAY_H_
 
+#include "features.h"
 #include <stdbool.h>
 #include <avr/io.h>
 
@@ -52,6 +53,14 @@
 
 #include <WireRtcLib.h>
 
+// Shield signature
+#define SIGNATURE_PORT  PORTD
+#define SIGNATURE_DDR   DDRD
+#define SIGNATURE_PIN   PIND
+#define SIGNATURE_BIT_0 PD3
+#define SIGNATURE_BIT_1 PD4
+#define SIGNATURE_BIT_2 PD5
+
 void display_init(uint8_t brightness);
 int get_digits(void);
 
@@ -72,17 +81,6 @@ void set_char_at(char c, uint8_t offset);
 void set_brightness(uint8_t brightness);
 
 void set_blink(bool on);
-
-enum shield_t {
-	SHIELD_NONE = 0,
-	SHIELD_7SEG,  // generic 7-seg display
-	SHIELD_14SEG, // generic 14-seg display
-	SHIELD_16SEG, // generic 16-seg display
-	SHIELD_IV6,   // VFD Modular Clock IV-6 shield
-	SHIELD_IV17,  // VFD Modular Clock IV-17 shield
-	SHIELD_IV18,  // VFD Modular Clock IV-18 shield
-	SHIELD_IV22,  // VFD Modular Clock IV-22 shield
-};
 
 void set_shield(shield_t shield_type, uint8_t digits = 4);
 

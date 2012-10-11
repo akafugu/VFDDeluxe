@@ -16,6 +16,7 @@
 #ifndef ROTARY_H_
 #define ROTARY_H_
 
+#include "features.h"
 #include <stdbool.h>
 
 #include <avr/io.h>
