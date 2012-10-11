@@ -52,7 +52,9 @@ volatile uint8_t s_rotary_pos;
 // fixme: set flag to see if rotary encoder is moving or not
 // Rotary encoder interrupt
 // Based on code in this library http://www.pjrc.com/teensy/td_libs_Encoder.html
-ISR( PCINT0_vect )
+//ISR( PCINT0_vect )
+//ISR( INT6_vect )
+static void isr6(void)
 {
   uint8_t s = s_encoder_state & 3;
   if (PINB & _BV(ROTARY_1_BIT)) s |= 4;
@@ -86,10 +88,18 @@ ISR( PCINT0_vect )
   //g_blink_on = false;
 }
 
+#include <Arduino.h>
 
 void Rotary::begin()
 {
-  // rotary encoder
+  //MCUCR |= (1 << ISC61)|(1 << ISC60); // Turn on INT6
+  //GIMSK |= (1 << INT6);
+    //EICRB |= (1 << ISC61)|(1 << ISC60);
+
+    attachInterrupt(6, isr6, CHANGE);
+
+  
+  // rotary encoder ports as input
   ROTARY_1_DDR &= ~(_BV(ROTARY_1));
   ROTARY_2_DDR &= ~(_BV(ROTARY_2));
 

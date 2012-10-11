@@ -24,6 +24,7 @@
 #include "display.h"
 #include "button.h"
 #include "pitches.h"
+#include "rotary.h"
 
 #include <Wire.h>
 #include <WireRtcLib.h>
@@ -54,6 +55,10 @@ volatile uint16_t g_rotary_moved_timer;
 
 extern enum shield_t shield;
 
+Rotary rot;
+
+#define TEMP_CORR -1
+
 void initialize(void)
 {
   // read eeprom
@@ -80,17 +85,22 @@ void initialize(void)
     delay(100);
   }
 
+  rot.begin();
+
   sei();
   Wire.begin();
 
   rtc.begin();
   rtc.runClock(true);
+  
 
-  //rtc_set_time_s(16, 59, 50);
+  //rtc.setTime_s(16, 9, 0);
   //rtc_set_alarm_s(17,0,0);
 
+  //set_shield(SHIELD_IV17, 4);
+  set_shield(SHIELD_IV18, 8);
   //set_shield(SHIELD_7SEG, 10);
-  set_shield(SHIELD_14SEG, 8);
+  //set_shield(SHIELD_14SEG, 8);
   
   display_init(g_brightness);
 
@@ -114,6 +124,9 @@ ISR( PCINT2_vect )
 }
 */
 
+uint8_t print_digits(uint8_t num, uint8_t offset);
+void clear_data(void);
+
 void read_rtc(bool show_extra_info)
 {
   static uint16_t counter = 0;
@@ -122,7 +135,7 @@ void read_rtc(bool show_extra_info)
     MPL115A2.ReadSensor();
     MPL115A2.shutdown();
 
-    float temp = MPL115A2.GetTemperature();
+    float temp = MPL115A2.GetTemperature() + TEMP_CORR;
     
     int8_t t;
     uint8_t f;
@@ -227,9 +240,11 @@ void loop()
   */
   
   read_rtc(true);
+  //clear_data();
+  //print_digits(rot.getRawPosition(), 4);
   
-  gps.tick();
-  //delay(1000);
-  delay(10);
+  delay(1000);
+  //gps.tick();
+  //delay(10);
 }
 
