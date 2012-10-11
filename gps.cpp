@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe
- * (C) 2011-12 Akafugu Corporation
+ * GPS support for VFD Modular Clock
+ * (C) 2012 William B Phelps
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -13,208 +13,236 @@
  *
  */
 
-/*
+#include "features.h"
 
-http://www.electronicsblog.net/arduino-gps-clock-using-nmea-protocol/
+#ifdef HAVE_GPS
 
-$GPGGA (fix information sentence)
-http://aprs.gids.nl/nmea/#gga
-
-$GPZDA (time info sentence)
-http://aprs.gids.nl/nmea/#zda
-
-UTC time offsets
-http://en.wikipedia.org/wiki/List_of_time_zones_by_UTC_offset
-
-*/
-
+#include <avr/interrupt.h>
+#include <string.h>
+#include <util/delay.h>
 #include "gps.h"
+#include "display.h"
+#include "Time.h"
 
+#include <WireRtcLib.h>
 
-uint32_t GPS::parsedecimal(char *str)
+// String buffer for processing GPS data:
+char gpsBuffer[GPSBUFFERSIZE];
+//volatile uint8_t gpsEnabled = 0;
+#define gpsTimeoutLimit 5  // 5 seconds until we display the "no gps" message
+uint16_t gpsTimeout = 0;  // how long since we received valid GPS data?
+time_t tGPSupdate = 0;
+
+// fixme: integrate with menu
+int8_t g_TZ_hour = 9;
+uint8_t g_TZ_minutes;
+uint8_t g_DST;  // DST off, on, auto?
+uint8_t g_DST_offset;  // DST offset in hours
+
+char gps_setting_[4];
+char* gps_setting(uint8_t gps)
 {
-  uint32_t d = 0;
-  
-  while (str[0] != 0) {
-   if ((str[0] > '9') || (str[0] < '0'))
-     return d;
-   d *= 10;
-   d += str[0] - '0';
-   str++;
-  }
-  return d;
+	switch (gps) {
+		case(0):
+			strcpy(gps_setting_,"off");
+			break;
+		case(48):
+			strcpy(gps_setting_," 48");
+			break;
+		case(96):
+			strcpy(gps_setting_," 96");
+			break;
+		default:
+			strcpy(gps_setting_," ??");
+	}
+	return gps_setting_;
 }
 
-void GPS::readline(void)
-{
-  char c;
-  
-  buffidx = 0; // start at begninning
-  while (1) {
-      c=Serial1.read();
-      if (c == -1)
-        continue;
-      if (c == '\n')
-        continue;
-      if ((buffidx == BUFFSIZ-1) || (c == '\r')) {
-        buffer[buffidx] = 0;
-        return;
-      }
-      buffer[buffidx++]= c;
-  }
+// Set DST offset and save in EE prom
+
+//Check to see if there is any serial data.
+uint8_t gpsDataReady(void) {
+#ifdef HAVE_LEONARDO
+  return Serial1.available();
+#else
+  return (UCSR0A & _BV(RXC0));
+#endif
 }
 
-#define GPSRATE 9600
+// get data from gps and update the clock (if possible)
+//$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E*68\r\n
+// 0         1         2         3         4         5         6         7
+// 01234567890123456789012345678901234567890123456789012345678901234567890
+//    0     1   2    3    4     5    6   7     8      9     10  11 12
+void getGPSdata(void) {
+    #ifdef HAVE_LEONARDO
+	char charReceived = Serial1.read();  // get a byte from the port
+#else
+	char charReceived = UDR0;  // get a byte from the port
+#endif
 
-void GPS::begin()
+    Serial.print("Polling ");
+    Serial.println(charReceived);
+
+
+	uint8_t bufflen = strlen(gpsBuffer);
+	//If the buffer has not been started, check for '$'
+	if ( ( bufflen == 0 ) &&  ( '$' != charReceived ) )
+		return;  // wait for start of next sentence from GPS
+	if ( bufflen < (GPSBUFFERSIZE - 1) ) {  // is there room left? (allow room for null term)
+		if ( '\r' != charReceived ) {  // end of sentence?
+			strncat(gpsBuffer, &charReceived, 1);  // add char to buffer
+			return;
+		}
+		strncat(gpsBuffer, "*", 1);  // mark end of buffer just in case
+		//beep(1000, 1);  // debugging
+		// end of sentence - is this the message we are looking for?
+		parseGPSdata();  // check for GPRMC sentence and set clock
+	}  // if space left in buffer
+	// either buffer is full, or the message has been processed. reset buffer for next message
+	memset( gpsBuffer, 0, GPSBUFFERSIZE );
+}  // getGPSdata
+
+extern WireRtcLib rtc;
+
+void setRTCTime(time_t t)
 {
-  Serial1.begin(GPSRATE);
+    tmElements_t tm;
+    
+    breakTime(t, &tm);
+    
+    rtc.setTime_s(tm.Hour, tm.Minute, tm.Second);   
 }
 
-GPS::gps_data* GPS::getData()
-{
-  return &gps;
-}
-  
-void GPS::tick()
-{
-  uint32_t tmp;
-  
-  readline();
-  
-  // $GPRMC = global positioning fixed data
-  if (strncmp(buffer, "$GPRMC",6) == 0) {
-    Serial.println(buffer);
+void parseGPSdata() {
+	char gpsCheck1, gpsCheck2;
+	char gpsTime[7];
+	char gpsDate[7];
+	char gpsFixStat[1];  // fix status
+	char gpsLat[6];  // ddmmff  (without decimal point)
+	char gpsLatH[1];  // hemisphere 
+	char gpsLong[7];  // ddddmmff  (without decimal point)
+	char gpsLongH[1];  // hemisphere 
+	char *gpsPtr;
+	if ( strncmp( gpsBuffer, "$GPRMC,", 7 ) == 0 ) {  
+            Serial.println("got GPRMC");
+		//beep(1000, 1);
+		//Calculate checksum from the received data
+		gpsPtr = &gpsBuffer[1];  // start at the "G"
+		gpsCheck1 = 0;  // init collector
+		 /* Loop through entire string, XORing each character to the next */
+		while (*gpsPtr != '*')  // count all the bytes up to the asterisk
+		{
+			gpsCheck1 ^= *gpsPtr;
+			gpsPtr++;
+		}
+		// now get the checksum from the string itself, which is in hex
+		uint8_t chk1, chk2;
+		chk1 = *(gpsPtr+1);
+		chk2 = *(gpsPtr+2);
+		if (chk1 > '9') 
+			chk1 = chk1 - 55;  // convert 'A-F' to 10-15
+		else
+			chk1 = chk1 - 48;  // convert '0-9' to 0-9
+		if (chk2 > '9') 
+			chk2 = chk2 - 55;  // convert 'A-F' to 10-15
+		else
+			chk2 = chk2 - 48;  // convert '0-9' to 0-9
+		gpsCheck2 = (chk1 * 16)  + chk2;
+		if (gpsCheck1 == gpsCheck2) {  // if checksums match, process the data
+			//beep(1000, 1);
+			//Find the first comma:
+			gpsPtr = strchr( gpsBuffer, ',');
+			//Copy the section of memory in the buffer that contains the time.
+			memcpy( gpsTime, gpsPtr + 1, 6 );
+			gpsTime[6] = 0;  //add a null character to the end of the time string.
+			gpsPtr = strchr( gpsPtr + 1, ',');  // find the next comma
+			memcpy( gpsFixStat, gpsPtr + 1, 1 );  // copy fix status
+			if (gpsFixStat[0] == 'A') {  // if data valid, parse time & date
+				gpsTimeout = 0;  // reset gps timeout counter
+				gpsPtr = strchr( gpsPtr + 1, ',');  // find the next comma
+				memcpy( gpsLat, gpsPtr + 1, 4 );  // copy Latitude ddmm
+				memcpy( gpsLat + 4, gpsPtr + 6, 2 );  // copy Latitude ff
+				gpsPtr = strchr( gpsPtr + 1, ',');  // find the next comma
+				memcpy( gpsLatH, gpsPtr + 1, 1 );  // copy Latitude Hemisphere
+				gpsPtr = strchr( gpsPtr + 1, ',');  // find the next comma
+				memcpy( gpsLong, gpsPtr + 1 , 5 );  // copy Longitude dddmm
+				memcpy( gpsLong + 5, gpsPtr + 7 , 2 );  // copy Longitude ff
+				gpsPtr = strchr( gpsPtr + 1, ',');  // find the next comma
+				memcpy( gpsLongH, gpsPtr + 1 ,1 );  // copy Longitude Hemisphere
+				//Find three more commas to get the date:
+				for ( int i = 0; i < 3; i++ ) {
+					gpsPtr = strchr( gpsPtr + 1, ',');
+				}
+				//Copy the section of memory in the buffer that contains the date.
+				memcpy( gpsDate, gpsPtr + 1, 6 );
+				gpsDate[6] = 0;  //add a null character to the end of the date string.
+				time_t tNow;
+				tmElements_t tm;
+				tm.Hour = (gpsTime[0] - '0') * 10;
+				tm.Hour = tm.Hour + (gpsTime[1] - '0');
+				tm.Minute = (gpsTime[2] - '0') * 10;
+				tm.Minute = tm.Minute + (gpsTime[3] - '0');
+				tm.Second = (gpsTime[4] - '0') * 10;
+				tm.Second = tm.Second + (gpsTime[5] - '0');
+				tm.Day = (gpsDate[0] - '0') * 10;
+				tm.Day = tm.Day + (gpsDate[1] - '0');
+				tm.Month = (gpsDate[2] - '0') * 10;
+				tm.Month = tm.Month + (gpsDate[3] - '0');
+				tm.Year = (gpsDate[4] - '0') * 10;
+				tm.Year = tm.Year + (gpsDate[5] - '0');
+				tm.Year = y2kYearToTm(tm.Year);  // convert yy year to (yyyy-1970) (add 30)
+				tNow = makeTime(&tm);  // convert to time_t
 
-    // hhmmss time data
-    parseptr = buffer+7;
-    tmp = parsedecimal(parseptr);
-    
-    gps.tm.hour = tmp / 10000;
-    gps.tm.min = (tmp / 100) % 100;
-    gps.tm.sec = tmp % 100;
-    
-    parseptr = strchr(parseptr, ',') + 1;
-    gps.status = parseptr[0];
-    parseptr += 2;
-    
-    // grab latitude & long data
-    // latitude
-    gps.latitude = parsedecimal(parseptr);
-    if (gps.latitude != 0) {
-      gps.latitude *= 10000;
-      parseptr = strchr(parseptr, '.')+1;
-      gps.latitude += parsedecimal(parseptr);
-    }
-    parseptr = strchr(parseptr, ',') + 1;
-    // read latitude N/S data
-    if (parseptr[0] != ',') {
-      gps.latdir = parseptr[0];
-    }
-    
-    // longitude
-    parseptr = strchr(parseptr, ',')+1;
-    gps.longitude = parsedecimal(parseptr);
-    if (gps.longitude != 0) {
-      gps.longitude *= 10000;
-      parseptr = strchr(parseptr, '.')+1;
-      gps.longitude += parsedecimal(parseptr);
-    }
-    parseptr = strchr(parseptr, ',')+1;
-    
-    // read longitude E/W data
-    if (parseptr[0] != ',') {
-      gps.longdir = parseptr[0];
-    }
+				if ((tm.Second == 0) || ((tNow - tGPSupdate)>=60)) {  // update RTC once/minute or if it's been 60 seconds
+					//beep(1000, 1);  // debugging
+					set_blink(true);
+					tGPSupdate = tNow;
+					tNow = tNow + (g_TZ_hour + g_DST_offset) * SECS_PER_HOUR;  // add time zone hour offset & DST offset
+					if (g_TZ_hour < 0)  // add or subtract time zone minute offset
+						tNow = tNow - g_TZ_minutes * SECS_PER_HOUR;
+					else
+						tNow = tNow + g_TZ_minutes * SECS_PER_HOUR;
 
-    // groundspeed
-    parseptr = strchr(parseptr, ',')+1;
-    gps.groundspeed = parsedecimal(parseptr);
+					setRTCTime(tNow);
+					//fixme: rtc.setTime_t(tNow);  // set RTC from adjusted GPS time & date
+					_delay_ms(100);  // pause long enough to make blink visible
+					set_blink(false);
+				}
 
-    // track angle
-    parseptr = strchr(parseptr, ',')+1;
-    gps.trackangle = parsedecimal(parseptr);
-
-    // date
-    parseptr = strchr(parseptr, ',')+1;
-    tmp = parsedecimal(parseptr); 
-    gps.tm.mday = tmp / 10000;
-    gps.tm.mon = (tmp / 100) % 100;
-    gps.tm.year = tmp % 100;
-    
-    Serial.print("Time: ");
-    Serial.print(gps.tm.hour);
-    Serial.print(":");
-    Serial.print(gps.tm.min);
-    Serial.print(":");
-    Serial.println(gps.tm.sec);
-
-    Serial.print("Date: ");
-    Serial.print(gps.tm.year);
-    Serial.print(".");
-    Serial.print(gps.tm.mon);
-    Serial.print(".");
-    Serial.println(gps.tm.mday);
-
-    //Serial.print("Status: ");
-    //Serial.println(gps.status);
-
-    /*
-    Serial.print("Lat: "); 
-    if (gps.latdir == 'N')
-       Serial.print('+');
-    else if (gps.latdir == 'S')
-       Serial.print('-');
-
-    Serial.print(gps.latitude/1000000, DEC); Serial.write('\°'); Serial.print(' ');
-    Serial.print((gps.latitude/10000)%100, DEC); Serial.print('\''); Serial.print(' ');
-    Serial.print((gps.latitude%10000)*6/1000, DEC); Serial.print('.');
-    Serial.print(((gps.latitude%10000)*6/10)%100, DEC); Serial.println('"');
-   
-    Serial.print("Long: ");
-    if (gps.longdir == 'E')
-       Serial.print('+');
-    else if (gps.longdir == 'W')
-       Serial.print('-');
-    Serial.print(gps.longitude/1000000, DEC); Serial.write('\°'); Serial.print(' ');
-    Serial.print((gps.longitude/10000)%100, DEC); Serial.print('\''); Serial.print(' ');
-    Serial.print((gps.longitude%10000)*6/1000, DEC); Serial.print('.');
-    Serial.print(((gps.longitude%10000)*6/10)%100, DEC); Serial.println('"');
-    */
-  }
-  // $GPGGA = Global Positioning System Fix Data
-  else if (strncmp(buffer, "$GPGGA",6) == 0) {
-    Serial.println(buffer);
-    
-    // skip past the initial data
-    parseptr = strchr(buffer, ',') + 1;
-    parseptr = strchr(parseptr, ',') + 1;
-    parseptr = strchr(parseptr, ',') + 1;
-    parseptr = strchr(parseptr, ',') + 1;
-    parseptr = strchr(parseptr, ',') + 1;
-    parseptr = strchr(parseptr, ',') + 1;
-
-    // read fix data: 0 = no fix, 1 = GPS fix, 2 = DGPS fix
-    if (*parseptr == 0)
-      gps.fix = false;
-    else
-      gps.fix = true;  
-
-    parseptr = strchr(parseptr, ',') + 1;
-     
-    char t1 = *parseptr++;
-    char t2 = *parseptr;
-    
-    if (t2 == ',')
-      gps.satellites = t1-'0';
-    else
-      gps.satellites = (t1-'0')*10+t2-'0';
-    
-    Serial.print("Fix data: ");
-    Serial.print(gps.fix ? "FIX (" : "No fix (");
-    Serial.print(gps.satellites);
-    Serial.println(" satellites)");
-  } 
+			} // if fix status is A
+		} // if checksums match
+	}  // if "$GPRMC"
 }
 
+void uart_init(uint16_t BRR) {
+#ifdef HAVE_LEONARDO
+    Serial1.begin(9600); // fixme: adapt uart rate for serial library
+#else
+  /* setup the main UART */
+  UBRR0 = BRR;               // set baudrate counter
+
+  UCSR0B = _BV(RXEN0) | _BV(TXEN0);
+  UCSR0C = _BV(USBS0) | (3<<UCSZ00);
+  DDRD |= _BV(PD1);
+  DDRD &= ~_BV(PD0);
+#endif
+}
+
+void gps_init(uint8_t gps) {
+    Serial.println("Init serial");
+    
+	switch (gps) {
+		case(0):  // no GPS
+			break;
+		case(48):
+			uart_init(BRRL_4800);
+			break;
+		case(96):
+			uart_init(BRRL_9600);
+			break;
+	}
+}
+
+#endif // HAVE_GPS
 

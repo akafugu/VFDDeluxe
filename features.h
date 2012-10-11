@@ -74,7 +74,8 @@ enum shield_t {
 #define FEATURE_SHIELD_AUTODETECT NO
 #define FEATURE_MPL115A2 YES
 #define FEATURE_ROTARY YES
-#define FEATURE_GPS NO
+#define FEATURE_GPS YES
+#define FEATURE_LEONARDO YES
 
 // fixme: this should probably be generated from a script
 // list FEATURES and what each feature defines when set to on
@@ -122,6 +123,16 @@ enum shield_t {
 
 #if FEATURE_GPS == YES
 #  define HAVE_GPS
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_LEONARDO) || FEATURE_LEONARDO < NO || FEATURE_LEONARDO > YES
+#  error Must define FEATURE_LEONARDO to be YES or NO
+#endif
+
+#if FEATURE_LEONARDO == YES
+#  define HAVE_LEONARDO
 #endif
 
 ///////////////////////////////////////////

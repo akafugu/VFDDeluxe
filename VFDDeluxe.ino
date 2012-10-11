@@ -37,7 +37,7 @@
 #include "gps.h"
 
 WireRtcLib rtc;
-GPS gps;
+//GPS gps;
 
 // Piezo
 #define PIEZO 11
@@ -48,6 +48,12 @@ uint8_t g_show_temp = true;
 uint8_t g_show_dots = true;
 uint8_t g_brightness = 5;
 uint8_t g_volume = 0;
+#ifdef HAVE_GPS
+uint8_t g_gps_enabled = 96;
+uint8_t g_region = 0;
+uint8_t g_autodate = false;
+#endif // HAVE_GPS
+
 
 // Other globals
 uint8_t g_has_dots = false; // can current shield show dot (decimal points)
@@ -126,7 +132,7 @@ void initialize(void)
   rtc.begin();
   rtc.runClock(true);  
 
-  //rtc.setTime_s(16, 9, 0);
+  rtc.setTime_s(5, 0, 0);
   //rtc_set_alarm_s(17,0,0);
 
 #ifdef HAVE_SHIELD_AUTODETECT
@@ -144,6 +150,9 @@ void initialize(void)
   PCICR |= (1 << PCIE2);
   PCMSK2 |= (1 << PCINT18);
   */
+  
+    // setup UART for GPS
+    gps_init(g_gps_enabled);
 }
 
 /*
@@ -213,7 +222,7 @@ void setup()
 
   initialize();
   
-  gps.begin();
+  //gps.begin();
 }
 
 void loop()
@@ -510,7 +519,17 @@ void loop()
 		if (g_alarm_switch && rtc.checkAlarm())
 			g_alarming = true;
 
+#ifdef HAVE_GPS
+		if (g_gps_enabled)
+			for (long i = 0; i < 2500; i++) {  // loop count set to create equivalent delay, and works at 9600 bps
+				if (gpsDataReady())
+					getGPSdata();  // get the GPS serial stream and possibly update the clock 
+			}
+		else
+			_delay_ms(7);  // do something that takes about the same amount of time
+#else
 		_delay_ms(7);  // roughly 10 ms per loop
+#endif
 	}
 
 }

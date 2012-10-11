@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe
- * (C) 2011-12 Akafugu Corporation
+ * GPS support for VFD Modular Clock
+ * (C) 2012 William B Phelps
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -17,47 +17,45 @@
 #define GPS_H_
 
 #include "features.h"
-#include <Wire.h>
-#include <WireRtcLib.h>
 
-#define BUFFSIZ 90 // plenty big
+#ifdef HAVE_GPS
 
-class GPS
-{
-public:
-  class gps_data {
-    public:
-      WireRtcLib::tm tm;
-      int8_t timezone;
+// String buffer size:
+#define GPSBUFFERSIZE 128 
+//The year the clock was programmed, used for error checking
+#define PROGRAMMING_YEAR 12
 
-     uint32_t latitude, longitude;
-     uint8_t groundspeed, trackangle;
+char* gps_setting(uint8_t gps);
 
-      char latdir, longdir;
-      char status;
-  
-      bool fix;
-      uint8_t satellites;
-  };
+extern int8_t g_TZ_hour;
+extern uint8_t g_TZ_minutes;
+extern uint8_t g_DST;  // DST off, on, auto?
+extern uint8_t g_DST_offset;  // DST offset in hours
 
-private:
-  char buffer[BUFFSIZ];
-  char *parseptr;
-  char buffidx;
-  
-  GPS::gps_data gps;
-  
-  uint32_t parsedecimal(char *str);
-  void readline(void);
+//GPS serial data handling functions:
+uint8_t gpsDataReady(void);
+void getGPSdata(void);
+void parseGPSdata(void);
 
-public:
-  void begin();
-  GPS::gps_data* getData();
-  
-  void tick();
-};
+void fix_time(void);
+//Set the time zone:
+void set_timezone(void);
 
+uint8_t leapyear(uint16_t y);
+void uart_init(uint16_t BRR);
+void gps_init(uint8_t gps);
+
+#if (F_CPU == 16000000)
+#define BRRL_4800 207    // for 16MHZ
+#define BRRL_9600 103    // for 16MHZ
+#define BRRL_192 52    // for 16MHZ
+#elif (F_CPU == 8000000)
+#define BRRL_4800 103
+#define BRRL_9600 52
+#define BRRL_192 26    
+#endif
+
+#endif // HAVE_GPS
 
 #endif // GPS_H_
-
 
