@@ -128,6 +128,10 @@ uint8_t calculate_segments_7(uint8_t character)
 		case 'j':
 			segments = (1<<B)|(1<<C)|(1<<D)|(1<<E);
 			break;
+                case 'k':
+                case 'K':
+                        segments = (1<<E)|(1<<F)|(1<<G);
+                        break;
 		case 'L':
 			segments = (1<<D)|(1<<E)|(1<<F);
 			break;

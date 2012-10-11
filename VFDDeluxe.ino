@@ -169,14 +169,23 @@ ISR( PCINT2_vect )
 uint8_t print_digits(uint8_t num, uint8_t offset);
 void clear_data(void);
 
-void read_rtc(bool show_extra_info)
+bool have_temp_sensor(void)
 {
-  static uint16_t counter = 0;
-
 #ifdef HAVE_MPL115A2      
-  // Show temperature from boards that have a MPL115A temp sensor
-  if (g_show_temp && counter > 5) {
-      
+    return true;
+#endif
+#ifdef HAVE_HIH6121
+    return true;
+#endif
+
+    return rtc.isDS3231();
+}
+
+void read_temp()
+{
+#ifdef HAVE_HIH6121
+    // fixme: implement
+#elif defined(HAVE_MPL115A2)
     MPL115A2.ReadSensor();
     MPL115A2.shutdown();
 
@@ -189,25 +198,63 @@ void read_rtc(bool show_extra_info)
     f = (int)((temp-t)*100);
 
     show_temp(t, f);
-  }
 #else
-  // Otherwise, use the onboard temp sensor on the DS3231(M) RTC for boards that have it
-  if (g_show_temp && rtc.isDS3231() && counter > 5) {
     int8_t t;
     uint8_t f;
     rtc.getTemp(&t, &f);
     show_temp(t, f);
-  }
-#endif // HAVE_MPL115A2
-  else {
-  // show time
+#endif
+}
+
+inline bool have_pressure_sensor()
+{
+#ifdef HAVE_MPL115A2
+    return true;
+#else
+    return false;
+#endif
+}
+
+void read_pressure()
+{
+#ifdef HAVE_MPL115A2
+    MPL115A2.ReadSensor();
+    MPL115A2.shutdown();
+
+    float pressure = MPL115A2.GetPressure();
+
+    show_pressure(pressure);
+#endif
+}
+
+inline bool have_humidity_sensor()
+{
+#ifdef HAVE_HIH6121
+    return true;
+#else
+    return false;
+#endif
+}
+
+void read_humidity()
+{
+    //fixme: implement
+    show_humidity(96);    
+}
+
+void read_rtc(bool show_extra_info)
+{
     tt = rtc.getTime();
     if (tt == NULL) return;
-    show_time(tt, g_24h_clock, show_extra_info);
-  }
 
-  counter++;
-  if (counter == 10) counter = 0;
+    if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
+        read_temp();
+    else if (have_pressure_sensor() && tt->sec >= 34 && tt->sec <= 36)
+        read_pressure();
+    else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
+        read_humidity();
+    else
+        show_time(tt, g_24h_clock, show_extra_info);
 }
 
 void setup()

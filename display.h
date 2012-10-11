@@ -68,6 +68,8 @@ int get_digits(void);
 void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode);
 void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec);
 void show_temp(int8_t t, uint8_t f);
+void show_humidity(uint8_t hum);
+void show_pressure(uint8_t pressure);
 
 // gps integration
 void set_gps_updated(bool b);

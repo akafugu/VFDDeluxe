@@ -489,12 +489,21 @@ ISR(TIMER3_OVF_vect)
 }
 
 // utility functions
+// fixme: generalize this to print any length of number
 uint8_t print_digits(uint8_t num, uint8_t offset)
 {
-	data[offset+1] = num % 10;
-	num /= 10;
-	data[offset] = num % 10;
-	return offset+2;
+    uint8_t ret = (num >= 100) ? offset+3 : offset+2;
+    
+    if (num >= 100) {
+        data[offset+2] = num % 10;
+        num /= 10;
+    }
+    
+    data[offset+1] = num % 10;
+    num /= 10;
+    data[offset] = num % 10;
+    
+    return ret;
 }
 
 uint8_t print_ch(char ch, uint8_t offset)
@@ -685,40 +694,58 @@ void show_temp(int8_t t, uint8_t f)
   else if (digits == 8) dots = (1<<3);
   else if (digits == 6) dots = (1<<2);
   else if (digits == 4) dots = (1<<1);
-  
-/*
-	dots = 0;
-	
-	if (digits == 6) {
-		data[5] = 'C';
-		
-		uint16_t num = f;
-		
-		data[4] = num % 10;
-		num /= 10;
-		data[3] = num % 10;
-		
-		sbi(dots, 2);
+}
 
-		num = t;
-		data[2] = num % 10;
-		num /= 10;
-		data[1] = num % 10;
-		num /= 10;
-		data[0] = ' ';
-	}	
-	else {
-		sbi(dots, 1);		
-		data[3] = 'C';
-		
-		uint16_t num = t*100 + f/10;
-		data[2] = num % 10;
-		num /= 10;
-		data[1] = num % 10;
-		num /= 10;
-		data[0] = num % 10;
+void show_humidity(uint8_t hum)
+{
+	dots = 0;
+	uint8_t offset = 0;
+	
+	switch (digits) {
+	case 10:
+		offset = print_ch(' ', offset);
+		offset = print_ch(' ', offset);
+		// fall-through
+	case 8:
+		offset = print_ch(' ', offset);
+		offset = print_ch(' ', offset);
+		// fall-through
+	case 6:
+		offset = print_ch(' ', offset);
+		offset = print_digits(hum, offset);
+		offset = print_ch('R', offset);
+		offset = print_ch('H', offset);
+		break;
+	case 4:
+		offset = print_digits(hum, offset);
+		offset = print_ch('H', offset);
 	}
-*/
+}
+
+void show_pressure(uint8_t pressure)
+{
+	dots = 0;
+	uint8_t offset = 0;
+	
+	switch (digits) {
+	case 10:
+		offset = print_ch(' ', offset);
+		offset = print_ch(' ', offset);
+		// fall-through
+	case 8:
+		offset = print_ch(' ', offset);
+		offset = print_ch(' ', offset);
+		// fall-through
+	case 6:
+		offset = print_digits(pressure, offset);
+		offset = print_ch('k', offset);
+		offset = print_ch('P', offset);
+		offset = print_ch('a', offset);
+		break;
+	case 4:
+		offset = print_digits(pressure, offset);
+		offset = print_ch('P', offset);
+	}
 }
 
 void set_string(const char* str)
