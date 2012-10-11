@@ -61,6 +61,8 @@ uint8_t blink;
 uint16_t blink_counter = 0;
 uint8_t display_on = 1;
 
+uint8_t gps_updated;
+
 // dots [bit 0~5]
 uint8_t dots = 0;
 
@@ -243,6 +245,13 @@ void set_blink(bool on)
 	if (!blink) display_on = 1;
 }
 
+void set_gps_updated(bool b) {
+    if (shield == SHIELD_IV18)
+        gps_updated = b;
+    else
+        set_blink(b);
+}
+
 //bool led = true;
 
 void display_multiplex_7seg(void)
@@ -382,10 +391,14 @@ void display_multiplex_iv18(void)
 	else if (multiplex_counter == 8) {
 		clear_display();
 
+                uint8_t seg = 0;
+
 		if (g_alarm_switch)
-			write_vfd_iv18(8, (1<<7));
-		else
-			write_vfd_iv18(8, 0);
+                    seg |= (1<<7);
+                if (gps_updated)
+                    seg |= (1<<6);
+
+		write_vfd_iv18(8, seg);
 	}
 	else {
 		clear_display();

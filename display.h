@@ -69,6 +69,9 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode);
 void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec);
 void show_temp(int8_t t, uint8_t f);
 
+// gps integration
+void set_gps_updated(bool b);
+
 // functions for showing settings
 void show_setting_string(const char* short_str, const char* long_str, const char* value, bool show_setting);
 void show_setting_int(const char* short_str, const char* long_str, int value, bool show_setting);

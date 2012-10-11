@@ -39,6 +39,8 @@ uint8_t g_TZ_minutes;
 uint8_t g_DST;  // DST off, on, auto?
 uint8_t g_DST_offset;  // DST offset in hours
 
+uint8_t g_gps_updated;
+
 char gps_setting_[4];
 char* gps_setting(uint8_t gps)
 {
@@ -195,8 +197,8 @@ void parseGPSdata() {
 				tNow = makeTime(&tm);  // convert to time_t
 
 				if ((tm.Second == 0) || ((tNow - tGPSupdate)>=60)) {  // update RTC once/minute or if it's been 60 seconds
-					//beep(1000, 1);  // debugging
-					set_blink(true);
+					set_gps_updated(true); // enable visual indication that the time is being updateds
+
 					tGPSupdate = tNow;
 					tNow = tNow + (g_TZ_hour + g_DST_offset) * SECS_PER_HOUR;  // add time zone hour offset & DST offset
 					if (g_TZ_hour < 0)  // add or subtract time zone minute offset
@@ -207,7 +209,8 @@ void parseGPSdata() {
 					setRTCTime(tNow);
 					//fixme: rtc.setTime_t(tNow);  // set RTC from adjusted GPS time & date
 					_delay_ms(100);  // pause long enough to make blink visible
-					set_blink(false);
+
+					set_gps_updated(false);
 				}
 
 			} // if fix status is A

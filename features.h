@@ -72,7 +72,8 @@ enum shield_t {
 #define NO  1
 
 #define FEATURE_SHIELD_AUTODETECT NO
-#define FEATURE_MPL115A2 YES
+#define FEATURE_MPL115A2 YES // Temperature and Atmospheric pressure sensor
+#define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY YES
 #define FEATURE_GPS YES
 #define FEATURE_LEONARDO YES
