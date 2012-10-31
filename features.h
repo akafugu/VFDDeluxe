@@ -73,9 +73,11 @@ enum shield_t {
 
 #define FEATURE_SHIELD_AUTODETECT NO
 #define FEATURE_MPL115A2 YES // Temperature and Atmospheric pressure sensor
-#define FEATURE_HIH6121 YES   // Temperature and Humidity sensor
+#define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY YES
 #define FEATURE_GPS YES
+
+// fixme: this can be automatic based on __AVR_ATmega32U4__ define
 #define FEATURE_LEONARDO YES
 
 // fixme: this should probably be generated from a script

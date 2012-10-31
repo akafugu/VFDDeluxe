@@ -1,6 +1,6 @@
 /*
- * Four Letter Word Generator
- * (C) 2012 Akafugu Corporation
+ * VFD Deluxe
+ * (C) 2011-12 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -13,27 +13,8 @@
  *
  */
 
-#ifndef FLW_H__
-#define FLW_H__
+// GLOBAL include file: Should be the first file to include in all source files
 
-#include <inttypes.h>
-#include <stdbool.h>
+#include "features.h"
+#include "direct_pin_read.h"
 
-// todo: turn into class
-
-class FourLetterWord
-{
-private:
-    unsigned long m_offset;
-    char m_current_word[6];
-public:
-    void begin(uint32_t seed = 0xbeefcace);
-    void get_word(char* word);
-};
-
-
-void seed_random(uint32_t seed);
-bool has_eeprom(void);
-unsigned long get_word(unsigned long offset, char* word);
-
-#endif

@@ -70,9 +70,9 @@ void button_timer(void)
 
 void get_button_state(struct BUTTON_STATE* buttons)
 {
-	buttons->b1_keydown = keydown_keys&_BV(BUTTON1_BIT);
-	buttons->b1_keyup = keyup_keys&_BV(BUTTON1_BIT);
-	buttons->b1_repeat = keyrepeat_keys&_BV(BUTTON1_BIT);
+	buttons->b2_keydown = keydown_keys&_BV(BUTTON1_BIT);
+	buttons->b2_keyup = keyup_keys&_BV(BUTTON1_BIT);
+	buttons->b2_repeat = keyrepeat_keys&_BV(BUTTON1_BIT);
 	
 	// Reset if we got keyup
 	if(keyup_keys&_BV(BUTTON1_BIT))
@@ -82,4 +82,6 @@ void get_button_state(struct BUTTON_STATE* buttons)
 		keyrepeat_keys &= ~(_BV(BUTTON1_BIT));
 		keyboard_counter[0] = 0;
 	}
+
+    buttons->none_held = ~(saved_keystatus)&(_BV(BUTTON1_BIT));
 }

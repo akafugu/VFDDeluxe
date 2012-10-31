@@ -13,7 +13,23 @@
  *
  */
 
-#include "features.h"
+/*
+ * TODO:
+ * - Use SQW interrupt to refresh clock (FEATURE)
+ * - Rewrite direct port access to use pin to port mapping features
+ * - Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
+ * - Add support for Rotary encoder
+ * - pin mapping header file
+ * - board header file boards.h
+ * - change features.h to globals.h
+ *   (globals includes features.h, boards.h)
+ * - serial slave feature
+ * - integrate GPS menu stuff
+ * - rewrite menu system into a more flexible class
+ */
+
+#include "global.h"
+#include "direct_pin_read.h"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -26,7 +42,7 @@
 #include "display.h"
 #include "button.h"
 #include "pitches.h"
-#include "rotary.h"
+//#include "rotary.h"
 
 #include <Wire.h>
 #include <WireRtcLib.h>
@@ -34,7 +50,12 @@
 #include <MPL115A2.h>
 #endif
 
+#include <Encoder.h>
+
+Encoder myEnc(6, 7);
+
 #include "gps.h"
+#include "flw.h"
 
 WireRtcLib rtc;
 //GPS gps;
@@ -54,8 +75,8 @@ uint8_t g_region = 0;
 uint8_t g_autodate = false;
 #endif // HAVE_GPS
 
-
 // Other globals
+uint8_t g_has_flw = false;  // does the unit have an EEPROM with the FLW database?
 uint8_t g_has_dots = false; // can current shield show dot (decimal points)
 uint8_t g_alarming = false; // alarm is going off
 uint8_t g_alarm_switch;
@@ -65,7 +86,7 @@ WireRtcLib::tm* tt = NULL; // for holding RTC values
 volatile uint16_t g_rotary_moved_timer;
 
 extern enum shield_t shield;
-Rotary rot;
+//Rotary rot;
 #define TEMP_CORR -1
 
 struct BUTTON_STATE buttons;
@@ -86,6 +107,18 @@ typedef enum {
 } menu_state_t;
 
 menu_state_t menu_state = STATE_CLOCK;
+
+
+/*
+ * FIXME: more display modes
+ *
+ * Auto 1 - toggle between showing time/date/temp/etc. automatically
+ * Auto 2 - same, but show secondary info (seconds on 4 digit displays, alternate display mode on other displays
+ * (example: 8-digits: Auto 1: HH.MM.SS, Auto 2: HH-MM-SS)
+ * temp - show temp and associated info
+ * flw  - show FLW
+ * 
+ */
 
 // display modes
 typedef enum {
@@ -124,7 +157,7 @@ void initialize(void)
     delay(100);
   }
 
-  rot.begin();
+  //rot.begin();
 
   sei();
   Wire.begin();
@@ -150,6 +183,8 @@ void initialize(void)
   PCICR |= (1 << PCIE2);
   PCMSK2 |= (1 << PCINT18);
   */
+  
+  g_has_flw = has_eeprom();
   
     // setup UART for GPS
     gps_init(g_gps_enabled);
@@ -242,6 +277,15 @@ void read_humidity()
     show_humidity(96);    
 }
 
+unsigned long offset = 0;
+char current_word[6];
+
+void read_flw()
+{
+    offset = get_word(offset, current_word);        
+    set_string(current_word);
+}
+
 void read_rtc(bool show_extra_info)
 {
     tt = rtc.getTime();
@@ -253,6 +297,8 @@ void read_rtc(bool show_extra_info)
         read_pressure();
     else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
         read_humidity();
+    else if (g_has_flw  && tt->sec >= 40 && tt->sec <= 59)
+        read_flw();
     else
         show_time(tt, g_24h_clock, show_extra_info);
 }
@@ -309,7 +355,7 @@ void loop()
       set_string("IV17");
       break;
     case(SHIELD_IV18):
-      set_string("IV18");
+      set_string("IV-18");
       break;
     case(SHIELD_IV22):
       set_string("IV22");
@@ -335,6 +381,8 @@ void loop()
   
 	while (1) {
 		get_button_state(&buttons);
+
+                long pos = myEnc.read();
 		
 		// When alarming:
 		// any button press cancels alarm
@@ -439,8 +487,8 @@ void loop()
 			else
 				button_released_timer = 0;
 			
-//			if (button_released_timer >= 80) {
-			if (button_released_timer >= 200) {  // 2 seconds (wm)
+			if (button_released_timer >= 35 ) {
+//			if (button_released_timer >= 200) {  // 2 seconds (wm)
 				button_released_timer = 0;
 				menu_state = STATE_CLOCK;
 			}
@@ -556,7 +604,7 @@ void loop()
 			}
 			// read RTC approx every 200ms  (wm)
 			static uint16_t cnt = 0;
-			if (cnt++ > 19) {
+			if (cnt++ > 15) {
 				read_rtc(display_mode);  // read RTC and display time
 				cnt = 0;
 				}
