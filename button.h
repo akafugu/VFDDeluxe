@@ -37,7 +37,7 @@ struct BUTTON_STATE_OLD
 	bool pressed, released, held;
 };
 
-void initialize_button();
+void initialize_button(uint8_t pin1, uint8_t pin2);
 
 bool is_button_pressed(void);
 

@@ -15,6 +15,17 @@
 
 // GLOBAL include file: Should be the first file to include in all source files
 
+#include <Arduino.h>
+
 #include "features.h"
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+#include <avr/eeprom.h>
+
+#include <stdbool.h>
+#include <stdlib.h>
+
 #include "direct_pin_read.h"
 

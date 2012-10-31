@@ -21,10 +21,11 @@
 
 #if defined(__AVR_ATmega32U4__)
 
-#define IO_REG_TYPE uint16_t
+#define IO_REG_TYPE uint8_t
 #define PIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
 #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
 #define DIRECT_PIN_READ(base, mask)     (((*(base)) & (mask)) ? 1 : 0)
+#define RAW_PIN_READ(base, mask)        ((*(base)) & (mask))
 
 #elif defined(__AVR__)
 
@@ -41,6 +42,13 @@
 #define DIRECT_PIN_READ(base, mask)	(((*(base+4)) & (mask)) ? 1 : 0)
 
 #endif
+
+struct pin_direct_t
+{
+    uint8_t pin;
+    volatile IO_REG_TYPE* reg;
+    IO_REG_TYPE bitmask;
+};
 
 #endif // DIRECT_PIN_READ_H_
 

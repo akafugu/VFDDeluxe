@@ -29,15 +29,6 @@
  */
 
 #include "global.h"
-#include "direct_pin_read.h"
-
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <util/delay.h>
-#include <avr/eeprom.h>
-
-#include <stdbool.h>
-#include <stdlib.h>
 
 #include "display.h"
 #include "button.h"
@@ -140,7 +131,8 @@ void initialize(void)
   digitalWrite(PIEZO, LOW);
 
   // initialize button
-  initialize_button();
+  // fixme: change depending on HAVE_ROTARY define
+  initialize_button(4, -1);
 
   // fixme: move to button class?
   // Set switch as input and enable pullup

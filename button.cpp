@@ -13,26 +13,37 @@
  *
  */
 
+#include "global.h"
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "button.h"
 
-#define BUTTON_PORT PORTD
-#define BUTTON_DDR  DDRD
-#define BUTTON_PIN  PIND
+pin_direct_t button1;
+pin_direct_t button2;
 
-#define BUTTON1_BIT  PORTD4
-
-void initialize_button()
+void initialize_button(uint8_t pin1, uint8_t pin2)
 {
-  // Set button as inputs and enable pullup
-  BUTTON_DDR &= ~(_BV(BUTTON1_BIT));
-  BUTTON_PORT |= _BV(BUTTON1_BIT);
+    pinMode(pin1, INPUT);
+    digitalWrite(pin1, HIGH); // enable pullup
+    
+    button1.pin = pin1;
+    button1.reg = PIN_TO_BASEREG(pin1);
+    button1.bitmask = PIN_TO_BITMASK(pin1);
+    
+    if (pin2 != -1) {
+        pinMode(pin2, INPUT);
+        digitalWrite(pin2, HIGH); // enable pullup
+
+        button2.pin = pin2;
+        button2.reg = PIN_TO_BASEREG(pin2);
+        button2.bitmask = PIN_TO_BITMASK(pin2);
+    }
 }
 
 bool is_button_pressed(void)
 {
-	if (BUTTON_PIN & _BV(BUTTON1_BIT))
+	if (*button1.reg & button1.bitmask)
 		return true;
 	return false;
 }
@@ -43,14 +54,14 @@ uint8_t keyup_keys = 0x00;
 uint8_t keyrepeat_keys = 0x00;
 
 uint16_t keyboard_counter[1] = {0};
-uint8_t button_bit[1] = { _BV(BUTTON1_BIT) };
+uint8_t button_bit[1] = { button1.bitmask };
 
 //#define REPEAT_SPEED	2000
 #define REPEAT_SPEED	20
 
 void button_timer(void)
 {
-	uint8_t keystatus = ~(BUTTON_PIN)&(_BV(BUTTON1_BIT));
+	uint8_t keystatus = ~(*button1.reg)&(button1.bitmask);
 	keydown_keys |= (uint8_t)(keystatus & ~(saved_keystatus));
 	keyup_keys   |= (uint8_t)(~(keystatus) & saved_keystatus);
 	saved_keystatus = keystatus;
@@ -70,18 +81,18 @@ void button_timer(void)
 
 void get_button_state(struct BUTTON_STATE* buttons)
 {
-	buttons->b2_keydown = keydown_keys&_BV(BUTTON1_BIT);
-	buttons->b2_keyup = keyup_keys&_BV(BUTTON1_BIT);
-	buttons->b2_repeat = keyrepeat_keys&_BV(BUTTON1_BIT);
+	buttons->b2_keydown = keydown_keys&button1.bitmask;
+	buttons->b2_keyup = keyup_keys&button1.bitmask;
+	buttons->b2_repeat = keyrepeat_keys&button1.bitmask;
 	
 	// Reset if we got keyup
-	if(keyup_keys&_BV(BUTTON1_BIT))
+	if(keyup_keys&button1.bitmask)
 	{
-		keydown_keys   &= ~(_BV(BUTTON1_BIT));
-		keyup_keys     &= ~(_BV(BUTTON1_BIT));
-		keyrepeat_keys &= ~(_BV(BUTTON1_BIT));
+		keydown_keys   &= ~(button1.bitmask);
+		keyup_keys     &= ~(button1.bitmask);
+		keyrepeat_keys &= ~(button1.bitmask);
 		keyboard_counter[0] = 0;
 	}
 
-    buttons->none_held = ~(saved_keystatus)&(_BV(BUTTON1_BIT));
+    buttons->none_held = ~(saved_keystatus)&(button1.bitmask);
 }
