@@ -28,15 +28,15 @@ void initialize_button(uint8_t pin1, uint8_t pin2)
     digitalWrite(pin1, HIGH); // enable pullup
     
     button1.pin = pin1;
-    button1.reg = PIN_TO_BASEREG(pin1);
-    button1.bitmask = PIN_TO_BITMASK(pin1);
+    button1.reg = PIN_TO_INPUT_REG(pin1);
+    button1.bitmask =   PIN_TO_BITMASK(pin1);
     
     if (pin2 != -1) {
         pinMode(pin2, INPUT);
         digitalWrite(pin2, HIGH); // enable pullup
 
         button2.pin = pin2;
-        button2.reg = PIN_TO_BASEREG(pin2);
+        button2.reg = PIN_TO_INPUT_REG(pin2);
         button2.bitmask = PIN_TO_BITMASK(pin2);
     }
 }

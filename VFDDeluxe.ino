@@ -165,8 +165,8 @@ void initialize(void)
 #else
   set_shield(SHIELD, SHIELD_DIGITS); 
 #endif
-  
-  display_init(g_brightness);
+
+  display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, g_brightness);
 
   //g_alarm_switch = get_alarm_switch();
 

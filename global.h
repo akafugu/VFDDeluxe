@@ -29,3 +29,14 @@
 
 #include "direct_pin_read.h"
 
+
+// fixme: pin mapping should be in separate file?
+
+struct PinMap
+{
+    // HV518 / HV5812
+    static const uint8_t data = A0;
+    static const uint8_t clock = A2;
+    static const uint8_t latch = A1;
+    static const uint8_t blank = 9;
+};

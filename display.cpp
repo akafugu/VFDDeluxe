@@ -13,8 +13,7 @@
  *
  */
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
+#include "global.h"
 #include "display.h"
 
 #include <Wire.h>
@@ -43,6 +42,23 @@ uint16_t calculate_segments_14(uint8_t character);
 
 // see font-7seg.c
 uint8_t calculate_segments_7(uint8_t character);
+
+// HV5812 Data In (PF7 - A0)
+#define DATA_HIGH DIRECT_PIN_HIGH(data_pin.reg, data_pin.bitmask)
+#define DATA_LOW  DIRECT_PIN_LOW(data_pin.reg, data_pin.bitmask)
+
+// HV5812 Clock (PF5 - A2)
+#define CLOCK_HIGH DIRECT_PIN_HIGH(clock_pin.reg, clock_pin.bitmask)
+#define CLOCK_LOW  DIRECT_PIN_LOW(clock_pin.reg, clock_pin.bitmask)
+
+// HV5812 Latch / Strobe (PF6 - A1)
+#define LATCH_ENABLE  DIRECT_PIN_LOW(latch_pin.reg, latch_pin.bitmask)
+#define LATCH_DISABLE DIRECT_PIN_HIGH(latch_pin.reg, latch_pin.bitmask)
+
+pin_direct_t data_pin;
+pin_direct_t clock_pin;
+pin_direct_t latch_pin;
+pin_direct_t blank_pin;
 
 enum shield_t shield = SHIELD_NONE;
 uint8_t digits = 6;
@@ -155,13 +171,29 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
   }
 }
 
-void display_init(uint8_t brightness)
+void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uint8_t brightness)
 {
-	// outputs
-	DATA_DDR  |= _BV(DATA_BIT);
-	CLOCK_DDR |= _BV(CLOCK_BIT);
-	LATCH_DDR |= _BV(LATCH_BIT);
-	BLANK_DDR |= _BV(BLANK_BIT);
+    // outputs
+    pinMode(data, OUTPUT);
+    pinMode(clock, OUTPUT);
+    pinMode(latch, OUTPUT);
+    pinMode(blank, OUTPUT);
+
+    data_pin.pin = data;
+    data_pin.reg = PIN_TO_OUTPUT_REG(data);
+    data_pin.bitmask = PIN_TO_BITMASK(data);
+
+    clock_pin.pin = data;
+    clock_pin.reg = PIN_TO_OUTPUT_REG(clock);
+    clock_pin.bitmask = PIN_TO_BITMASK(clock);
+
+    latch_pin.pin = latch;
+    latch_pin.reg = PIN_TO_OUTPUT_REG(latch);
+    latch_pin.bitmask = PIN_TO_BITMASK(latch);
+
+    blank_pin.pin = blank;
+    blank_pin.reg = PIN_TO_OUTPUT_REG(blank);
+    blank_pin.bitmask = PIN_TO_BITMASK(blank);
 
 	LATCH_ENABLE;
 

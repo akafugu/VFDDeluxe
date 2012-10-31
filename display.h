@@ -20,37 +20,6 @@
 #include <stdbool.h>
 #include <avr/io.h>
 
-// HV5812 Data In (PF7 - A0)
-#define DATA_BIT PORTF7
-#define DATA_PORT PORTF
-#define DATA_DDR DDRF
-#define DATA_HIGH DATA_PORT |= _BV(DATA_BIT)
-#define DATA_LOW DATA_PORT &= ~(_BV(DATA_BIT))
-
-// HV5812 Clock (PF5 - A2)
-#define CLOCK_BIT PORTF5
-#define CLOCK_PORT PORTF
-#define CLOCK_DDR DDRF
-#define CLOCK_HIGH CLOCK_PORT |= _BV(CLOCK_BIT)
-#define CLOCK_LOW CLOCK_PORT &= ~(_BV(CLOCK_BIT))
-
-// HV5812 Latch / Strobe (PF6 - A1)
-#define LATCH_BIT PORTF6
-#define LATCH_PORT PORTF
-#define LATCH_DDR DDRF
-#define LATCH_HIGH LATCH_PORT |= _BV(LATCH_BIT)
-#define LATCH_LOW LATCH_PORT &= ~(_BV(LATCH_BIT))
-
-#define LATCH_ENABLE LATCH_LOW
-#define LATCH_DISABLE LATCH_HIGH
-
-// HV5812 Blank (PB5 - D9)
-#define BLANK_BIT PORTB5
-#define BLANK_PORT PORTB
-#define BLANK_DDR DDRB
-#define BLANK_HIGH BLANK_PORT |= _BV(BLANK_BIT)
-#define BLANK_LOW BLANK_PORT &= ~(_BV(BLANK_BIT))
-
 #include <WireRtcLib.h>
 
 // Shield signature
@@ -61,7 +30,7 @@
 #define SIGNATURE_BIT_1 PD4
 #define SIGNATURE_BIT_2 PD5
 
-void display_init(uint8_t brightness);
+void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uint8_t brightness);
 int get_digits(void);
 
 // functions for showing current time and temperature

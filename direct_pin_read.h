@@ -19,20 +19,15 @@
 #ifndef DIRECT_PIN_READ_H_
 #define DIRECT_PIN_READ_H_
 
-#if defined(__AVR_ATmega32U4__)
+#if defined(__AVR__)
 
 #define IO_REG_TYPE uint8_t
-#define PIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
-#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-#define DIRECT_PIN_READ(base, mask)     (((*(base)) & (mask)) ? 1 : 0)
-#define RAW_PIN_READ(base, mask)        ((*(base)) & (mask))
-
-#elif defined(__AVR__)
-
-#define IO_REG_TYPE uint8_t
-#define PIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
-#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
-#define DIRECT_PIN_READ(base, mask)     (((*(base)) & (mask)) ? 1 : 0)
+#define PIN_TO_INPUT_REG(pin)         (portInputRegister(digitalPinToPort(pin)))
+#define PIN_TO_OUTPUT_REG(pin)        (portOutputRegister(digitalPinToPort(pin)))
+#define PIN_TO_BITMASK(pin)           (digitalPinToBitMask(pin))
+#define DIRECT_PIN_READ(base, mask)   (((*(base)) & (mask)) ? 1 : 0)
+#define DIRECT_PIN_HIGH(base, mask)   ((*(base)) |= (mask))
+#define DIRECT_PIN_LOW(base, mask)    ((*(base)) &= ~(mask))
 
 #elif defined(__PIC32MX__)
 
@@ -40,6 +35,11 @@
 #define PIN_TO_BASEREG(pin)             (portModeRegister(digitalPinToPort(pin)))
 #define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
 #define DIRECT_PIN_READ(base, mask)	(((*(base+4)) & (mask)) ? 1 : 0)
+#define RAW_PIN_READ(base, mask)        ((*(base)) & (mask))
+
+#else
+
+#error Unsupported architecture
 
 #endif
 
