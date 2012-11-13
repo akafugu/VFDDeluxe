@@ -132,7 +132,8 @@ void initialize(void)
 
   // initialize button
   // fixme: change depending on HAVE_ROTARY define
-  initialize_button(4, -1);
+  //initialize_button(4, -1);
+  initialize_button(7, 9);
 
   // fixme: move to button class?
   // Set switch as input and enable pullup
@@ -374,7 +375,7 @@ void loop()
 	while (1) {
 		get_button_state(&buttons);
 
-                long pos = myEnc.read();
+                //long pos = myEnc.read();
 		
 		// When alarming:
 		// any button press cancels alarm

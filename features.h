@@ -41,6 +41,7 @@
 // Display Shields
 enum shield_t {
 	SHIELD_NONE = 0,
+	// VFD displays
 	SHIELD_7SEG,  // generic 7-seg display
 	SHIELD_14SEG, // generic 14-seg display
 	SHIELD_16SEG, // generic 16-seg display
@@ -48,6 +49,9 @@ enum shield_t {
 	SHIELD_IV17,  // VFD Modular Clock IV-17 shield
 	SHIELD_IV18,  // VFD Modular Clock IV-18 shield
 	SHIELD_IV22,  // VFD Modular Clock IV-22 shield
+	// Nixie displays
+	SHIELD_IN14,  // VFDDeluxe IN-8-2/IN-14 6-digit Nixie
+	SHIELD_HYBRID, // VFDDeluxe IV-18/IN-17 VFD/Nixie hybrid shield
 };
 
 #define SHIELD SHIELD_IV18

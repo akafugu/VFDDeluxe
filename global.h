@@ -38,5 +38,12 @@ struct PinMap
     static const uint8_t data = A0;
     static const uint8_t clock = A2;
     static const uint8_t latch = A1;
-    static const uint8_t blank = 9;
+    //static const uint8_t blank = 9; // v1    
+    static const uint8_t blank = 6;
+    
+    // Nixie anodes
+    static const uint8_t nixie_a1 = A3;
+    static const uint8_t nixie_a2 = 17;
+    static const uint8_t nixie_a3 = A4;
+    static const uint8_t nixie_a4 = 16;
 };

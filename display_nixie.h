@@ -13,36 +13,20 @@
  *
  */
 
-#ifndef BUTTON_H_
-#define BUTTON_H_
+#ifndef DISPLAY_NIXIE_H_
+#define DISPLAY_NIXIE_H_
 
 #include "features.h"
 #include <stdbool.h>
+#include <avr/io.h>
 
-struct BUTTON_STATE
-{
-	bool b1_keydown : 1;
-	bool b1_keyup : 1;
-	bool b1_repeat : 1;
-	bool b2_keydown : 1;
-	bool b2_keyup : 1;
-	bool b2_repeat : 1;
-	
-	bool both_held : 1;
-	bool none_held : 1;
-};
+void init_nixie_6digit();
+void init_nixie_hybrid();
 
-struct BUTTON_STATE_OLD
-{
-	bool pressed, released, held;
-};
+void display_multiplex_in14();
+void display_multiplex_hybrid();
 
-void initialize_button(uint8_t pin1, int8_t pin2);
+void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss);
 
-//bool is_button_pressed(void);
+#endif // DISPLAY_NIXIE_H
 
-void get_button_state(struct BUTTON_STATE* buttons);
-
-void button_timer(void);
-
-#endif

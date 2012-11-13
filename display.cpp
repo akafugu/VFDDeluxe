@@ -15,6 +15,7 @@
 
 #include "global.h"
 #include "display.h"
+#include "display_nixie.h"
 
 #include <Wire.h>
 #include <WireRtcLib.h>
@@ -27,6 +28,10 @@ void write_vfd_iv6(uint8_t digit, uint8_t segments);
 void write_vfd_iv17(uint8_t digit, uint16_t segments);
 void write_vfd_iv18(uint8_t digit, uint8_t segments);
 void write_vfd_iv22(uint8_t digit, uint8_t segments);
+
+// nixie shields
+void write_nixie_6digit(uint8_t digit, uint8_t value);
+void write_nixie_hybrid(uint8_t digit, uint8_t value);
 
 void write_vfd_8bit(uint8_t data);
 void clear_display(void);
@@ -169,6 +174,16 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     digits = 4;
     g_has_dots = true;    
   }
+  else if (shield_type == SHIELD_IN14) {
+    shield = SHIELD_IN14;
+    digits = 6;
+    g_has_dots = false;    
+  }
+  else if (shield_type == SHIELD_HYBRID) {
+    shield = SHIELD_HYBRID;
+    digits = 4;
+    g_has_dots = false;    
+  }
 }
 
 void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uint8_t brightness)
@@ -238,10 +253,12 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
   TCNT3 = 0xf0; // Initialize counter
   */
 
-  set_brightness(brightness);
+  //set_brightness(brightness);
+  digitalWrite(blank_pin.pin, LOW);
 }
 
 // brightness value: 1 (low) - 10 (high)
+// fixme: BLANK must always be set to GND when driving Nixies
 void set_brightness(uint8_t brightness) {
 	// workaround: IV17 shield not compatible with PWM dimming method
 	// using simple software dimming instead
@@ -485,6 +502,12 @@ void display_multiplex(void)
 		display_multiplex_iv18();
 	else if (shield == SHIELD_IV22)
 		display_multiplex_iv22();
+	else if (shield == SHIELD_IN14)
+		display_multiplex_in14();
+	else if (shield == SHIELD_HYBRID) {
+		display_multiplex_iv18();
+		display_multiplex_hybrid();
+	}
 }
 
 void button_timer(void);
