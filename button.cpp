@@ -67,7 +67,8 @@ uint8_t button_bit[2] = { button1.bitmask, button2.bitmask };
 
 void button_timer(void)
 {
-	uint8_t keystatus = ~(*button1.reg)&(button1.bitmask|button2.bitmask);
+	uint8_t keystatus = (~(*button1.reg)&(button1.bitmask)) | (~(*button2.reg)&(button2.bitmask));
+
 	keydown_keys |= (uint8_t)(keystatus & ~(saved_keystatus));
 	keyup_keys   |= (uint8_t)(~(keystatus) & saved_keystatus);
 	saved_keystatus = keystatus;
