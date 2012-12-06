@@ -27,6 +27,7 @@ void display_multiplex_in14();
 void display_multiplex_hybrid();
 
 void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss);
+void nixie_clear_data();
 
 #endif // DISPLAY_NIXIE_H
 

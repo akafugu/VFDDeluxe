@@ -50,18 +50,25 @@ enum shield_t {
 	SHIELD_IV18,  // VFD Modular Clock IV-18 shield
 	SHIELD_IV22,  // VFD Modular Clock IV-22 shield
 	// Nixie displays
-	SHIELD_IN14,  // VFDDeluxe IN-8-2/IN-14 6-digit Nixie
-	SHIELD_HYBRID, // VFDDeluxe IV-18/IN-17 VFD/Nixie hybrid shield
+        SHIELD_IN8_2, // VFDDeluxe, IN-8-2 6-digit Nixie
+	SHIELD_IN14,  // VFDDeluxe IN-14 6-digit Nixie
+	SHIELD_HYBRID, // VFDDeluxe IV-18+IN-17 VFD/Nixie hybrid shield
 };
 
-#define SHIELD SHIELD_IV18
-#define SHIELD_DIGITS 8
+//#define SHIELD SHIELD_IV18
+//#define SHIELD_DIGITS 8
+
+#define SHIELD SHIELD_IN14
+#define SHIELD_DIGITS 6
+#define IN14_FIX
+
+//#define SHIELD SHIELD_HYBRID
+//#define SHIELD_DIGITS 8
 
 // Display Shield identifiers
 // add here
 
 /*
-#define FEATURE_GPS
 #define FEATURE_HV518
 #define FEATURE_NIXIE
 #define FEATURE_BUTTONS
@@ -80,6 +87,7 @@ enum shield_t {
 #define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY YES
 #define FEATURE_GPS YES
+#define FEATURE_RGB_BACKLIGHT NO
 
 // fixme: this can be automatic based on __AVR_ATmega32U4__ define
 #define FEATURE_LEONARDO YES
@@ -153,6 +161,15 @@ enum shield_t {
 #endif
 
 ///////////////////////////////////////////
+
+#if !(defined FEATURE_RGB_BACKLIGHT) || FEATURE_RGB_BACKLIGHT < NO || FEATURE_RGB_BACKLIGHT > YES
+#  error Must define FEATURE_RGB_BACKLIGHT to be YES or NO
+#endif
+
+#if FEATURE_RGB_BACKLIGHT == YES
+#  define HAVE_RGB_BACKLIGHT
+#endif
+
 
 #endif // FEATURES_H_
 

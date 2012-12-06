@@ -46,4 +46,10 @@ struct PinMap
     static const uint8_t nixie_a2 = 17;
     static const uint8_t nixie_a3 = A4;
     static const uint8_t nixie_a4 = 16;
+    
+    // Input buttons
+    static const uint8_t button1 = 7;
+    static const uint8_t button2 = 9;
+    //static const uint8_t button1 = 4;
+    //static const uint8_t button2 = -1;
 };

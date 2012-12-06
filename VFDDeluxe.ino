@@ -31,6 +31,7 @@
 #include "global.h"
 
 #include "display.h"
+#include "display_nixie.h"
 #include "button.h"
 #include "pitches.h"
 //#include "rotary.h"
@@ -41,12 +42,13 @@
 #include <MPL115A2.h>
 #endif
 
-#include <Encoder.h>
+//#include <Encoder.h>
 
-Encoder myEnc(6, 7);
+//Encoder myEnc(6, 7);
 
 #include "gps.h"
 #include "flw.h"
+#include "rgbled.h"
 
 WireRtcLib rtc;
 //GPS gps;
@@ -132,8 +134,7 @@ void initialize(void)
 
   // initialize button
   // fixme: change depending on HAVE_ROTARY define
-  //initialize_button(4, -1);
-  initialize_button(7, 9);
+  initialize_button(PinMap::button1, PinMap::button2);
 
   // fixme: move to button class?
   // Set switch as input and enable pullup
@@ -155,10 +156,19 @@ void initialize(void)
   sei();
   Wire.begin();
 
+#ifdef HAVE_RGB_BACKLIGHT
+  // fixme: refactor into backlight class
+  pca9685_wake();
+  
+  // Turn off all LEDs
+  for (uint8_t i = 0; i < 16; i++)
+    pca9685_set_channel(i, 0);
+#endif // HAVE_RGB_BACKLIGHT
+
   rtc.begin();
   rtc.runClock(true);  
 
-  rtc.setTime_s(5, 0, 0);
+  //rtc.setTime_s(16, 10, 0);
   //rtc_set_alarm_s(17,0,0);
 
 #ifdef HAVE_SHIELD_AUTODETECT
@@ -168,6 +178,9 @@ void initialize(void)
 #endif
 
   display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, g_brightness);
+  
+  if (shield == SHIELD_IN14)
+      init_nixie_6digit();
 
   //g_alarm_switch = get_alarm_switch();
 
@@ -284,6 +297,7 @@ void read_rtc(bool show_extra_info)
     tt = rtc.getTime();
     if (tt == NULL) return;
 
+/*
     if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
         read_temp();
     else if (have_pressure_sensor() && tt->sec >= 34 && tt->sec <= 36)
@@ -294,10 +308,28 @@ void read_rtc(bool show_extra_info)
         read_flw();
     else
         show_time(tt, g_24h_clock, show_extra_info);
+ */
+
+    if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
+        show_time(tt, g_24h_clock, show_extra_info);
+//        read_temp();
+    else if (have_pressure_sensor() && tt->sec >= 34 && tt->sec <= 36)
+        show_time(tt, g_24h_clock, show_extra_info);
+//        read_pressure();
+    else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
+        show_time(tt, g_24h_clock, show_extra_info);
+//        read_humidity();
+    else if (g_has_flw  && tt->sec >= 40 && tt->sec <= 59)
+//        show_time(tt, g_24h_clock, show_extra_info);
+        read_flw();
+    else
+        show_time(tt, g_24h_clock, show_extra_info);
 }
 
 void setup()
 {
+  //while (!Serial) ;
+    
   Serial.begin(9600);
   Serial.println("VFD Deluxe");
   
@@ -374,7 +406,6 @@ void loop()
   
 	while (1) {
 		get_button_state(&buttons);
-
                 //long pos = myEnc.read();
 		
 		// When alarming:
@@ -397,6 +428,8 @@ void loop()
 		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
 		//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
 		else if (menu_state == STATE_CLOCK && buttons.both_held) {
+                        Serial.println("Both held");
+    
 			if (g_alarm_switch) {
 				menu_state = STATE_SET_ALARM;
 				show_set_alarm();

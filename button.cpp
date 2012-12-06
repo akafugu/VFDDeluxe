@@ -120,6 +120,6 @@ void get_button_state(struct BUTTON_STATE* buttons)
 		keyboard_counter[0] = 0;
 	}
 
-    //buttons->both_held = (keydown_keys&button1.bitmask) && (keydown_keys&button2.bitmask);
+    buttons->both_held = (keydown_keys&button1.bitmask) && (keydown_keys&button2.bitmask);
     buttons->none_held = ~(saved_keystatus)&(button1.bitmask) && ~(saved_keystatus)&(button2.bitmask);
 }

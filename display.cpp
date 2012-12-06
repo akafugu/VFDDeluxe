@@ -31,7 +31,6 @@ void write_vfd_iv22(uint8_t digit, uint8_t segments);
 
 // nixie shields
 void write_nixie_6digit(uint8_t digit, uint8_t value);
-void write_nixie_hybrid(uint8_t digit, uint8_t value);
 
 void write_vfd_8bit(uint8_t data);
 void clear_display(void);
@@ -175,14 +174,15 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     g_has_dots = true;    
   }
   else if (shield_type == SHIELD_IN14) {
+      Serial.println("IN14 shield");
     shield = SHIELD_IN14;
     digits = 6;
-    g_has_dots = false;    
+    g_has_dots = true;    
   }
-  else if (shield_type == SHIELD_HYBRID) {
-    shield = SHIELD_HYBRID;
-    digits = 4;
-    g_has_dots = false;    
+  else if (shield_type == SHIELD_IN8_2) {
+    shield = SHIELD_IN8_2;
+    digits = 6;
+    g_has_dots = true;    
   }
 }
 
@@ -255,6 +255,8 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 
   //set_brightness(brightness);
   digitalWrite(blank_pin.pin, LOW);
+
+  //analogWrite(blank_pin.pin, 255);
 }
 
 // brightness value: 1 (low) - 10 (high)
@@ -486,8 +488,12 @@ void display_multiplex_iv22(void)
 	if (multiplex_counter == 4) multiplex_counter = 0;
 }
 
+volatile uint8_t nixie_multiplex_counter;
+
 void display_multiplex(void)
-{  
+{
+    nixie_multiplex_counter = !nixie_multiplex_counter;
+    
 	if (shield == SHIELD_7SEG)
 		display_multiplex_7seg();
 	else if (shield == SHIELD_14SEG)
@@ -502,12 +508,10 @@ void display_multiplex(void)
 		display_multiplex_iv18();
 	else if (shield == SHIELD_IV22)
 		display_multiplex_iv22();
-	else if (shield == SHIELD_IN14)
+	else if (shield == SHIELD_IN14 && nixie_multiplex_counter)
 		display_multiplex_in14();
-	else if (shield == SHIELD_HYBRID) {
-		display_multiplex_iv18();
-		display_multiplex_hybrid();
-	}
+	else if (shield == SHIELD_IN8_2 && nixie_multiplex_counter)
+		display_multiplex_in14();
 }
 
 void button_timer(void);
@@ -518,29 +522,30 @@ uint16_t button_counter = 0;
 //ISR(TIMER3_COMPA_vect)
 ISR(TIMER3_OVF_vect)
 {
-	// control blinking: on time is slightly longer than off time
-	if (blink && display_on && ++blink_counter >= 0x900) {
-		display_on = false;
-		blink_counter = 0;
-	}
-	else if (blink && !display_on && ++blink_counter >= 0x750) {
-		display_on = true;
-		blink_counter = 0;
-	}
+    // control blinking: on time is slightly longer than off time
+    if (blink && display_on && ++blink_counter >= 0x900) {
+        display_on = false;
+        blink_counter = 0;
+    }
+    else if (blink && !display_on && ++blink_counter >= 0x750) {
+        display_on = true;
+        blink_counter = 0;
+    }
 	
-	// button polling
-	//if (++button_counter == 71) {
-		button_timer();
-	//	button_counter = 0;
-	//}
+    // button polling
+    //if (++button_counter == 71) {
+        button_timer();
+    // button_counter = 0;
+    //}
 	
-	// display multiplex
-	if (++interrupt_counter == 6) {
-		display_multiplex();
-		interrupt_counter = 0;
-	}
+    // display multiplex
+    // fixme: nixie multiplexer must be called faster!
+    if (++interrupt_counter == 12) {
+        display_multiplex();
+        interrupt_counter = 0;
+    }
 
-	TCNT3 = 0xff00; // Initialize counter
+    TCNT3 = 0xff00; // Initialize counter
 }
 
 // utility functions
@@ -613,6 +618,8 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 
 	uint8_t offset = 0;
 	uint8_t hour = _24h_clock ? t->hour : t->twelveHour;
+
+	nixie_print(hour, t->min, t->sec);
 
 	print_dots(mode, t->sec);
 
@@ -724,6 +731,8 @@ void show_temp(int8_t t, uint8_t f)
 {
 	dots = 0;
 	uint8_t offset = 0;
+
+	nixie_print(0, t, f);
 	
 	switch (digits) {
 	case 10:
@@ -756,6 +765,8 @@ void show_humidity(uint8_t hum)
 	dots = 0;
 	uint8_t offset = 0;
 	
+	nixie_print(0, 0, hum);
+
 	switch (digits) {
 	case 10:
 		offset = print_ch(' ', offset);
@@ -782,6 +793,11 @@ void show_pressure(uint8_t pressure)
 	dots = 0;
 	uint8_t offset = 0;
 	
+	uint8_t temp  = pressure % 10;
+	uint8_t temp2 = pressure/= 10;
+
+	nixie_print(0, temp2, temp);
+
 	switch (digits) {
 	case 10:
 		offset = print_ch(' ', offset);
@@ -1012,7 +1028,6 @@ void write_vfd_iv18(uint8_t digit, uint8_t segments)
 	LATCH_ENABLE;	
 }
 
-
 // Writes to the HV5812 driver for IV-22
 // HV1~4:   Digit grids, 4 bits
 // HV5~6:   NC
@@ -1029,6 +1044,27 @@ void write_vfd_iv22(uint8_t digit, uint8_t segments)
 	
 	LATCH_DISABLE;
 	LATCH_ENABLE;	
+}
+
+void write_nixie(uint8_t value1, uint8_t value2, uint8_t value3)
+{
+    uint32_t val = (1<<(uint32_t)value3);
+    val <<= 10;
+    val |= (1<<(uint32_t)value2);
+    val <<= 10;
+    val |= (1<<(uint32_t)value1);
+    val = ~val;
+    
+    //uint32_t val = 0b0010000000100000010000000;
+    //val = ~val;
+
+    write_vfd_8bit(val >> 24);
+    write_vfd_8bit(val >> 16);
+    write_vfd_8bit(val >> 8);
+    write_vfd_8bit(val);
+
+    LATCH_DISABLE;
+    LATCH_ENABLE;   
 }
 
 void clear_display(void)

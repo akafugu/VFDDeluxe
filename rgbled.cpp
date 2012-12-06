@@ -13,6 +13,10 @@
  *
  */
 
+#include "global.h"
+
+#ifdef HAVE_RGB_BACKLIGHT
+
 #include "rgbled.h"
 #include <Wire.h>
 
@@ -213,4 +217,7 @@ void rgb_tick(void)
 		solid_color_fade();
         }
 }
+
+#endif // HAVE_RGB_BACKLIGHT
+
 

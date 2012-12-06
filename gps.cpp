@@ -65,7 +65,8 @@ char* gps_setting(uint8_t gps)
 //Check to see if there is any serial data.
 uint8_t gpsDataReady(void) {
 #ifdef HAVE_LEONARDO
-  return Serial1.available();
+  //return Serial1.available();
+  return (UCSR1A & _BV(RXC1));
 #else
   return (UCSR0A & _BV(RXC0));
 #endif
@@ -77,14 +78,15 @@ uint8_t gpsDataReady(void) {
 // 01234567890123456789012345678901234567890123456789012345678901234567890
 //    0     1   2    3    4     5    6   7     8      9     10  11 12
 void getGPSdata(void) {
-    #ifdef HAVE_LEONARDO
-	char charReceived = Serial1.read();  // get a byte from the port
+#ifdef HAVE_LEONARDO
+	//char charReceived = Serial1.read();  // get a byte from the port
+	char charReceived = UDR1;  // get a byte from the port
 #else
 	char charReceived = UDR0;  // get a byte from the port
 #endif
 
-    Serial.print("Polling ");
-    Serial.println(charReceived);
+    //Serial.print("Polling ");
+    //Serial.println(charReceived);
 
 
 	uint8_t bufflen = strlen(gpsBuffer);
@@ -126,8 +128,7 @@ void parseGPSdata() {
 	char gpsLong[7];  // ddddmmff  (without decimal point)
 	char gpsLongH[1];  // hemisphere 
 	char *gpsPtr;
-	if ( strncmp( gpsBuffer, "$GPRMC,", 7 ) == 0 ) {  
-            Serial.println("got GPRMC");
+	if ( strncmp( gpsBuffer, "$GPRMC,", 7 ) == 0 ) {
 		//beep(1000, 1);
 		//Calculate checksum from the received data
 		gpsPtr = &gpsBuffer[1];  // start at the "G"
@@ -152,6 +153,9 @@ void parseGPSdata() {
 			chk2 = chk2 - 48;  // convert '0-9' to 0-9
 		gpsCheck2 = (chk1 * 16)  + chk2;
 		if (gpsCheck1 == gpsCheck2) {  // if checksums match, process the data
+
+                        Serial.println(gpsBuffer);
+
 			//beep(1000, 1);
 			//Find the first comma:
 			gpsPtr = strchr( gpsBuffer, ',');
@@ -214,21 +218,30 @@ void parseGPSdata() {
 				}
 
 			} // if fix status is A
+                        else {
+                            Serial.println("No fix");
+                        }
 		} // if checksums match
 	}  // if "$GPRMC"
 }
 
 void uart_init(uint16_t BRR) {
 #ifdef HAVE_LEONARDO
-    Serial1.begin(9600); // fixme: adapt uart rate for serial library
+  UBRR1 = BRR;               // set baudrate counter
+
+  UCSR1B = _BV(RXEN1) | _BV(TXEN1);
+  UCSR1C = _BV(USBS1) | (3<<UCSZ12);
+  DDRD |= _BV(PORTD2);
+  DDRD &= ~_BV(PORTD);
+//    Serial1.begin(9600); // fixme: adapt uart rate for serial library
 #else
   /* setup the main UART */
   UBRR0 = BRR;               // set baudrate counter
 
   UCSR0B = _BV(RXEN0) | _BV(TXEN0);
   UCSR0C = _BV(USBS0) | (3<<UCSZ00);
-  DDRD |= _BV(PD1);
-  DDRD &= ~_BV(PD0);
+  DDRD |= _BV(PORTD1);
+  DDRD &= ~_BV(PORTD0);
 #endif
 }
 
