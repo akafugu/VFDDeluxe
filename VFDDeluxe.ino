@@ -68,6 +68,8 @@ uint8_t g_region = 0;
 uint8_t g_autodate = false;
 #endif // HAVE_GPS
 
+uint8_t g_second_dots_on = true;
+
 // Other globals
 uint8_t g_has_flw = false;  // does the unit have an EEPROM with the FLW database?
 uint8_t g_has_dots = false; // can current shield show dot (decimal points)
@@ -179,7 +181,7 @@ void initialize(void)
 
   display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, g_brightness);
   
-  if (shield == SHIELD_IN14)
+  if (shield == SHIELD_IN14 || shield == SHIELD_IN8_2)
       init_nixie_6digit();
 
   //g_alarm_switch = get_alarm_switch();
@@ -296,6 +298,8 @@ void read_rtc(bool show_extra_info)
 {
     tt = rtc.getTime();
     if (tt == NULL) return;
+
+    g_second_dots_on = tt->sec % 2 == 0 ? true : false;
 
 /*
     if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
@@ -481,11 +485,11 @@ void loop()
 
 				menu_state = STATE_CLOCK;
 			}
-			
+
 			// Increase / Decrease time counter
-			if (buttons.b1_repeat) time_to_set+=(button_speed/100);
+			if (buttons.b1_repeat) time_to_set+=(button_speed/10);
 			if (buttons.b1_keyup)  time_to_set++;
-			if (buttons.b2_repeat) time_to_set-=(button_speed/100);
+			if (buttons.b2_repeat) time_to_set-=(button_speed/10);
 			if (buttons.b2_keyup)  time_to_set--;
 
 			if (time_to_set  >= 1440) time_to_set = 0;
@@ -641,13 +645,13 @@ void loop()
 			g_alarming = true;
 
 #ifdef HAVE_GPS
-		if (g_gps_enabled)
+		if (g_gps_enabled && menu_state == STATE_CLOCK)
 			for (long i = 0; i < 2500; i++) {  // loop count set to create equivalent delay, and works at 9600 bps
 				if (gpsDataReady())
 					getGPSdata();  // get the GPS serial stream and possibly update the clock 
 			}
 		else
-			_delay_ms(7);  // do something that takes about the same amount of time
+			_delay_ms(16);  // do something that takes about the same amount of time
 #else
 		_delay_ms(7);  // roughly 10 ms per loop
 #endif

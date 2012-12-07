@@ -24,6 +24,15 @@ pin_direct_t button2;
 
 uint8_t button_count = 1;
 
+uint8_t saved_keystatus = 0x00;
+uint8_t keydown_keys = 0x00;
+uint8_t keyup_keys = 0x00;
+uint8_t keyrepeat_keys = 0x00;
+
+uint16_t keyboard_counter[2] = {0, 0};
+//uint8_t button_bit[2] = { button1.bitmask, button2.bitmask };
+volatile uint8_t button_bit[2];
+
 void initialize_button(uint8_t pin1, int8_t pin2)
 {
     pinMode(pin1, INPUT);
@@ -31,7 +40,8 @@ void initialize_button(uint8_t pin1, int8_t pin2)
     
     button1.pin = pin1;
     button1.reg = PIN_TO_INPUT_REG(pin1);
-    button1.bitmask =   PIN_TO_BITMASK(pin1);
+    button1.bitmask = PIN_TO_BITMASK(pin1);
+    button_bit[0]   = PIN_TO_BITMASK(pin1);
     
     if (pin2 != -1) {
         pinMode(pin2, INPUT);
@@ -40,6 +50,7 @@ void initialize_button(uint8_t pin1, int8_t pin2)
         button2.pin = pin2;
         button2.reg = PIN_TO_INPUT_REG(pin2);
         button2.bitmask = PIN_TO_BITMASK(pin2);
+        button_bit[1]   = PIN_TO_BITMASK(pin2);
         
         button_count = 2;
     }
@@ -54,14 +65,6 @@ bool is_button_pressed(void)
 }
 */
 
-uint8_t saved_keystatus = 0x00;
-uint8_t keydown_keys = 0x00;
-uint8_t keyup_keys = 0x00;
-uint8_t keyrepeat_keys = 0x00;
-
-uint16_t keyboard_counter[2] = {0, 0};
-uint8_t button_bit[2] = { button1.bitmask, button2.bitmask };
-
 //#define REPEAT_SPEED	2000
 #define REPEAT_SPEED	20
 
@@ -75,6 +78,7 @@ void button_timer(void)
 	
 	for(uint8_t i = 0; i < button_count; i++)
 	{
+  
 		if(~(keydown_keys)&button_bit[i])
 			; // Do nothing, no keyrepeat is needed
 		else if(keyup_keys&button_bit[i])
@@ -96,6 +100,10 @@ void get_button_state(struct BUTTON_STATE* buttons)
 	buttons->b1_keydown = keydown_keys&button1.bitmask;
 	buttons->b1_keyup = keyup_keys&button1.bitmask;
 	buttons->b1_repeat = keyrepeat_keys&button1.bitmask;
+
+ /* Serial.print(keyrepeat_keys);
+   Serial.print(button1.bitmask);
+    Serial.println(buttons->b1_repeat);*/
 	
 	// Reset if we got keyup
 	if(keyup_keys&button1.bitmask)
@@ -117,7 +125,7 @@ void get_button_state(struct BUTTON_STATE* buttons)
 		keydown_keys   &= ~(button2.bitmask);
 		keyup_keys     &= ~(button2.bitmask);
 		keyrepeat_keys &= ~(button2.bitmask);
-		keyboard_counter[0] = 0;
+		keyboard_counter[1] = 0;
 	}
 
     buttons->both_held = (keydown_keys&button1.bitmask) && (keydown_keys&button2.bitmask);

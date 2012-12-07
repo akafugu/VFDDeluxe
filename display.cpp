@@ -81,6 +81,8 @@ uint8_t blink;
 uint16_t blink_counter = 0;
 uint8_t display_on = 1;
 
+extern uint8_t g_second_dots_on;
+
 uint8_t gps_updated;
 
 // dots [bit 0~5]
@@ -174,7 +176,6 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     g_has_dots = true;    
   }
   else if (shield_type == SHIELD_IN14) {
-      Serial.println("IN14 shield");
     shield = SHIELD_IN14;
     digits = 6;
     g_has_dots = true;    
@@ -518,25 +519,28 @@ void button_timer(void);
 uint8_t interrupt_counter = 0;
 uint16_t button_counter = 0;
 
+//#define BUTTON_TIMER_MAX 71
+#define BUTTON_TIMER_MAX 71*2
+
 // 1 click = 1us. Overflow every 255 us
 //ISR(TIMER3_COMPA_vect)
 ISR(TIMER3_OVF_vect)
 {
     // control blinking: on time is slightly longer than off time
-    if (blink && display_on && ++blink_counter >= 0x900) {
+    if (blink && display_on && ++blink_counter >= 0x900*5) {
         display_on = false;
         blink_counter = 0;
     }
-    else if (blink && !display_on && ++blink_counter >= 0x750) {
+    else if (blink && !display_on && ++blink_counter >= 0x750*5) {
         display_on = true;
         blink_counter = 0;
     }
 	
     // button polling
-    //if (++button_counter == 71) {
+    if (++button_counter == BUTTON_TIMER_MAX) {
         button_timer();
-    // button_counter = 0;
-    //}
+     button_counter = 0;
+    }
 	
     // display multiplex
     // fixme: nixie multiplexer must be called faster!
@@ -707,6 +711,8 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 // shows time - used when setting time
 void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec)
 {
+	nixie_print(hour, min, sec);
+
 	dots = 0;
 	uint8_t offset = 0;
 	
@@ -1048,14 +1054,22 @@ void write_vfd_iv22(uint8_t digit, uint8_t segments)
 
 void write_nixie(uint8_t value1, uint8_t value2, uint8_t value3)
 {
-    uint32_t val = (1<<(uint32_t)value3);
+    uint32_t val = 0;
+    val <<= 2;
+    val |= (1<<(uint32_t)value3);
     val <<= 10;
     val |= (1<<(uint32_t)value2);
     val <<= 10;
     val |= (1<<(uint32_t)value1);
+    
+    if (g_second_dots_on) {
+        val |= ((uint32_t)1<<(uint32_t)30);
+        val |= ((uint32_t)1<<(uint32_t)31);
+    }
+    
     val = ~val;
     
-    //uint32_t val = 0b0010000000100000010000000;
+    //val = 0b11000000010000000100000010000000;
     //val = ~val;
 
     write_vfd_8bit(val >> 24);

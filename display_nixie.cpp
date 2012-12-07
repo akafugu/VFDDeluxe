@@ -180,14 +180,15 @@ void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss)
     for (uint8_t i = 0; i <= 5; i++)
         ndata[i] = remap_in14(xdata[i]);
 #else
+/*
     ndata[0] = ss % 10;
     ndata[1] = ss % 10;
     ndata[2] = ss % 10;
     ndata[3] = ss % 10;
     ndata[4] = ss % 10;
     ndata[5] = ss % 10;
+    */
 
-/*
     ndata[4] = hh % 10;
     hh /= 10;
     ndata[5] = hh % 10;
@@ -199,7 +200,6 @@ void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss)
     ndata[0] = ss % 10;
     ss /= 10;
     ndata[1] = ss % 10;
- */
 #endif
 }
 

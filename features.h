@@ -58,12 +58,10 @@ enum shield_t {
 //#define SHIELD SHIELD_IV18
 //#define SHIELD_DIGITS 8
 
-#define SHIELD SHIELD_IN14
+//#define SHIELD SHIELD_IN14
+#define SHIELD SHIELD_IN8_2
 #define SHIELD_DIGITS 6
-#define IN14_FIX
-
-//#define SHIELD SHIELD_HYBRID
-//#define SHIELD_DIGITS 8
+//#define IN14_FIX
 
 // Display Shield identifiers
 // add here
