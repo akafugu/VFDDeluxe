@@ -14,6 +14,9 @@
  */
 
 #include "rotary.h"
+
+#ifdef HAVE_ROTARY
+
 #include <avr/interrupt.h>
 
 /*
@@ -169,4 +172,6 @@ uint8_t Rotary::getRawPosition()
 {
   return s_rotary_pos;
 }
+
+#endif // HAVE_ROTARY
 

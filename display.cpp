@@ -216,44 +216,30 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 	clear_display();
 	clear_data();
 
+#ifdef HAVE_ATMEGA328
+  // TIMER 2 overflow interrupt
+  //cli();
+  TCCR2B = 0;
+
+  // enable Timer2 overflow interrupt:
+  TIMSK2 |= (1<<TOIE2);
+  // Set CS00 bit so timer runs at clock speed:
+  TCCR2B |= (1<<CS22)|(1<<CS21); // Set Prescaler to clk/8 : 1 click = 1us. CS21=1
+#elif defined(HAVE_LEONARDO)
   // TIMER 3 overflow interrupt
-  cli();             // disable global interrupts
+  //cli();             // disable global interrupts
   TCCR3A = 0;        // set entire TCCR1A register to 0
   TCCR3B = 0;
  
   // enable Timer3 overflow interrupt:
   TIMSK3 = (1 << TOIE3);
-  // Set CS10 bit so timer runs at clock speed:
+  // Set CS30 bit so timer runs at clock speed:
   TCCR3B |= (1 << CS30);
+#endif
+
   // enable global interrupts:
-  sei();
+  //sei();
     
-  /*
-  // TIMER 3 OVERFLOW COMPARE INTERRUPT
-  cli();          // disable global interrupts
-  TCCR3A = 0;     // set entire TCCR1A register to 0
-  TCCR3B = 0;     // same for TCCR1B
- 
-  // set compare match register to desired timer count:
-  OCR3A = 50;
-  // turn on CTC mode:
-  TCCR3B |= (1 << WGM32);
-  // Set CS10 and CS12 bits for 1024 prescaler:
-  TCCR3B |= (1 << CS30);
-  //TCCR3B |= (1 << CS32);
-  // enable timer compare interrupt:
-  TIMSK3 |= (1 << OCIE3A);
-  sei();          // enable global interrupts
-  */
-
-  // Original VFD Modular Clock code, too slow
-  /*
-  // Inititalize timer for multiplexing
-  TCCR3B |= (1<<CS31); // Set Prescaler to clk/8 : 1 click = 1us. CS21=1
-  TIMSK3 |= (1<<TOIE3); // Enable Overflow Interrupt Enable
-  TCNT3 = 0xf0; // Initialize counter
-  */
-
   //set_brightness(brightness);
   digitalWrite(blank_pin.pin, LOW);
 
@@ -335,12 +321,12 @@ void display_multiplex_16seg(void)
   
 }
 
+int slow = 0;
+int counter = 'A';
+
 // display multiplexing routine for 4 digits: run once every 5us
 void display_multiplex_iv17(void)
 {
-  //led = !led;
-  //digitalWrite(13, led);
-
 	if (multiplex_counter == 0) {
 		clear_display();
 		write_vfd_iv17(0, calculate_segments_16(display_on ? data[0] : ' '));
@@ -516,7 +502,7 @@ void display_multiplex(void)
 }
 
 void button_timer(void);
-uint8_t interrupt_counter = 0;
+uint16_t interrupt_counter = 0;
 uint16_t button_counter = 0;
 
 //#define BUTTON_TIMER_MAX 71
@@ -524,8 +510,13 @@ uint16_t button_counter = 0;
 
 // 1 click = 1us. Overflow every 255 us
 //ISR(TIMER3_COMPA_vect)
+
+#ifdef HAVE_ATMEGA328
+ISR(TIMER2_OVF_vect)
+#elif defined (HAVE_LEONARDO)
 ISR(TIMER3_OVF_vect)
-{
+#endif
+{  
     // control blinking: on time is slightly longer than off time
     if (blink && display_on && ++blink_counter >= 0x900*5) {
         display_on = false;
@@ -543,13 +534,16 @@ ISR(TIMER3_OVF_vect)
     }
 	
     // display multiplex
-    // fixme: nixie multiplexer must be called faster!
-    if (++interrupt_counter == 12) {
+    if (++interrupt_counter == 48) {
         display_multiplex();
         interrupt_counter = 0;
     }
 
-    TCNT3 = 0xff00; // Initialize counter
+#ifdef HAVE_ATMEGA328
+    TCNT2 = 0x0;
+#elif defined (HAVE_LEONARDO)
+    TCNT3 = 0xff00;
+#endif
 }
 
 // utility functions

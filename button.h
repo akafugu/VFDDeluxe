@@ -16,7 +16,6 @@
 #ifndef BUTTON_H_
 #define BUTTON_H_
 
-#include "features.h"
 #include <stdbool.h>
 
 struct BUTTON_STATE

@@ -29,8 +29,36 @@
 
 #include "direct_pin_read.h"
 
+#if BOARD == BOARD_VFD_MODULAR_CLOCK
 
-// fixme: pin mapping should be in separate file?
+struct PinMap
+{
+    // HV518 / HV5812
+    static const uint8_t data = 11;
+    static const uint8_t clock = 13;
+    static const uint8_t latch = A0;
+    static const uint8_t blank = 6;
+    
+    // Nixie anodes (not supported on VFD Modular clock)
+    static const uint8_t nixie_a1 = -1;
+    static const uint8_t nixie_a2 = -1;
+    static const uint8_t nixie_a3 = -1;
+    static const uint8_t nixie_a4 = -1;
+    
+    // Input buttons
+    static const uint8_t button1 = -1;
+    static const uint8_t button2 = -1;
+    //static const uint8_t button1 = 4;
+    //static const uint8_t button2 = -1;
+    
+    // other
+    static const uint8_t alarm_switch = 2;
+    static const uint8_t sig0 = 3;
+    static const uint8_t sig1 = 4;
+    static const uint8_t sig2 = 5;
+};
+
+#elif BOARD == BOARD_VFD_DELUXE
 
 struct PinMap
 {
@@ -53,3 +81,6 @@ struct PinMap
     //static const uint8_t button1 = 4;
     //static const uint8_t button2 = -1;
 };
+
+#endif
+

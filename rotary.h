@@ -17,6 +17,9 @@
 #define ROTARY_H_
 
 #include "features.h"
+
+#ifdef HAVE_ROTARY
+
 #include <stdbool.h>
 
 #include <avr/io.h>
@@ -62,6 +65,6 @@ private:
   uint8_t m_saved_pos, m_saved_min, m_saved_max;
 };
 
-
+#endif // HAVE_ROTARY
 #endif // ROTARY_H_
 

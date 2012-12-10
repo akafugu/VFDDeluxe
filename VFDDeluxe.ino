@@ -54,7 +54,12 @@ WireRtcLib rtc;
 //GPS gps;
 
 // Piezo
+#ifdef HAVE_ATMEGA328
+#define PIEZO 10
+#define PIEZO_GND 9
+#elif defined(HAVE_LEONARDO)
 #define PIEZO 11
+#endif
 
 // Cached settings
 uint8_t g_24h_clock = true;
@@ -134,6 +139,11 @@ void initialize(void)
   pinMode(PIEZO, OUTPUT);
   digitalWrite(PIEZO, LOW);
 
+#ifdef HAVE_ATMEGA328
+  pinMode(PIEZO_GND, OUTPUT);
+  digitalWrite(PIEZO_GND, LOW);
+#endif
+
   // initialize button
   // fixme: change depending on HAVE_ROTARY define
   initialize_button(PinMap::button1, PinMap::button2);
@@ -142,16 +152,6 @@ void initialize(void)
   // Set switch as input and enable pullup
   //SWITCH_DDR  &= ~(_BV(SWITCH_BIT));
   //SWITCH_PORT |= _BV(SWITCH_BIT);
-
-  // test
-  pinMode(13, OUTPUT);
-
-  for (int i = 0; i < 5; i++) {
-    digitalWrite(13, LOW);
-    delay(100);
-    digitalWrite(13, HIGH);
-    delay(100);
-  }
 
   //rot.begin();
 
@@ -172,6 +172,8 @@ void initialize(void)
 
   //rtc.setTime_s(16, 10, 0);
   //rtc_set_alarm_s(17,0,0);
+  
+  g_has_flw = has_eeprom();
 
 #ifdef HAVE_SHIELD_AUTODETECT
   autodetect_shield();
@@ -180,7 +182,7 @@ void initialize(void)
 #endif
 
   display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, g_brightness);
-  
+
   if (shield == SHIELD_IN14 || shield == SHIELD_IN8_2)
       init_nixie_6digit();
 
@@ -192,10 +194,11 @@ void initialize(void)
   PCMSK2 |= (1 << PCINT18);
   */
   
-  g_has_flw = has_eeprom();
   
+#ifdef HAVE_GPS
     // setup UART for GPS
     gps_init(g_gps_enabled);
+#endif // HAVE_GPS
 }
 
 /*
@@ -327,15 +330,15 @@ void read_rtc(bool show_extra_info)
 //        show_time(tt, g_24h_clock, show_extra_info);
         read_flw();
     else
-        show_time(tt, g_24h_clock, show_extra_info);
+        show_time(tt, g_24h_clock, show_extra_info);        
 }
 
 void setup()
 {
   //while (!Serial) ;
     
-  Serial.begin(9600);
-  Serial.println("VFD Deluxe");
+  //Serial.begin(9600);
+  //Serial.println("VFD Deluxe");
   
 #ifdef HAVE_MPL115A2
   MPL115A2.begin();
@@ -343,8 +346,6 @@ void setup()
 #endif // HAVE_MPL115A2
 
   initialize();
-  
-  //gps.begin();
 }
 
 void loop()
@@ -364,7 +365,7 @@ void loop()
       }
 
       delay(250);
-      Serial.println(i);
+      //Serial.println(i);
     }
   }
   */
@@ -407,7 +408,7 @@ void loop()
     //delay(10);
   }
   */
-  
+
 	while (1) {
 		get_button_state(&buttons);
                 //long pos = myEnc.read();
@@ -432,7 +433,7 @@ void loop()
 		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
 		//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
 		else if (menu_state == STATE_CLOCK && buttons.both_held) {
-                        Serial.println("Both held");
+                        //Serial.println("Both held");
     
 			if (g_alarm_switch) {
 				menu_state = STATE_SET_ALARM;
@@ -634,8 +635,9 @@ void loop()
 							display_mode = MODE_NORMAL;
 					}
 			}
+
 			// read RTC approx every 200ms  (wm)
-			static uint16_t cnt = 0;
+			static uint8_t cnt = 0;
 			if (cnt++ > 15) {
 				read_rtc(display_mode);  // read RTC and display time
 				cnt = 0;
@@ -653,9 +655,9 @@ void loop()
 					getGPSdata();  // get the GPS serial stream and possibly update the clock 
 			}
 		else
-			_delay_ms(16);  // do something that takes about the same amount of time
+			delay(16);  // do something that takes about the same amount of time
 #else
-		_delay_ms(7);  // roughly 10 ms per loop
+		delay(7);  // roughly 10 ms per loop
 #endif
 	}
 

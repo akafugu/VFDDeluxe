@@ -13,6 +13,7 @@
  *
  */
 
+#include "global.h"
 #include <avr/io.h> 
 
 #define A  0
@@ -29,8 +30,6 @@
 #define K  11
 #define L  12
 #define M  13
-
-#define  FEATURE_LOWERCASE
 
 uint16_t calculate_segments_14(uint8_t character)
 {
@@ -191,7 +190,7 @@ uint16_t calculate_segments_14(uint8_t character)
 		case 'Z':
 			segments = (1<<A)|(1<<D)|(1<<J)|(1<<M);
 			break;
-#ifdef FEATURE_LOWERCASE
+#ifdef HAVE_LOWERCASE
 		case 'a':
 			segments = (1<<D)|(1<<E)|(1<<G1)|(1<<L);
 			break;

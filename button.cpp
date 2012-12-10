@@ -33,6 +33,31 @@ uint16_t keyboard_counter[2] = {0, 0};
 //uint8_t button_bit[2] = { button1.bitmask, button2.bitmask };
 volatile uint8_t button_bit[2];
 
+#if BOARD == BOARD_VFD_MODULAR_CLOCK
+void initialize_button(uint8_t pin1, int8_t pin2)
+{
+    // Special handling for VFD Modular Clock
+    // It has buttons on PB6 and PB7 which have no assigned Arduino pin numbers
+  
+    // Set buttons as inputs
+    DDRB &= ~(_BV(PORTB6));
+    DDRB &= ~(_BV(PORTB7));
+    
+    // Enable pullups for buttons
+    PORTB |= _BV(PORTB6);
+    PORTB |= _BV(PORTB7);
+
+    button1.pin = -1;
+    button1.reg = &PINB;
+    button1.bitmask = _BV(PORTB6);
+    button_bit[0]   = _BV(PORTB6);
+
+    button2.pin = -1;
+    button2.reg = &PINB;
+    button2.bitmask = _BV(PORTB7);
+    button_bit[1]   = _BV(PORTB7);
+}
+#else
 void initialize_button(uint8_t pin1, int8_t pin2)
 {
     pinMode(pin1, INPUT);
@@ -55,6 +80,7 @@ void initialize_button(uint8_t pin1, int8_t pin2)
         button_count = 2;
     }
 }
+#endif // Board type
 
 /*
 bool is_button_pressed(void)

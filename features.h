@@ -33,10 +33,17 @@
 
 // Boards
 #define BOARD_VFD_DELUXE 0
-#define BOARD_VFD_DELUXE_BETA 1
-#define BOARD_VFD_MODULAR_CLOCK 2
+#define BOARD_VFD_MODULAR_CLOCK 1
 
+// fixme: this is just a convenience declaration for now since there are only two board types
+#ifdef __AVR_ATmega32U4__
 #define BOARD BOARD_VFD_DELUXE
+#else
+#define BOARD BOARD_VFD_MODULAR_CLOCK
+#endif
+
+//#define BOARD BOARD_VFD_DELUXE
+//#define BOARD BOARD_VFD_MODULAR_CLOCK
 
 // Display Shields
 enum shield_t {
@@ -59,9 +66,12 @@ enum shield_t {
 //#define SHIELD_DIGITS 8
 
 //#define SHIELD SHIELD_IN14
-#define SHIELD SHIELD_IN8_2
-#define SHIELD_DIGITS 6
+//#define SHIELD SHIELD_IN8_2
+//#define SHIELD_DIGITS 6
 //#define IN14_FIX
+
+#define SHIELD SHIELD_IV17
+#define SHIELD_DIGITS 4
 
 // Display Shield identifiers
 // add here
@@ -81,14 +91,24 @@ enum shield_t {
 #define NO  1
 
 #define FEATURE_SHIELD_AUTODETECT NO
-#define FEATURE_MPL115A2 YES // Temperature and Atmospheric pressure sensor
+#define FEATURE_MPL115A2 NO // Temperature and Atmospheric pressure sensor
 #define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
-#define FEATURE_ROTARY YES
+#define FEATURE_ROTARY NO
 #define FEATURE_GPS YES
 #define FEATURE_RGB_BACKLIGHT NO
+#define FEATURE_LOWERCASE YES
 
 // fixme: this can be automatic based on __AVR_ATmega32U4__ define
+
+#ifdef __AVR_ATmega32U4__
 #define FEATURE_LEONARDO YES
+#define FEATURE_ATMEGA328 NO
+#elif defined(__AVR_ATmega328P__)
+#define FEATURE_LEONARDO NO
+#define FEATURE_ATMEGA328 YES
+#else
+#error Unsupported board: Only ATmega328 and ATmega32U4 are supported at this time
+#endif
 
 // fixme: this should probably be generated from a script
 // list FEATURES and what each feature defines when set to on
@@ -160,6 +180,16 @@ enum shield_t {
 
 ///////////////////////////////////////////
 
+#if !(defined FEATURE_ATMEGA328) || FEATURE_ATMEGA328 < NO || FEATURE_ATMEGA328 > YES
+#  error Must define FEATURE_ATMEGA328 to be YES or NO
+#endif
+
+#if FEATURE_ATMEGA328 == YES
+#  define HAVE_ATMEGA328
+#endif
+
+///////////////////////////////////////////
+
 #if !(defined FEATURE_RGB_BACKLIGHT) || FEATURE_RGB_BACKLIGHT < NO || FEATURE_RGB_BACKLIGHT > YES
 #  error Must define FEATURE_RGB_BACKLIGHT to be YES or NO
 #endif
@@ -168,6 +198,15 @@ enum shield_t {
 #  define HAVE_RGB_BACKLIGHT
 #endif
 
+///////////////////////////////////////////
+
+#if !(defined FEATURE_LOWERCASE) || FEATURE_LOWERCASE < NO || FEATURE_LOWERCASE > YES
+#  error Must define FEATURE_LOWERCASE to be YES or NO
+#endif
+
+#if FEATURE_LOWERCASE == YES
+#  define HAVE_LOWERCASE
+#endif
 
 #endif // FEATURES_H_
 

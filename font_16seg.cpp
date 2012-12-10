@@ -13,6 +13,7 @@
  *
  */
 
+#include "global.h"
 #include <avr/io.h>
 
 uint16_t calculate_segments_16(uint8_t character);
@@ -82,37 +83,37 @@ uint16_t calculate_segments_16(uint8_t character)
 			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F)|(1<<G1)|(1<<G2);
 			break;
 		case 10:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<L)|(1<<I)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<E)|(1<<F);
 			break;
 		case 11:
 			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F);
 			break;
 		case 12:
-			segments = (1<<A2)|(1<<B)|(1<<D1)|(1<<L)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<D2)|(1<<L)|(1<<G2)|(1<<E)|(1<<F);
 			break;
 		case 13:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<G2)|(1<<E)|(1<<F);
 			break;
 		case 14:
 			segments = (1<<B)|(1<<C)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
 			break;
 		case 15:
-			segments = (1<<A2)|(1<<C)|(1<<D1)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<C)|(1<<D2)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
 			break;
 		case 16:
-			segments = (1<<A2)|(1<<C)|(1<<D1)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
 			break;
 		case 17:
 			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<I)|(1<<E)|(1<<F);
 			break;
 		case 18:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
 			break;
 		case 19:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);	
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);	
 			break;
 		case 20:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<L)|(1<<I)|(1<<H)|(1<<G1)|(1<<E)|(1<<D2);
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<H)|(1<<G1)|(1<<E)|(1<<D2);
 			break;
 		case 'A':
 			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<E)|(1<<F)|(1<<G1)|(1<<G2);
@@ -193,7 +194,7 @@ uint16_t calculate_segments_16(uint8_t character)
 		case 'Z':
 			segments = (1<<A1)|(1<<A2)|(1<<D1)|(1<<D2)|(1<<J)|(1<<M);
 			break;
-#ifdef FEATURE_LOWERCASE
+#ifdef HAVE_LOWERCASE
 		case 'a':
 			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<G2)|(1<<L);
 			break;
