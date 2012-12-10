@@ -101,10 +101,6 @@ void get_button_state(struct BUTTON_STATE* buttons)
 	buttons->b1_keyup = keyup_keys&button1.bitmask;
 	buttons->b1_repeat = keyrepeat_keys&button1.bitmask;
 
- /* Serial.print(keyrepeat_keys);
-   Serial.print(button1.bitmask);
-    Serial.println(buttons->b1_repeat);*/
-	
 	// Reset if we got keyup
 	if(keyup_keys&button1.bitmask)
 	{

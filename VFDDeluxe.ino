@@ -299,7 +299,7 @@ void read_rtc(bool show_extra_info)
     tt = rtc.getTime();
     if (tt == NULL) return;
 
-    g_second_dots_on = tt->sec % 2 == 0 ? true : false;
+    g_second_dots_on = (menu_state == STATE_CLOCK && display_mode == MODE_NORMAL && tt->sec % 2 == 0) ? true : false;
 
 /*
     if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
@@ -437,12 +437,14 @@ void loop()
 			if (g_alarm_switch) {
 				menu_state = STATE_SET_ALARM;
 				show_set_alarm();
+                                g_second_dots_on = false;
 				rtc.getAlarm_s(&hour, &min, &sec);
 				time_to_set = hour*60 + min;
 			}
 			else {
 				menu_state = STATE_SET_CLOCK;
 				show_set_time();		
+                                g_second_dots_on = false;
 				rtc.getTime_s(&hour, &min, &sec);
 				time_to_set = hour*60 + min;
 			}

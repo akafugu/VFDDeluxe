@@ -623,11 +623,11 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 	uint8_t offset = 0;
 	uint8_t hour = _24h_clock ? t->hour : t->twelveHour;
 
-	nixie_print(hour, t->min, t->sec);
-
 	print_dots(mode, t->sec);
 
 	if (mode == 0) { // normal display mode
+            nixie_print(hour, t->min, t->sec);
+
 		if (digits == 10) { // "  HH.MM.SS  "
 			offset = print_ch(' ', offset); 
 
@@ -663,6 +663,9 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 		}
 	}
 	else if (mode == 1) { // extra display mode
+            nixie_print_compact(hour, t->min, t->sec);
+
+
 		if (digits == 10) { // " HH-MM-SS "
 			offset = print_ch('-', offset);
 			offset = print_digits(hour, offset);
@@ -711,7 +714,7 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 // shows time - used when setting time
 void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec)
 {
-	nixie_print(hour, min, sec);
+	nixie_print_compact(hour, min, sec);
 
 	dots = 0;
 	uint8_t offset = 0;
@@ -1056,21 +1059,37 @@ void write_nixie(uint8_t value1, uint8_t value2, uint8_t value3)
 {
     uint32_t val = 0;
     val <<= 2;
-    val |= (1<<(uint32_t)value3);
+    val |= value3 == 10 ? 0 : (1<<(uint32_t)value3);
     val <<= 10;
-    val |= (1<<(uint32_t)value2);
+    val |= value2 == 10 ? 0 : (1<<(uint32_t)value2);
     val <<= 10;
-    val |= (1<<(uint32_t)value1);
+    val |= value1 == 10 ? 0 : (1<<(uint32_t)value1);
     
+    val = ~val;
+    
+    write_vfd_8bit(val >> 24);
+    write_vfd_8bit(val >> 16);
+    write_vfd_8bit(val >> 8);
+    write_vfd_8bit(val);
+
+    LATCH_DISABLE;
+    LATCH_ENABLE;   
+}
+
+void write_nixie_dots()
+{
+    uint32_t val = 0;
+    
+    // fixme: dot printing for nixies should be based on the normal dots variable
+    // and be dependent on the dots setting as well as display mode
+    // (for example: compact display on 6-digit nixie shields will have no dots for
+    // compact display mode)
     if (g_second_dots_on) {
         val |= ((uint32_t)1<<(uint32_t)30);
         val |= ((uint32_t)1<<(uint32_t)31);
     }
-    
+
     val = ~val;
-    
-    //val = 0b11000000010000000100000010000000;
-    //val = ~val;
 
     write_vfd_8bit(val >> 24);
     write_vfd_8bit(val >> 16);

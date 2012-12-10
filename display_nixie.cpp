@@ -54,8 +54,10 @@ void nixie_clear_display(void)
 }
 
 void write_nixie(uint8_t value1, uint8_t value2, uint8_t value3);
+void write_nixie_dots();
+void write_nixie_6digit(uint8_t digit, uint8_t value1, uint8_t value2, uint8_t value3, bool dots = false);
 
-void write_nixie_6digit(uint8_t digit, uint8_t value1, uint8_t value2, uint8_t value3)
+void write_nixie_6digit(uint8_t digit, uint8_t value1, uint8_t value2, uint8_t value3, bool dots)
 {
     nixie_clear_display();
 
@@ -73,12 +75,10 @@ void write_nixie_6digit(uint8_t digit, uint8_t value1, uint8_t value2, uint8_t v
     }
     */
 
-    if (value1 == 10 || value2 == 10) return;
-
-    // write to shift register here
-    //set_number(value1, value2);
-    write_nixie(value1, value2, value3);
-    //write_nixie(0, 2, 3 );
+    if (dots)
+      write_nixie_dots();
+    else
+      write_nixie(value1, value2, value3);
 
     switch (digit) {
     case 0:
@@ -102,10 +102,17 @@ void display_multiplex_in14()
     nixie_clear_display();
   else if (multiplex_counter_nixie >= 12 && multiplex_counter_nixie <= 21)
     display_on ? write_nixie_6digit(1, ndata[4], ndata[2], ndata[0]) : nixie_clear_display();
+  
+  // fixme: this is to support the nixie's dots.
+  // fixme: dots are on the left side of digits 3 and 5 on IN-14, so parameter 1 should be 0
+  else if (multiplex_counter_nixie == 22)
+    nixie_clear_display();
+  else if (multiplex_counter_nixie >= 23 && multiplex_counter_nixie <= 27)
+    display_on ? write_nixie_6digit(1, 0, 0, 0, true) : nixie_clear_display();
 
   multiplex_counter_nixie++;
 
-  if (multiplex_counter_nixie == 22) multiplex_counter_nixie = 0;
+  if (multiplex_counter_nixie == 28) multiplex_counter_nixie = 0;
 }
 
 #ifdef IN14_FIX
@@ -137,6 +144,8 @@ uint8_t remap_in14(uint8_t val)
         return 3;
     if (val == 9)
         return 2;
+    if (val == 10)
+        return 10;
     
     return val;
 }
@@ -145,15 +154,6 @@ uint8_t remap_in14(uint8_t val)
 
 void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss)
 {
-    /*
-    Serial.print("Time: ");
-    Serial.print(hh);
-    Serial.print(":");
-    Serial.print(mm);
-    Serial.print(":");
-    Serial.print(ss);
-    */
-        
 #ifdef IN14_FIX
 /*
     xdata[0] = ss % 10;
@@ -203,8 +203,42 @@ void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss)
 #endif
 }
 
+void nixie_print_compact(uint8_t hh, uint8_t mm, uint8_t ss)
+{
+#ifdef IN14_FIX
+    Xdata[5] = 10;
+
+    Xdata[3] = hh % 10;
+    hh /= 10;
+    Xdata[4] = hh % 10;
+
+    Xdata[1] = mm % 10;
+    mm /= 10;
+    Xdata[2] = mm % 10;
+
+    Xdata[0] = 10;
+    
+    // fix for incorrectly wired first version of IN14 shield
+    for (uint8_t i = 0; i <= 5; i++)
+        ndata[i] = remap_in14(xdata[i]);
+#else
+    ndata[5] = 10;
+
+    ndata[3] = hh % 10;
+    hh /= 10;
+    ndata[4] = hh % 10;
+
+    ndata[1] = mm % 10;
+    mm /= 10;
+    ndata[2] = mm % 10;
+
+    ndata[0] = 10;
+#endif
+
+}
+
 void nixie_clear_data()
 {
-    ndata[0] = ndata[1] = ndata[2] = ndata[3] = 10;  
+    ndata[0] = ndata[1] = ndata[2] = ndata[3] = ndata[4] = ndata[5] = 10;  
 }
 
