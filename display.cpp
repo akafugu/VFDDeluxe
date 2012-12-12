@@ -16,6 +16,7 @@
 #include "global.h"
 #include "display.h"
 #include "display_nixie.h"
+#include "gps.h"
 
 #include <Wire.h>
 #include <WireRtcLib.h>
@@ -69,6 +70,9 @@ uint8_t digits = 6;
 volatile char data[16]; // Digit data
 uint8_t us_counter = 0; // microsecond counter
 uint8_t multiplex_counter = 0;
+#ifdef HAVE_GPS
+uint8_t gps_counter = 0;
+#endif
 
 // globals from main.c
 extern uint8_t g_show_dots;
@@ -281,6 +285,13 @@ void set_blink(bool on)
 {
 	blink = on;
 	if (!blink) display_on = 1;
+}
+
+void flash_display(uint16_t ms)  // this does not work but why???
+{
+	display_on = false;
+	_delay_ms(ms);
+	display_on = true;
 }
 
 void set_gps_updated(bool b) {
@@ -534,10 +545,17 @@ ISR(TIMER3_OVF_vect)
     }
 	
     // display multiplex
-    if (++interrupt_counter == 48) {
+    if (++interrupt_counter == 10) {
         display_multiplex();
         interrupt_counter = 0;
     }
+
+#ifdef HAVE_GPS
+	if (++gps_counter == 4) {  // every 0.001024 seconds
+		GPSread();  // check for data on the serial port
+		gps_counter = 0;
+	}
+#endif // HAVE_GPS
 
 #ifdef HAVE_ATMEGA328
     TCNT2 = 0x0;

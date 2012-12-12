@@ -62,16 +62,16 @@ enum shield_t {
 	SHIELD_HYBRID, // VFDDeluxe IV-18+IN-17 VFD/Nixie hybrid shield
 };
 
-//#define SHIELD SHIELD_IV18
-//#define SHIELD_DIGITS 8
+#define SHIELD SHIELD_IV18
+#define SHIELD_DIGITS 8
 
 //#define SHIELD SHIELD_IN14
 //#define SHIELD SHIELD_IN8_2
 //#define SHIELD_DIGITS 6
 //#define IN14_FIX
 
-#define SHIELD SHIELD_IV17
-#define SHIELD_DIGITS 4
+//#define SHIELD SHIELD_IV17
+//#define SHIELD_DIGITS 4
 
 // Display Shield identifiers
 // add here
@@ -97,6 +97,7 @@ enum shield_t {
 #define FEATURE_GPS YES
 #define FEATURE_RGB_BACKLIGHT NO
 #define FEATURE_LOWERCASE YES
+#define FEATURE_ALTERNATE_FONT YES
 
 // fixme: this can be automatic based on __AVR_ATmega32U4__ define
 
@@ -207,6 +208,17 @@ enum shield_t {
 #if FEATURE_LOWERCASE == YES
 #  define HAVE_LOWERCASE
 #endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_ALTERNATE_FONT) || FEATURE_ALTERNATE_FONT < NO || FEATURE_ALTERNATE_FONT > YES
+#  error Must define FEATURE_ALTERNATE_FONT to be YES or NO
+#endif
+
+#if FEATURE_ALTERNATE_FONT == YES
+#  define HAVE_ALTERNATE_FONT
+#endif
+
 
 #endif // FEATURES_H_
 

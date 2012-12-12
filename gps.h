@@ -21,25 +21,29 @@
 #ifdef HAVE_GPS
 
 // String buffer size:
-#define GPSBUFFERSIZE 128 
+#define GPSBUFFERSIZE 96 
 //The year the clock was programmed, used for error checking
 #define PROGRAMMING_YEAR 12
 
-char* gps_setting(uint8_t gps);
+//int8_t g_TZ_hour;
+//int8_t g_TZ_minutes;
+extern unsigned long tGPSupdate;  // really time_t
 
-extern int8_t g_TZ_hour;
-extern uint8_t g_TZ_minutes;
-extern uint8_t g_DST;  // DST off, on, auto?
-extern uint8_t g_DST_offset;  // DST offset in hours
+// we double buffer: read into one line and leave one for the main program
+extern volatile char gpsBuffer1[GPSBUFFERSIZE];
+extern volatile char gpsBuffer2[GPSBUFFERSIZE];
+// our index into filling the current line
+extern volatile uint8_t gpsBufferPtr;
+// pointers to the double buffers
+extern volatile char *gpsNextBuffer;
+extern volatile char *gpsLastBuffer;
+extern volatile uint8_t gpsDataReady_;
 
 //GPS serial data handling functions:
 uint8_t gpsDataReady(void);
-void getGPSdata(void);
-void parseGPSdata(void);
-
-void fix_time(void);
-//Set the time zone:
-void set_timezone(void);
+void GPSread(void);
+char *gpsNMEA(void);
+void parseGPSdata(char *gpsBuffer);
 
 uint8_t leapyear(uint16_t y);
 void uart_init(uint16_t BRR);

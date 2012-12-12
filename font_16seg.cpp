@@ -50,6 +50,40 @@ uint16_t calculate_segments_16(uint8_t character)
 			//segments = (1<<I)|(1<<L);
 			segments = (1<<B)|(1<<C)|(1<<J);
 			break;
+#ifdef HAVE_ALTERNATE_FONT
+		case 2:
+		case '2':
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<G2)|(1<<M)|(1<<D1)|(1<<D2);
+			break;
+		case 3:
+		case '3':
+			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<J)|(1<<G2);
+			break;
+		case 4:
+		case '4':
+			segments = (1<<B)|(1<<C)|(1<<H)|(1<<G2);
+			break;
+		case 5:
+		case '5':
+			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<H)|(1<<G2);
+			break;
+		case 6:
+		case '6':
+			segments = (1<<A1)|(1<<A2)|(1<<K)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F)|(1<<G1);
+			break;
+		case 7:
+		case '7':
+			segments = (1<<A1)|(1<<A2)|(1<<J)|(1<<L);
+			break;
+		case 8:
+		case '8':
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<H)|(1<<G1)|(1<<G2);
+			break;
+		case 9:
+		case '9':
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<H)|(1<<G2);
+			break;
+#else
 		case 2:
 		case '2':
 			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<G1)|(1<<G2)|(1<<E)|(1<<D1)|(1<<D2);
@@ -82,6 +116,7 @@ uint16_t calculate_segments_16(uint8_t character)
 		case '9':
 			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F)|(1<<G1)|(1<<G2);
 			break;
+#endif // HAVE_ALTERNATE_FONT
 		case 10:
 			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<E)|(1<<F);
 			break;

@@ -335,10 +335,10 @@ void read_rtc(bool show_extra_info)
 
 void setup()
 {
-  //while (!Serial) ;
+  while (!Serial) ;
     
-  //Serial.begin(9600);
-  //Serial.println("VFD Deluxe");
+  Serial.begin(9600);
+  Serial.println("VFD Deluxe");
   
 #ifdef HAVE_MPL115A2
   MPL115A2.begin();
@@ -353,7 +353,7 @@ void loop()
   /*
   // test: write alphabet
   while (1) {
-    for (int i = 'A'; i <= 'Z'+1; i++) {
+    for (int i = 'a'; i <= 'z'+1; i++) {
       set_char_at(i, 0);
       set_char_at(i+1, 1);
       set_char_at(i+2, 2);
@@ -364,7 +364,7 @@ void loop()
         set_char_at(i+5, 5);
       }
 
-      delay(250);
+      delay(1000);
       //Serial.println(i);
     }
   }
@@ -649,15 +649,18 @@ void loop()
 			g_alarming = true;
 
 #ifdef HAVE_GPS
-		if (g_gps_enabled && menu_state == STATE_CLOCK)
-			for (long i = 0; i < 2500; i++) {  // loop count set to create equivalent delay, and works at 9600 bps
-				if (gpsDataReady())
-					getGPSdata();  // get the GPS serial stream and possibly update the clock 
+		if (g_gps_enabled && menu_state == STATE_CLOCK) {
+			if (gpsDataReady()) {
+				parseGPSdata(gpsNMEA());  // get the GPS serial stream and possibly update the clock 
+				}
+			else {
+				_delay_ms(2);
 			}
+		}
 		else
-			delay(16);  // do something that takes about the same amount of time
+			_delay_ms(2);
 #else
-		delay(7);  // roughly 10 ms per loop
+		delay(74);  // roughly 10 ms per loop
 #endif
 	}
 
