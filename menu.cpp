@@ -40,6 +40,7 @@
 void beep(uint16_t freq, uint8_t times);
 extern WireRtcLib rtc;
 
+menu_state_t g_menu_state;
 
 // 
 // This code produces lots of warnings:
@@ -329,7 +330,7 @@ void menu(uint8_t btn)
 	if (menuPtr == NULL) {  // check for end of menu
 		menuIdx = 0;
 		update = false;
-		menu_state = STATE_CLOCK;
+		g_menu_state = STATE_CLOCK;
 		return;
 	}
 	char shortName[5];
@@ -432,11 +433,11 @@ void menu(uint8_t btn)
 
 void menu_init(void)
 {
-	menu_state = STATE_CLOCK;
+	g_menu_state = STATE_CLOCK;
 	menu_enable(MENU_TEMP, rtc.isDS3231());  // show temperature setting only when running on a DS3231
 	menu_enable(MENU_DOTS, g_has_dots);  // don't show dots settings for shields that have no dots
 #ifdef HAVE_FLW
-	menu_enable(MENU_FLW, g_has_eeprom);  // don't show FLW settings when there is no EEPROM with database
+	menu_enable(MENU_FLW, g_has_flw);  // don't show FLW settings when there is no EEPROM with database
 #endif
 }
 

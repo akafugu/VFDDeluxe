@@ -127,7 +127,7 @@ typedef enum {  // no ifdefs, no harm in defining unused items
 	MENU_END  // must be last
 } menu_number;
 
-menu_state_t menu_state;
+extern menu_state_t g_menu_state;
 //uint8_t menuDisabled[MENU_COUNT];
 
 #if defined FEATURE_WmGPS || defined FEATURE_AUTO_DST
