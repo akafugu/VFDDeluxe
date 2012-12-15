@@ -80,9 +80,6 @@ enum shield_t {
 #define FEATURE_HV518
 #define FEATURE_NIXIE
 #define FEATURE_BUTTONS
-#define FEATURE_FLW
-#define FEATURE_LEONARDO
-#define FEATURE_MEGA328
 #define FEATURE_ALARM_SWITCH
 #define FEATURE_ALARM_BUTTON
 */
@@ -94,7 +91,14 @@ enum shield_t {
 #define FEATURE_MPL115A2 NO // Temperature and Atmospheric pressure sensor
 #define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY NO
+#define FEATURE_FLW YES
 #define FEATURE_GPS YES
+#define FEATURE_GPS_DEBUG NO
+#define FEATURE_AUTO_DST NO
+#define FEATURE_AUTO_DATE NO
+#define FEATURE_AUTO_DIM NO
+#define FEATURE_SET_DATE YES
+
 #define FEATURE_RGB_BACKLIGHT NO
 #define FEATURE_LOWERCASE YES
 #define FEATURE_ALTERNATE_FONT YES
@@ -161,12 +165,74 @@ enum shield_t {
 
 ///////////////////////////////////////////
 
+#if !(defined FEATURE_FLW) || FEATURE_FLW < NO || FEATURE_FLW > YES
+#  error Must define FEATURE_FLW to be YES or NO
+#endif
+
+#if FEATURE_FLW == YES
+// we have a rotary encoder with a single button for input
+#  define HAVE_FLW
+#endif
+
+
+///////////////////////////////////////////
+
 #if !(defined FEATURE_GPS) || FEATURE_GPS < NO || FEATURE_GPS > YES
 #  error Must define FEATURE_GPS to be YES or NO
 #endif
 
 #if FEATURE_GPS == YES
 #  define HAVE_GPS
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_GPS_DEBUG) || FEATURE_GPS_DEBUG < NO || FEATURE_GPS_DEBUG > YES
+#  error Must define FEATURE_GPS_DEBUG to be YES or NO
+#endif
+
+#if FEATURE_GPS_DEBUG == YES
+#  define HAVE_GPS_DEBUG
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_AUTO_DST) || FEATURE_AUTO_DST < NO || FEATURE_AUTO_DST > YES
+#  error Must define FEATURE_AUTO_DST to be YES or NO
+#endif
+
+#if FEATURE_AUTO_DST == YES
+#  define HAVE_AUTO_DST
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_AUTO_DIM) || FEATURE_AUTO_DIM < NO || FEATURE_AUTO_DIM > YES
+#  error Must define FEATURE_AUTO_DIM to be YES or NO
+#endif
+
+#if FEATURE_AUTO_DIM == YES
+#  define HAVE_AUTO_DIM
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_AUTO_DATE) || FEATURE_AUTO_DATE < NO || FEATURE_AUTO_DATE > YES
+#  error Must define FEATURE_AUTO_DATE to be YES or NO
+#endif
+
+#if FEATURE_AUTO_DATE == YES
+#  define HAVE_AUTO_DATE
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_SET_DATE) || FEATURE_SET_DATE < NO || FEATURE_SET_DATE > YES
+#  error Must define FEATURE_SET_DATE to be YES or NO
+#endif
+
+#if FEATURE_SET_DATE == YES
+#  define HAVE_SET_DATE
 #endif
 
 ///////////////////////////////////////////

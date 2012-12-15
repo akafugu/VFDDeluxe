@@ -29,29 +29,28 @@
  */
 
 #include "global.h"
+#include "global_vars.h"
+
+#include <Wire.h>
+#include <WireRtcLib.h>
 
 #include "display.h"
 #include "display_nixie.h"
 #include "button.h"
 #include "pitches.h"
 //#include "rotary.h"
+#include "gps.h"
+#include "flw.h"
+#include "rgbled.h"
 
-#include <Wire.h>
-#include <WireRtcLib.h>
 #ifdef HAVE_MPL115A2
 #include <MPL115A2.h>
 #endif
 
 //#include <Encoder.h>
-
 //Encoder myEnc(6, 7);
 
-#include "gps.h"
-#include "flw.h"
-#include "rgbled.h"
-
 WireRtcLib rtc;
-//GPS gps;
 
 // Piezo
 #ifdef HAVE_ATMEGA328
@@ -61,23 +60,9 @@ WireRtcLib rtc;
 #define PIEZO 11
 #endif
 
-// Cached settings
-uint8_t g_24h_clock = true;
-uint8_t g_show_temp = true;
-uint8_t g_show_dots = true;
-uint8_t g_brightness = 5;
-uint8_t g_volume = 0;
-#ifdef HAVE_GPS
-uint8_t g_gps_enabled = 96;
-uint8_t g_region = 0;
-uint8_t g_autodate = false;
-#endif // HAVE_GPS
-
 uint8_t g_second_dots_on = true;
 
 // Other globals
-uint8_t g_has_flw = false;  // does the unit have an EEPROM with the FLW database?
-uint8_t g_has_dots = false; // can current shield show dot (decimal points)
 uint8_t g_alarming = false; // alarm is going off
 uint8_t g_alarm_switch;
 uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
@@ -106,8 +91,12 @@ typedef enum {
 	STATE_MENU_LAST,
 } menu_state_t;
 
-menu_state_t menu_state = STATE_CLOCK;
+extern menu_state_t menu_state; // = STATE_CLOCK;
 
+
+// fixme: implement
+void beep(uint16_t freq, uint8_t times) {
+}
 
 /*
  * FIXME: more display modes
@@ -335,10 +324,12 @@ void read_rtc(bool show_extra_info)
 
 void setup()
 {
-  while (!Serial) ;
+  //while (!Serial) ;
     
   Serial.begin(9600);
   Serial.println("VFD Deluxe");
+  
+  globals_init();
   
 #ifdef HAVE_MPL115A2
   MPL115A2.begin();

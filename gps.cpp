@@ -24,6 +24,8 @@
 #include "display.h"
 #include "Time.h"
 
+#include "global_vars.h"
+
 #include <WireRtcLib.h>
 
 unsigned long tGPSupdate;
@@ -38,19 +40,6 @@ volatile char *gpsNextBuffer;
 volatile char *gpsLastBuffer;
 volatile uint8_t gpsDataReady_;
 
-// fixme: move back to globals.h
-extern int8_t g_gps_enabled;
-int8_t g_TZ_hour = 9; // fixme: add to settings
-int8_t g_TZ_minute;
-int8_t g_gps_updating;  // for signalling GPS update on some displays
-// debugging counters 
-int8_t g_gps_cks_errors;  // gps checksum error counter
-int8_t g_gps_parse_errors;  // gps parse error counter
-int8_t g_gps_time_errors;  // gps time error counter
-int8_t g_DST_mode;  // DST off, on, auto?
-int8_t g_DST_offset;  // DST offset in Hours
-int8_t g_DST_updated;  // DST update flag = allow update only once per day
-
 // globals from main.c
 extern enum shield_t shield;
 
@@ -62,8 +51,6 @@ extern WireRtcLib rtc;
 
 void setRTCTime(time_t t)
 {
-  Serial.println("setRTCTime");
-  
     tmElements_t tm;
     
     breakTime(t, &tm);
