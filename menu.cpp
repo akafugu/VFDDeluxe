@@ -15,8 +15,6 @@
 
 #include "global.h"
 
-#define __PROG_TYPES_COMPAT__ 
-
 #include <util/delay.h>
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
