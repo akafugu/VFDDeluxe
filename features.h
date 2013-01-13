@@ -62,16 +62,19 @@ enum shield_t {
 	SHIELD_HYBRID, // VFDDeluxe IV-18+IN-17 VFD/Nixie hybrid shield
 };
 
-//#define SHIELD SHIELD_IV18
-//#define SHIELD_DIGITS 8
+#define SHIELD SHIELD_IV18
+#define SHIELD_DIGITS 8
 
 //#define SHIELD SHIELD_IN14
 //#define SHIELD SHIELD_IN8_2
 //#define SHIELD_DIGITS 6
 //#define IN14_FIX
 
-#define SHIELD SHIELD_IV17
-#define SHIELD_DIGITS 4
+//#define SHIELD SHIELD_IV17
+//#define SHIELD_DIGITS 4
+
+//#define SHIELD SHIELD_7SEG
+//#define SHIELD_DIGITS 10
 
 // Display Shield identifiers
 // add here

@@ -111,6 +111,8 @@ void detect_shield(void)
 		 ((SIGNATURE_PIN & _BV(SIGNATURE_BIT_2)) ? 0b100 : 0 ));
 
 	switch (sig) {
+		case(0):  // 6-digit Nixie shield
+			break;
 		case(1):  // IV-17 shield
 			shield = SHIELD_IV17;
 			digits = 4;
@@ -123,13 +125,19 @@ void detect_shield(void)
 			mpx_count = 8;
 			g_has_dots = true;
 			break;
+		case(3):  // IV-11 shield
+			break;
+		case(4):  // RESERVED
+			break;
+		case(5):  // RESERVED
+			break;
 		case(6):  // IV-22 shield
 			shield = SHIELD_IV22;
 			digits = 4;
 			mpx_count = 8;
 			g_has_dots = true;
 			break;
-		case(7):  // IV-18 shield (note: save value as no shield - all bits on)
+		case(7):  // IV-18 shield (note: same value as no shield - all bits on)
 			shield = SHIELD_IV18;
 			digits = 8;
 			mpx_count = 7; 
@@ -855,6 +863,16 @@ void set_string(const char* str)
 // shows setting string
 void show_setting_string(const char* short_str, const char* long_str, const char* value, bool show_setting)
 {
+    Serial.print("show_setting_string(");
+    Serial.print(short_str);
+    Serial.print(", ");
+    Serial.print(long_str);
+    Serial.print(", ");
+    Serial.print(value);
+    Serial.print(", ");
+    Serial.print(show_setting ? "true" : "false");
+    Serial.println(")");
+    
 	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
 
 	if (get_digits() == 8) {
@@ -877,6 +895,17 @@ void show_setting_string(const char* short_str, const char* long_str, const char
 
 void show_setting_int(const char* short_str, const char* long_str, int value, bool show_setting)
 {
+    Serial.print("show_setting_int(");
+    Serial.print(short_str);
+    Serial.print(", ");
+    Serial.print(long_str);
+    Serial.print(", ");
+    Serial.print(value);
+    Serial.print(", ");
+    Serial.print(show_setting ? "true" : "false");
+    Serial.println(")");
+    
+
 	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
 
 	if (get_digits() == 8) {

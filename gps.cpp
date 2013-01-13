@@ -156,10 +156,6 @@ void parseGPSdata(char *gpsBuffer) {
 	char *ptr;
   uint32_t tmp;
 	if ( strncmp( gpsBuffer, "$GPRMC,", 7 ) == 0 ) {  
-  
-    Serial.println("parseGPSData");
-  Serial.println(gpsBuffer);  
-
 		//beep(1000, 1);
 		//Calculate checksum from the received data
 		ptr = &gpsBuffer[1];  // start at the "G"

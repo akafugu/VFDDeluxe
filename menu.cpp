@@ -15,6 +15,8 @@
 
 #include "global.h"
 
+#define __PROG_TYPES_COMPAT__ 
+
 #include <util/delay.h>
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
@@ -51,7 +53,7 @@ menu_state_t g_menu_state;
 //
 
 //const menu_value menuOffOn[] = { {0, " off"}, {1, "  on"} };
-const menu_value PROGMEM menu_gps[] = { {0, " off"}, {48, "  48"}, {96, "  96"} };
+const PROGMEM menu_value menu_gps[] = { {0, " off"}, {48, "  48"}, {96, "  96"} };
 //const menu_value PROGMEM menu_gps[] = { {0, { ' ', 'o', 'f', 'f' } }, {48, { ' ', ' ', '4', '8'} }, {96, {' ', ' ', '9', '6'} } };
 #if defined HAVE_AUTO_DST
 const PROGMEM menu_value menu_adst[] = { {0, " off"}, {1, "  on"}, {2, "auto"} };
@@ -208,6 +210,8 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
 
 void menu_action(menu_item * menuPtr)
 {
+    Serial.println("menu_action");
+    
 	switch(menuPtr->menuNum) {
 		case MENU_BRIGHTNESS:
 			set_brightness(*menuPtr->setting);
@@ -252,18 +256,38 @@ uint8_t show = false;  // show value?
 static menu_item_rw current_item;
 menu_item* getItem(uint8_t idx)
 {
+    Serial.print("getItem(");
+    Serial.print(idx);
+    Serial.println(")");
+    
 	menu_item* mPtr = (menu_item*)pgm_read_word(&menuItems[idx]);  // address of current menu item
 	if (mPtr == NULL)  return(NULL);
 //	memcpy_P(&current_item, &mPtr, sizeof(current_item));
 	current_item.menuNum = pgm_read_byte(&mPtr->menuNum);
 	current_item.flags = pgm_read_byte(&mPtr->flags);
-	strncpy_P(current_item.shortName,(char *)&mPtr->shortName,4); 
+	strncpy_P(current_item.shortName,(char *)&mPtr->shortName,4);
+current_item.shortName[4] = 0;
 	strncpy_P(current_item.longName,(char *)&mPtr->longName,5); 
+current_item.longName[5] = 0;
 	current_item.setting = (int8_t *)pgm_read_word(&mPtr->setting);
 	current_item.eeAddress = (uint8_t*)pgm_read_word(&mPtr->eeAddress);
 	current_item.loLimit = pgm_read_byte(&mPtr->loLimit);
 	current_item.hiLimit = pgm_read_byte(&mPtr->hiLimit);
 	*current_item.menuList = (menu_value*)pgm_read_word(&mPtr->menuList);
+
+        Serial.print("    menuNum = ");
+        Serial.println(current_item.menuNum);
+        Serial.print("    flags = ");
+        Serial.println(current_item.flags);
+        Serial.print("    shortName = ");
+        Serial.println(current_item.shortName);
+        Serial.print("    longName = ");
+        Serial.println(current_item.longName);
+        Serial.print("    loLimit = ");
+        Serial.println(current_item.loLimit);
+        Serial.print("    hiLimit = ");
+        Serial.println(current_item.hiLimit);
+
 	return (menu_item*)&current_item;
 }
 
@@ -298,12 +322,18 @@ menu_item * nextItem(uint8_t skipSub)  // next menu item
 
 void menu(uint8_t btn)
 {
+    Serial.print("menu(");
+    Serial.print(btn);
+    Serial.println(")");
+    
+    
 //	menu_item * menuPtr = (menu_item*)pgm_read_word(&menuItems[menuIdx]);  // current menu item
 	menu_item * menuPtr = getItem(menuIdx);  // next menu item
 	uint8_t digits = get_digits();
 //	tick();
 	switch (btn) {
 		case 0:  // start at top of menu
+                        Serial.println("restart menu");
 			menuIdx = 0;  // restart menu
 //			menuPtr = (menu_item*)pgm_read_word(&menuItems[menuIdx]);
 			menuPtr = getItem(menuIdx);  // next menu item
@@ -311,23 +341,28 @@ void menu(uint8_t btn)
 			show = false;
 			break;
 		case 1:  // right button - show/update current item value
+                        Serial.println("right button");
 			if (menuPtr->flags & menu_hasSub) {
+                                Serial.println("has sub");
 				menuPtr = nextItem(false);  // show first submenu item
 				update = false;
 			}
 			else {
+                                Serial.println("show value");
 				show = true;  // show value
 				if (digits>6)
 					update = true;
 			}
 			break;
 		case 2:  // left button - show next menu item
+                        Serial.println("next menu item");
 			menuPtr = nextItem(true);  // next menu items (skip subs)
 			update = false;
 			show = false;
 			break;
 	}
 	if (menuPtr == NULL) {  // check for end of menu
+                Serial.println("end of menu reached");
 		menuIdx = 0;
 		update = false;
 		g_menu_state = STATE_CLOCK;
@@ -342,7 +377,6 @@ void menu(uint8_t btn)
 	int valNum = *(menuPtr->setting);
 	char valStr[5] = "";  // item value name for display ("off", "on", etc)
 	const menu_value * menuValues = *(menuPtr->menuList);  //get pointer to menu values
-//	menu_value* menuValues = (menu_value*)pgm_read_word(&menuPtr->menuList);  //get pointer to menu values
 	volatile uint8_t idx = 0;
 // numeric menu item
 	if (menuPtr->flags & menu_num) {
@@ -388,7 +422,6 @@ void menu(uint8_t btn)
 			idx = 0;
 			for (uint8_t i=0;i<menuPtr->hiLimit;i++) {  // search for the current item's value in the list
 				if (pgm_read_byte(&menuValues[i].value) == valNum) {
-//				if (menuPtr->menuList[i]->value == valNum) {
 					idx = i;
 					}
 			}

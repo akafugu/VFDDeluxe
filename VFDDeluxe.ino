@@ -63,7 +63,7 @@ WireRtcLib rtc;
 
 uint8_t g_second_dots_on = true;
 
-#define MENU_TIMEOUT 20*1000  // 2.0 seconds
+#define MENU_TIMEOUT 400
 
 #ifdef FEATURE_AUTO_DATE
 uint16_t g_autodisp = 50;  // how long to display date 5.0 seconds
@@ -419,7 +419,7 @@ void loop()
 		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
 		//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
 		else if (g_menu_state == STATE_CLOCK && buttons.both_held) {
-                        //Serial.println("Both held");
+                        Serial.println("Both held");
     
 			if (g_alarm_switch) {
 				g_menu_state = STATE_SET_ALARM;
@@ -444,6 +444,7 @@ void loop()
 				get_button_state(&buttons);
 				if (buttons.none_held)
 					break;
+                                Serial.println("waiting for buttons to be released");
 			}
 		}
 		// Set time or alarm
@@ -459,6 +460,9 @@ void loop()
 				button_released_timer = 0;
 				button_speed++;
 			}
+
+                        Serial.print("button_released_timer = ");
+                        Serial.println(button_released_timer);
 
 			// exit mode after no button has been touched for a while
 			if (button_released_timer >= MENU_TIMEOUT) {

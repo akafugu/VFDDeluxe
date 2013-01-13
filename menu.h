@@ -14,6 +14,8 @@
  */
 #ifndef MENU_H_
 #define MENU_H_
+
+//#define __PROG_TYPES_COMPAT__ 
 #include <avr/pgmspace.h>
 
 #ifdef __FLASH
