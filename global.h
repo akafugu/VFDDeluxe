@@ -24,7 +24,6 @@
 #include <util/delay.h>
 #include <avr/eeprom.h>
 
-#include <stdbool.h>
 #include <stdlib.h>
 
 #include "direct_pin_read.h"

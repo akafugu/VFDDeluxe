@@ -398,6 +398,29 @@ void loop()
 	while (1) {  // <<< ===================== MAIN LOOP ===================== >>>
 		get_button_state(&buttons);
                 //long pos = myEnc.read();
+                
+                static uint8_t foo = 0;
+                
+                if (foo++ == 10) {
+                    Serial.print("Buttons:");
+                    Serial.print(" b1_keydown - ");
+                    Serial.print(buttons.b1_keydown);
+                    Serial.print(" b1_keyup - ");
+                    Serial.print(buttons.b1_keyup);
+                    Serial.print(" b1_repeat - ");
+                    Serial.print(buttons.b1_repeat);
+                    Serial.print(" b2_keydown - ");
+                    Serial.print(buttons.b2_keydown);
+                    Serial.print(" b2_keyup - ");
+                    Serial.print(buttons.b2_keyup);
+                    Serial.print(" b2_repeat - ");
+                    Serial.print(buttons.b2_repeat);
+                    Serial.print(" both_held - ");
+                    Serial.print(buttons.both_held);
+                    Serial.print(" none_held - ");
+                    Serial.println(buttons.none_held);
+                    foo = 0;
+                }
 		
 		// When alarming:
 		// any button press cancels alarm
@@ -451,11 +474,13 @@ void loop()
 		else if (g_menu_state == STATE_SET_CLOCK || g_menu_state == STATE_SET_ALARM) {
 			// Check if we should exit STATE_SET_CLOCK or STATE_SET_ALARM
 			if (buttons.none_held) {
+    Serial.println("none_held = 1");
 				set_blink(true);
 				button_released_timer++;
 				button_speed = 1;
 			}
 			else {
+    Serial.println("none_held = 0");
 				set_blink(false);
 				button_released_timer = 0;
 				button_speed++;

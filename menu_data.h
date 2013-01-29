@@ -107,7 +107,6 @@ typedef enum {  // no ifdefs, no harm in defining unused items
 extern menu_state_t menu_state;
 extern uint8_t menu_disabled[MENU_END];
 
-
 menu_item* getItem(uint8_t idx);
 menu_item * nextItem(uint8_t skipSub);
 

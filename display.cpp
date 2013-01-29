@@ -549,7 +549,7 @@ ISR(TIMER3_OVF_vect)
     // button polling
     if (++button_counter == BUTTON_TIMER_MAX) {
         button_timer();
-     button_counter = 0;
+       button_counter = 0;
     }
 	
     // display multiplex

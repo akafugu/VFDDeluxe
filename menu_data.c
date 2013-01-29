@@ -124,10 +124,12 @@ menu_item* getItem(uint8_t idx)
 {
 	menu_item* mPtr = (menu_item*)pgm_read_word(&menuItems[idx]);  // address of current menu item
 	if (mPtr == NULL)  return(NULL);
+        
 //	memcpy_P(&current_item, &mPtr, sizeof(current_item));
 	current_item.menuNum = pgm_read_byte(&mPtr->menuNum);
 	current_item.flags = pgm_read_byte(&mPtr->flags);
 	strncpy_P(current_item.shortName,(char *)&mPtr->shortName,4); 
+        return NULL;
 	strncpy_P(current_item.longName,(char *)&mPtr->longName,5); 
 	current_item.setting = (int8_t *)pgm_read_word(&mPtr->setting);
 	current_item.eeAddress = (uint8_t*)pgm_read_word(&mPtr->eeAddress);
