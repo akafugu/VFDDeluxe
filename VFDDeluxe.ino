@@ -335,7 +335,7 @@ void read_rtc(bool show_extra_info)
 
 void setup()
 {
-  while (!Serial) ;
+ // while (!Serial) ;
     
   Serial.begin(9600);
   Serial.println("VFD Deluxe");

@@ -12,19 +12,6 @@
  * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
  *
  */
- 
-/*
- * Feature system IDEA:
- *
- * #define FEATURE_XXX YES/NO
- * 
- * a feature may define one or more HAVE_XXX defines
- *
- * e.g:
- * FEATURE_GPS
- * defines
- * HAVE_GPS
- */
 
 #ifndef FEATURES_H_
 #define FEATURES_H_

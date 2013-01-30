@@ -25,7 +25,7 @@ uint16_t calculate_segments_16(uint8_t character);
 #define D1 5
 #define D2 4
 #define E  6
-#define F  7
+#define F_ 7
 #define G1 8
 #define G2 9
 #define H  10
@@ -43,7 +43,7 @@ uint16_t calculate_segments_16(uint8_t character)
 	{
 		case 0:
 		case '0':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F)|(1<<J)|(1<<M);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<J)|(1<<M);
 			break;
 		case 1:
 		case '1':
@@ -69,7 +69,7 @@ uint16_t calculate_segments_16(uint8_t character)
 			break;
 		case 6:
 		case '6':
-			segments = (1<<A1)|(1<<A2)|(1<<K)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F)|(1<<G1);
+			segments = (1<<A1)|(1<<A2)|(1<<K)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G1);
 			break;
 		case 7:
 		case '7':
@@ -94,85 +94,85 @@ uint16_t calculate_segments_16(uint8_t character)
 			break;
 		case 4:
 		case '4':
-			segments = (1<<B)|(1<<C)|(1<<G1)|(1<<G2)|(1<<F);
+			segments = (1<<B)|(1<<C)|(1<<G1)|(1<<G2)|(1<<F_);
 			break;
 		case 5:
 		case '5':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 		case 6:
 		case '6':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 		case 7:
 		case '7':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<F);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<F_);
 			break;
 		case 8:
 		case '8':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 		case 9:
 		case '9':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 #endif // HAVE_ALTERNATE_FONT
 		case 10:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<E)|(1<<F_);
 			break;
 		case 11:
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F);
+			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_);
 			break;
 		case 12:
-			segments = (1<<A2)|(1<<B)|(1<<D2)|(1<<L)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<D2)|(1<<L)|(1<<G2)|(1<<E)|(1<<F_);
 			break;
 		case 13:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<G2)|(1<<E)|(1<<F_);
 			break;
 		case 14:
-			segments = (1<<B)|(1<<C)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<B)|(1<<C)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);
 			break;
 		case 15:
-			segments = (1<<A2)|(1<<C)|(1<<D2)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<C)|(1<<D2)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);
 			break;
 		case 16:
-			segments = (1<<A2)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);
 			break;
 		case 17:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<I)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<I)|(1<<E)|(1<<F_);
 			break;
 		case 18:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);
 			break;
 		case 19:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<I)|(1<<G2)|(1<<E)|(1<<F);	
+			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);	
 			break;
 		case 20:
 			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<H)|(1<<G1)|(1<<E)|(1<<D2);
 			break;
 		case 'A':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<E)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 		case 'B':
 			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<G2)|(1<<I)|(1<<L);
 			break;
 		case 'C':
-			segments = (1<<A1)|(1<<A2)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F);
+			segments = (1<<A1)|(1<<A2)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_);
 			break;
 		case 'D':
 			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<I)|(1<<L);
 			break;
 		case 'E':
-			segments = (1<<A1)|(1<<A2)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 		case 'F':
-			segments = (1<<A1)|(1<<A2)|(1<<E)|(1<<F)|(1<<G1);
+			segments = (1<<A1)|(1<<A2)|(1<<E)|(1<<F_)|(1<<G1);
 			break;
 		case 'G':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G2);
 			break;
 		case 'H':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 		case 'I':
 			segments = (1<<A1)|(1<<A2)|(1<<I)|(1<<L)|(1<<D1)|(1<<D2);
@@ -181,43 +181,43 @@ uint16_t calculate_segments_16(uint8_t character)
 			segments = (1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E);
 			break;
 		case 'K':
-			segments = (1<<E)|(1<<F)|(1<<G1)|(1<<J)|(1<<K);
+			segments = (1<<E)|(1<<F_)|(1<<G1)|(1<<J)|(1<<K);
 			break;
 		case 'L':
-			segments = (1<<D1)|(1<<D2)|(1<<E)|(1<<F);
+			segments = (1<<D1)|(1<<D2)|(1<<E)|(1<<F_);
 			break;
 		case 'M':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F)|(1<<H)|(1<<J);
+			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<H)|(1<<J);
 			break;
 		case 'N':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F)|(1<<H)|(1<<K);
+			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<H)|(1<<K);
 			break;
 		case 'O':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_);
 			break;
 		case 'P':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<E)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 		case 'Q':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F)|(1<<K);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<K);
 			break;
 		case 'R':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<E)|(1<<F)|(1<<G1)|(1<<G2)|(1<<K);
+			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2)|(1<<K);
 			break;
 		case 'S':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F)|(1<<G1)|(1<<G2);
+			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F_)|(1<<G1)|(1<<G2);
 			break;
 		case 'T':
 			segments = (1<<A1)|(1<<A2)|(1<<I)|(1<<L);
 			break;
 		case 'U':
-			segments = (1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F);
+			segments = (1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_);
 			break;
 		case 'V':
-			segments = (1<<E)|(1<<F)|(1<<J)|(1<<M);
+			segments = (1<<E)|(1<<F_)|(1<<J)|(1<<M);
 			break;
 		case 'W':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F)|(1<<K)|(1<<M);
+			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<K)|(1<<M);
 			break;
 		case 'X':
 		case 'x':
