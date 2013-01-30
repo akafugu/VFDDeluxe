@@ -176,7 +176,7 @@ void initialize(void)
   g_has_flw = has_eeprom();
 
 #ifdef HAVE_SHIELD_AUTODETECT
-  autodetect_shield();
+  detect_shield();
 #else
   set_shield(SHIELD, SHIELD_DIGITS); 
 #endif
@@ -335,7 +335,9 @@ void read_rtc(bool show_extra_info)
 
 void setup()
 {
- // while (!Serial) ;
+#ifdef HAVE_SERIAL_DEBUG
+  while (!Serial) ;
+#endif
     
   Serial.begin(9600);
   Serial.println("VFD Deluxe");

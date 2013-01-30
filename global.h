@@ -80,6 +80,11 @@ struct PinMap
     static const uint8_t button2 = 9;
     //static const uint8_t button1 = 4;
     //static const uint8_t button2 = -1;
+    
+    // Shield signature pins
+    static const uint8_t sig0 = 5;
+    static const uint8_t sig1 = A4;
+    static const uint8_t sig2 = A3;    
 };
 
 #endif

@@ -58,5 +58,6 @@ void set_blink(bool on);
 void flash_display(uint16_t ms);
 
 void set_shield(shield_t shield_type, uint8_t digits = 4);
+void detect_shield();
 
 #endif // DISPLAY_H_

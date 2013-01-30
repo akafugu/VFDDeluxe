@@ -77,7 +77,7 @@ enum shield_t {
 #define YES 2
 #define NO  1
 
-#define FEATURE_SHIELD_AUTODETECT NO
+#define FEATURE_SHIELD_AUTODETECT YES
 #define FEATURE_MPL115A2 NO // Temperature and Atmospheric pressure sensor
 #define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY NO
@@ -85,6 +85,7 @@ enum shield_t {
 #define FEATURE_RGB_BACKLIGHT NO
 #define FEATURE_LOWERCASE YES
 #define FEATURE_ALTERNATE_FONT YES
+#define FEATURE_SERIAL_DEBUG YES // Wait for serial console to open before booting
 
 // fixme: this can be automatic based on __AVR_ATmega32U4__ define
 
@@ -206,6 +207,15 @@ enum shield_t {
 #  define HAVE_ALTERNATE_FONT
 #endif
 
+///////////////////////////////////////////
+
+#if !(defined FEATURE_SERIAL_DEBUG) || FEATURE_SERIAL_DEBUG < NO || FEATURE_SERIAL_DEBUG > YES
+#  error Must define FEATURE_SERIAL_DEBUG to be YES or NO
+#endif
+
+#if FEATURE_SERIAL_DEBUG == YES
+#  define HAVE_SERIAL_DEBUG
+#endif
 
 #endif // FEATURES_H_
 
