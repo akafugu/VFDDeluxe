@@ -29,6 +29,11 @@
  */
 
 #include "global.h"
+#include "global_vars.h"
+#include "menu.h"
+
+#include <Wire.h>
+#include <WireRtcLib.h>
 
 #include "display.h"
 #include "display_nixie.h"
@@ -36,8 +41,6 @@
 #include "pitches.h"
 //#include "rotary.h"
 
-#include <Wire.h>
-#include <WireRtcLib.h>
 #ifdef HAVE_MPL115A2
 #include <MPL115A2.h>
 #endif
@@ -61,25 +64,11 @@ WireRtcLib rtc;
 #define PIEZO 11
 #endif
 
-// Cached settings
-uint8_t g_24h_clock = true;
-uint8_t g_show_temp = true;
-uint8_t g_show_dots = true;
-uint8_t g_brightness = 5;
-uint8_t g_volume = 0;
-#ifdef HAVE_GPS
-uint8_t g_gps_enabled = 96;
-uint8_t g_region = 0;
-uint8_t g_autodate = false;
-#endif // HAVE_GPS
-
 uint8_t g_second_dots_on = true;
-
-// Other globals
-uint8_t g_has_flw = false;  // does the unit have an EEPROM with the FLW database?
-uint8_t g_has_dots = false; // can current shield show dot (decimal points)
-uint8_t g_alarming = false; // alarm is going off
 uint8_t g_alarm_switch;
+#define MENU_TIMEOUT 200
+
+uint8_t g_alarming = false;
 uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
 WireRtcLib::tm* tt = NULL; // for holding RTC values
 
@@ -91,23 +80,8 @@ extern enum shield_t shield;
 
 struct BUTTON_STATE buttons;
 
-// menu states
-typedef enum {
-	// basic states
-	STATE_CLOCK = 0,
-	STATE_SET_CLOCK,
-	STATE_SET_ALARM,
-	// menu
-	STATE_MENU_BRIGHTNESS,
-	STATE_MENU_24H,
-	STATE_MENU_VOL,
-	STATE_MENU_TEMP,
-	STATE_MENU_DOTS,
-	STATE_MENU_LAST,
-} menu_state_t;
-
-menu_state_t menu_state = STATE_CLOCK;
-
+extern menu_state_t g_menu_state;
+bool menu_b1_first = false;
 
 /*
  * FIXME: more display modes
@@ -302,7 +276,7 @@ void read_rtc(bool show_extra_info)
     tt = rtc.getTime();
     if (tt == NULL) return;
 
-    g_second_dots_on = (menu_state == STATE_CLOCK && display_mode == MODE_NORMAL && tt->sec % 2 == 0) ? true : false;
+    g_second_dots_on = (g_menu_state == STATE_CLOCK && display_mode == MODE_NORMAL && tt->sec % 2 == 0) ? true : false;
 
 /*
     if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
@@ -414,6 +388,11 @@ void loop()
 	while (1) {
 		get_button_state(&buttons);
                 //long pos = myEnc.read();
+           
+                if (buttons.b1_keyup)
+                    Serial.println("Got buttons.b1_keyup");
+                if (buttons.b2_keyup)
+                    Serial.println("Got buttons.b2_keyup");
 		
 		// When alarming:
 		// any button press cancels alarm
@@ -434,18 +413,18 @@ void loop()
 		// If both buttons are held:
 		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
 		//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
-		else if (menu_state == STATE_CLOCK && buttons.both_held) {
+		else if (g_menu_state == STATE_CLOCK && buttons.both_held) {
                         //Serial.println("Both held");
     
 			if (g_alarm_switch) {
-				menu_state = STATE_SET_ALARM;
+				g_menu_state = STATE_SET_ALARM;
 				show_set_alarm();
                                 g_second_dots_on = false;
 				rtc.getAlarm_s(&hour, &min, &sec);
 				time_to_set = hour*60 + min;
 			}
 			else {
-				menu_state = STATE_SET_CLOCK;
+				g_menu_state = STATE_SET_CLOCK;
 				show_set_time();		
                                 g_second_dots_on = false;
 				rtc.getTime_s(&hour, &min, &sec);
@@ -463,7 +442,7 @@ void loop()
 			}
 		}
 		// Set time or alarm
-		else if (menu_state == STATE_SET_CLOCK || menu_state == STATE_SET_ALARM) {
+		else if (g_menu_state == STATE_SET_CLOCK || g_menu_state == STATE_SET_ALARM) {
 			// Check if we should exit STATE_SET_CLOCK or STATE_SET_ALARM
 			if (buttons.none_held) {
 				set_blink(true);
@@ -477,18 +456,18 @@ void loop()
 			}
 
 			// exit mode after no button has been touched for a while
-			if (button_released_timer >= 160) {
+			if (button_released_timer >= MENU_TIMEOUT) {
 				set_blink(false);
 				button_released_timer = 0;
 				button_speed = 1;
 				
 				// fixme: should be different in 12h mode
-				if (menu_state == STATE_SET_CLOCK)
+				if (g_menu_state == STATE_SET_CLOCK)
 					rtc.setTime_s(time_to_set / 60, time_to_set % 60, 0);
 				else
 					rtc.setAlarm_s(time_to_set / 60, time_to_set % 60, 0);
 
-				menu_state = STATE_CLOCK;
+				g_menu_state = STATE_CLOCK;
 			}
 
 			// Increase / Decrease time counter
@@ -503,124 +482,45 @@ void loop()
 			show_time_setting(time_to_set / 60, time_to_set % 60, 0);
 		}
 		// Left button enters menu
-		else if (menu_state == STATE_CLOCK && buttons.b2_keyup) {
-			menu_state = STATE_MENU_BRIGHTNESS;
+		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
+			g_menu_state = STATE_MENU_BRIGHTNESS;
 			show_setting_int("BRIT", "BRITE", g_brightness, false);
 			buttons.b2_keyup = 0; // clear state
 		}
 		// Right button toggles display mode
-		else if (menu_state == STATE_CLOCK && buttons.b1_keyup) {
+		else if (g_menu_state == STATE_CLOCK && buttons.b1_keyup) {
 			display_mode = (display_mode_t)((int)display_mode + 1);
 //			if (display_mode == MODE_ALARM_TEXT)  g_show_special_cnt = 100;  // show alarm text for 1 second
 //			if (display_mode == MODE_ALARM_TIME)  g_show_special_cnt = 100;  // show alarm time for 1 second
 			if (display_mode == MODE_LAST) display_mode = MODE_NORMAL;
 			buttons.b1_keyup = 0; // clear state
 		}
-		else if (menu_state >= STATE_MENU_BRIGHTNESS) {
+		else if (g_menu_state >= STATE_MENU_BRIGHTNESS) {
 			if (buttons.none_held)
 				button_released_timer++;
 			else
 				button_released_timer = 0;
 			
-			if (button_released_timer >= 35 ) {
-//			if (button_released_timer >= 200) {  // 2 seconds (wm)
+			if (button_released_timer >= MENU_TIMEOUT) {
 				button_released_timer = 0;
-				menu_state = STATE_CLOCK;
-			}
-			
-			switch (menu_state) {
-				case STATE_MENU_BRIGHTNESS:
-					if (buttons.b1_keyup) {
-						g_brightness++;
-						buttons.b1_keyup = false;
-					
-						if (g_brightness > 10) g_brightness = 1;
-					
-						//eeprom_update_byte(&b_brightness, g_brightness);
-					
-//						if (shield == SHIELD_IV17)  // wm ???
-//							show_setting_string("BRIT", "BRITE", (g_brightness % 2 == 0) ? "  lo" : "  hi", true);
-//						else
-						show_setting_int("BRIT", "BRITE", g_brightness, true);
-						set_brightness(g_brightness);
-					}
-					break;
-				case STATE_MENU_24H:
-					if (buttons.b1_keyup) {
-						g_24h_clock = !g_24h_clock;
-						//eeprom_update_byte(&b_24h_clock, g_24h_clock);
-						
-						show_setting_string("24H", "24H", g_24h_clock ? " on" : " off", true);
-						buttons.b1_keyup = false;
-					}
-					break;
-				case STATE_MENU_VOL:
-					if (buttons.b1_keyup) {
-						g_volume = !g_volume;
-						//eeprom_update_byte(&b_volume, g_volume);
-						
-						show_setting_string("VOL", "VOL", g_volume ? " hi" : " lo", true);
-						//piezo_init();
-						//beep(1000, 1);
-						buttons.b1_keyup = false;
-					}
-					break;
-				case STATE_MENU_TEMP:
-					if (buttons.b1_keyup) {
-						g_show_temp = !g_show_temp;
-						//eeprom_update_byte(&b_show_temp, g_show_temp);
-						
-						show_setting_string("TEMP", "TEMP", g_show_temp ? " on" : " off", true);
-						buttons.b1_keyup = false;
-					}
-					break;
-				case STATE_MENU_DOTS:
-					if (buttons.b1_keyup) {
-						g_show_dots = !g_show_dots;
-						//eeprom_update_byte(&b_show_dots, g_show_dots);
-						
-						show_setting_string("DOTS", "DOTS", g_show_dots ? " on" : " off", true);
-						buttons.b1_keyup = false;
-					}
-					break;
-				default:
-					break; // do nothing
+				g_menu_state = STATE_CLOCK;
 			}
 
-			if (buttons.b2_keyup) {
-				menu_state = (menu_state_t)((int)menu_state + 1);
-				
-				// show temperature setting only when running on a DS3231
-				if (menu_state == STATE_MENU_TEMP && !rtc.isDS3231()) menu_state = (menu_state_t)((int)menu_state + 1);
-
-				// don't show dots settings for shields that have no dots
-				if (menu_state == STATE_MENU_DOTS && !g_has_dots) menu_state = (menu_state_t)((int)menu_state + 1);
-
-				if (menu_state == STATE_MENU_LAST) menu_state = STATE_MENU_BRIGHTNESS;
-				
-				switch (menu_state) {
-					case STATE_MENU_BRIGHTNESS:
-						show_setting_int("BRIT", "BRITE", g_brightness, false);
-						break;
-					case STATE_MENU_VOL:
-						show_setting_string("VOL", "VOL", g_volume ? " hi" : " lo", false);
-						break;
-					case STATE_MENU_24H:
-						show_setting_string("24H", "24H", g_24h_clock ? " on" : " off", false);
-						break;
-					case STATE_MENU_DOTS:
-						show_setting_string("DOTS", "DOTS", g_show_dots ? " on" : " off", false);
-						break;
-					case STATE_MENU_TEMP:
-						show_setting_string("TEMP", "TEMP", g_show_temp ? " on" : " off", false);
-						break;
-					default:
-						break; // do nothing
-				}
-				
-				buttons.b2_keyup = 0; // clear state
-			}
-		}
+                        if (buttons.b1_keyup) {  // right button
+                            menu(!menu_b1_first, true);
+                            buttons.b1_keyup = false;
+                            menu_b1_first = false;  // b1 not first time now
+                        }
+                        if (buttons.b2_keyup) {  // left button
+                           menu_b1_first = true;  // reset first time flag
+                           g_menu_state = (menu_state_t)(g_menu_state + 1);
+      
+                           if (g_menu_state == STATE_MENU_LAST) g_menu_state = STATE_CLOCK;
+      
+                           menu(false, false);
+                           buttons.b2_keyup = 0; // clear state
+                        }
+                }
 		else {
 			if (g_show_special_cnt>0) {
 				g_show_special_cnt--;
@@ -651,7 +551,7 @@ void loop()
 			g_alarming = true;
 
 #ifdef HAVE_GPS
-		if (g_gps_enabled && menu_state == STATE_CLOCK) {
+		if (g_gps_enabled && g_menu_state == STATE_CLOCK) {
 			if (gpsDataReady()) {
 				parseGPSdata(gpsNMEA());  // get the GPS serial stream and possibly update the clock 
 				}
