@@ -340,32 +340,38 @@ int counter = 'A';
 // display multiplexing routine for 4 digits: run once every 5us
 void display_multiplex_iv17(void)
 {
-	if (multiplex_counter == 0) {
-		clear_display();
-		write_vfd_iv17(0, calculate_segments_16(display_on ? data[0] : ' '));
-	}
-	else if (multiplex_counter == 1) {
-		clear_display();
-		write_vfd_iv17(1, calculate_segments_16(display_on ? data[1] : ' '));
-	}
-	else if (multiplex_counter == 2) {
-		clear_display();
-		write_vfd_iv17(2, calculate_segments_16(display_on ? data[2] : ' '));
-	}
-	else if (multiplex_counter == 3) {
-		clear_display();
-		write_vfd_iv17(3, calculate_segments_16(display_on ? data[3] : ' '));
-	}
-	else {
-		clear_display();
-	}
+    if (multiplex_counter == 0) {
+        clear_display();
+        
+        uint16_t seg = calculate_segments_16(display_on ? data[0] : ' ');
 
-	multiplex_counter++;
+        if (g_gps_updating && display_on)
+            seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));
+        
+        write_vfd_iv17(0, seg);
+    }
+    else if (multiplex_counter == 1) {
+        clear_display();
+        write_vfd_iv17(1, calculate_segments_16(display_on ? data[1] : ' '));
+    }
+    else if (multiplex_counter == 2) {
+        clear_display();
+        write_vfd_iv17(2, calculate_segments_16(display_on ? data[2] : ' '));
+    }
+    else if (multiplex_counter == 3) {
+        clear_display();
+        write_vfd_iv17(3, calculate_segments_16(display_on ? data[3] : ' '));
+    }
+    else {
+        clear_display();
+    }
 
-	// high brightness
-	if (multiplex_counter == 4 && g_brightness % 2 == 1) multiplex_counter = 0;
-	// low brightness
-	if (multiplex_counter == 8) multiplex_counter = 0;
+    multiplex_counter++;
+
+    // high brightness
+    if (multiplex_counter == 4 && g_brightness % 2 == 1) multiplex_counter = 0;
+    // low brightness
+    if (multiplex_counter == 8) multiplex_counter = 0;
 }
 
 // display multiplexing routine for IV6 shield: run once every 5us

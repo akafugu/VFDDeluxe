@@ -313,7 +313,7 @@ void read_rtc(bool show_extra_info)
     else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
         show_time(tt, g_24h_clock, show_extra_info);
 //        read_humidity();
-    else if (g_has_flw  && tt->sec >= 40 && tt->sec <= 59)
+    else if (g_has_flw  && tt->sec >= 40 && tt->sec <= 50)
 //        show_time(tt, g_24h_clock, show_extra_info);
         read_flw();
     else
@@ -385,18 +385,6 @@ void loop()
 
   delay(500);
   set_string("--------");
-
-  /*
-  while (1) { 
-    read_rtc(true);
-    //clear_data();
-    //print_digits(rot.getRawPosition(), 4);
-  
-    delay(1000);
-    //gps.tick();
-    //delay(10);
-  }
-  */
 
 	while (1) {
 		get_button_state(&buttons);
