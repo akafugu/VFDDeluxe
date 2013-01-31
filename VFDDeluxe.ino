@@ -69,7 +69,10 @@ uint8_t g_alarm_switch;
 #define MENU_TIMEOUT 200
 
 uint8_t g_alarming = false;
+<<<<<<< HEAD
 bool g_update_rtc = true;
+=======
+>>>>>>> 648021a95b9f02084ff58e4693ea1e2c44be4848
 uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
 WireRtcLib::tm* tt = NULL; // for holding RTC values
 
