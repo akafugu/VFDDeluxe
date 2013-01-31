@@ -1,6 +1,6 @@
 /*
  * VFD Deluxe
- * (C) 2011-12 Akafugu Corporation
+ * (C) 2011-13 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -16,14 +16,12 @@
 /*
  * TODO:
  *
- * SQW interrupt to update time
  * Implement brightness PWM
- * Find keyup bug
  * Test FLW
  * Refactor FLW
  * Add menu items for GPS etc.
  * Port Date scrolling function (from William's newest branch)
- * Implement alarm switch switching functionality
+ * Implement show alarm time when flipping switch
  * Implement alarm
  * Port William's new menu system
  * Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
@@ -71,6 +69,7 @@ uint8_t g_alarm_switch;
 #define MENU_TIMEOUT 200
 
 uint8_t g_alarming = false;
+bool g_update_rtc = true;
 uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
 WireRtcLib::tm* tt = NULL; // for holding RTC values
 
@@ -124,6 +123,11 @@ void initialize(void)
   // fixme: change depending on HAVE_ROTARY define
   initialize_button(PinMap::button1, PinMap::button2);
 
+  // initialize alarm switch
+  pinMode(PinMap::alarm_switch, OUTPUT);
+  digitalWrite(PinMap::alarm_switch, HIGH); // enable pullup
+  g_alarm_switch = digitalRead(PinMap::alarm_switch);
+
   // fixme: move to button class?
   // Set switch as input and enable pullup
   //SWITCH_DDR  &= ~(_BV(SWITCH_BIT));
@@ -144,7 +148,7 @@ void initialize(void)
 #endif // HAVE_RGB_BACKLIGHT
 
   rtc.begin();
-  rtc.runClock(true);  
+  rtc.runClock(true);
 
   //rtc.setTime_s(16, 10, 0);
   //rtc_set_alarm_s(17,0,0);
@@ -171,6 +175,14 @@ void initialize(void)
   PCMSK2 |= (1 << PCINT18);
   */
   
+#ifdef HAVE_RTC_SQW
+    // set up interrupt for RTC SQW
+    PCICR |= (1 << PCIE0);
+    PCMSK0 |= (1 << PCINT4); // RTC SQW
+  
+    rtc.SQWSetFreq(WireRtcLib::FREQ_1);
+    rtc.SQWEnable(true);
+#endif
   
 #ifdef HAVE_GPS
     // setup UART for GPS
@@ -178,16 +190,14 @@ void initialize(void)
 #endif // HAVE_GPS
 }
 
-/*
-// Alarm switch changed interrupt
-ISR( PCINT2_vect )
+#ifdef HAVE_RTC_SQW
+// RTC SQW interrupt
+ISR( PCINT0_vect )
 {
-	if ( (SWITCH_PIN & _BV(SWITCH_BIT)) == 0)
-		g_alarm_switch = false;
-	else
-		g_alarm_switch = true;
+    g_update_rtc = true;
+    g_gps_updating = false;
 }
-*/
+#endif
 
 uint8_t print_digits(uint8_t num, uint8_t offset);
 void clear_data(void);
@@ -541,14 +551,23 @@ void loop()
 					}
 			}
 
-			// read RTC approx every 200ms  (wm)
+#ifdef HAVE_RTC_SQW
+                        if (g_update_rtc) {
+                            g_update_rtc = false;
+                            read_rtc(display_mode);  // read RTC and display time
+                        }    
+#else
+			// read RTC approx every 200ms
 			static uint8_t cnt = 0;
-			if (cnt++ > 15) {
+			if (cnt++ > 7) {
 				read_rtc(display_mode);  // read RTC and display time
 				cnt = 0;
 				}
+#endif // HAVE_RTC_SQW
 		}
-		
+
+                g_alarm_switch = digitalRead(PinMap::alarm_switch);
+
 		// fixme: alarm should not be checked when setting time or alarm
 		if (g_alarm_switch && rtc.checkAlarm())
 			g_alarming = true;

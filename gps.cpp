@@ -41,7 +41,6 @@ volatile char *gpsNextBuffer;
 volatile char *gpsLastBuffer;
 volatile uint8_t gpsDataReady_;
 
-// fixme: move back to globals.h
 extern int8_t g_gps_enabled;
 
 // globals from main.c
@@ -55,12 +54,8 @@ extern WireRtcLib rtc;
 
 void setRTCTime(time_t t)
 {
-  Serial.println("setRTCTime");
-  
     tmElements_t tm;
-    
     breakTime(t, &tm);
-    
     rtc.setTime_s(tm.Hour, tm.Minute, tm.Second);   
 }
 

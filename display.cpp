@@ -14,6 +14,8 @@
  */
 
 #include "global.h"
+#include "global_vars.h"
+
 #include "display.h"
 #include "display_nixie.h"
 #include "gps.h"
@@ -75,10 +77,7 @@ uint8_t gps_counter = 0;
 #endif
 
 // globals from main.c
-extern uint8_t g_show_dots;
-extern uint8_t g_has_dots;
 extern uint8_t g_alarm_switch;
-extern uint8_t g_brightness;
 
 // variables for controlling display blink
 uint8_t blink;
@@ -86,8 +85,6 @@ uint16_t blink_counter = 0;
 uint8_t display_on = 1;
 
 extern uint8_t g_second_dots_on;
-
-uint8_t gps_updated;
 
 // dots [bit 0~5]
 uint8_t dots = 0;
@@ -306,13 +303,6 @@ void flash_display(uint16_t ms)  // this does not work but why???
 	display_on = true;
 }
 
-void set_gps_updated(bool b) {
-    if (shield == SHIELD_IV18)
-        gps_updated = b;
-    else
-        set_blink(b);
-}
-
 //bool led = true;
 
 void display_multiplex_7seg(void)
@@ -456,7 +446,7 @@ void display_multiplex_iv18(void)
 
 		if (g_alarm_switch)
                     seg |= (1<<7);
-                if (gps_updated)
+                if (g_gps_updating)
                     seg |= (1<<6);
 
 		write_vfd_iv18(8, seg);
@@ -611,8 +601,6 @@ uint8_t print_strn(const char* str, uint8_t offset, uint8_t n)
 
 	return offset;
 }
-
-extern uint8_t g_volume;
 
 // set dots based on mode and seconds
 void print_dots(uint8_t mode, uint8_t seconds)
