@@ -19,16 +19,25 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-// todo: turn into class
-
 class FourLetterWord
 {
 private:
     unsigned long m_offset;
     char m_current_word[6];
+    uint32_t m_lfsr;
+    
+    uint32_t randomize();
+    
+    uint8_t read_byte(int device, unsigned int addr);
+    void read_buffer(int device, unsigned int addr, uint8_t *buffer, int length);
 public:
+    FourLetterWord() :
+      m_offset(0),
+      m_lfsr(0xbeefcace) {}
+
     void begin(uint32_t seed = 0xbeefcace);
-    void get_word(char* word);
+    bool has_eeprom();
+    char* get_word();
 };
 
 

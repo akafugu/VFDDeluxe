@@ -53,6 +53,10 @@
 #include "flw.h"
 #include "rgbled.h"
 
+#ifdef HAVE_FLW
+FourLetterWord flw;
+#endif
+
 WireRtcLib rtc;
 //GPS gps;
 
@@ -69,10 +73,7 @@ uint8_t g_alarm_switch;
 #define MENU_TIMEOUT 200
 
 uint8_t g_alarming = false;
-<<<<<<< HEAD
 bool g_update_rtc = true;
-=======
->>>>>>> 648021a95b9f02084ff58e4693ea1e2c44be4848
 uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
 WireRtcLib::tm* tt = NULL; // for holding RTC values
 
@@ -156,7 +157,14 @@ void initialize(void)
   //rtc.setTime_s(16, 10, 0);
   //rtc_set_alarm_s(17,0,0);
   
-  g_has_flw = has_eeprom();
+#ifdef HAVE_FLW
+  flw.begin();
+  g_has_flw = flw.has_eeprom();
+  Serial.print("has_eeprom = ");
+  Serial.println(g_has_flw);
+#else
+  g_has_flw = false;
+#endif
 
 #ifdef HAVE_SHIELD_AUTODETECT
   detect_shield();
@@ -283,8 +291,11 @@ char current_word[6];
 
 void read_flw()
 {
-    offset = get_word(offset, current_word);        
-    set_string(current_word);
+#ifdef HAVE_FLW
+  set_string(flw.get_word());
+//    offset = get_word(offset, current_word);        
+//    set_string(current_word);
+#endif
 }
 
 void read_rtc(bool show_extra_info)
