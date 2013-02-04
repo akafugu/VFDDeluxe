@@ -292,70 +292,10 @@ void read_humidity()
     show_humidity(96);    
 }
 
-/*
-#include "blacklist.h"
-
-bool binary_search(const char *key, int imin, int imax){
-  int pos;
-  int cond=0;
-  
-  char buf[5];
-
-  while (imin<=imax){
-    pos = (imin+imax)/2;
-    
-    strcpy_P(buf, (char*)pgm_read_word(&(flw_blacklist[pos])));
-    cond = strcmp(key, buf);
-    
-    if (cond == 0)
-      return true;
-    else if (cond>0)
-      imin=pos+1;
-    else
-      imax=pos-1;
-  }
-  return false;
-}
-
-char* check_blacklist()
-{
-  char* w = flw.get_word();
-  
-  // assume a maximum of 5 censored words chosen in a row
-  for (uint8_t i = 0; i < 5; i++) {
-    if (binary_search(w, 0, BLACKLIST_SIZE)) { // censored
-      Serial.print("blacklisted: ");
-      Serial.println(w);
-      w = flw.get_word();
-    }
-  }
-  
-  return w;
-}
-*/
-
 void read_flw()
 {
 #ifdef HAVE_FLW
-
-/*
-  char* foo = flw.get_word();
-  Serial.println(foo);
-  
-    if (binary_search(foo, 0, BLACKLIST_SIZE))
-      Serial.println("blacklisted!");
-  */
-  
-  //bool blacklisted = flw.check_blacklist(foo);
-  //if (blacklisted) Serial.println("blacklisted!");
-  
-  //char* foo = check_blacklist();
-
-  char* foo = flw.get_word();
-  Serial.println(foo);
-  set_string(foo);
-
-  //set_string(flw.get_word());
+    set_string(flw.get_word());
 #endif
 }
 
