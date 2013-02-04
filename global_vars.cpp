@@ -93,7 +93,7 @@ int8_t g_datemonth;
 int8_t g_dateday;
 #endif
 #ifdef HAVE_FLW
-uint8_t g_has_flw = false;  // does the unit have an EEPROM with the FLW database?
+uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
 int8_t g_flw_enabled;
 #endif
 #ifdef HAVE_GPS 

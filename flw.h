@@ -19,30 +19,41 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+// FLW level
+#define FLW_OFF  0 // disabled
+#define FLW_ON   1 // on (cencored)
+#define FLW_FULL 2 // on (uncensored)
+
 class FourLetterWord
 {
 private:
+    bool m_censored;
     unsigned long m_offset;
     char m_current_word[6];
     uint32_t m_lfsr;
     
     uint32_t randomize();
     
+    void rot13(char* w);
+    bool binary_search(const char *key, int imin, int imax);
     uint8_t read_byte(int device, unsigned int addr);
     void read_buffer(int device, unsigned int addr, uint8_t *buffer, int length);
+    
+    char* get_word_censored();
+    char* get_word_uncensored();
+
 public:
     FourLetterWord() :
+      m_censored(true),
       m_offset(0),
       m_lfsr(0xbeefcace) {}
 
-    void begin(uint32_t seed = 0xbeefcace);
+    void begin(uint32_t seed = 0xbeefcace, bool censored = true);
+    
+    void setCensored(bool c) { m_censored = c; }
+    
     bool has_eeprom();
     char* get_word();
 };
-
-
-void seed_random(uint32_t seed);
-bool has_eeprom(void);
-unsigned long get_word(unsigned long offset, char* word);
 
 #endif

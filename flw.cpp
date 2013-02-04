@@ -21,18 +21,52 @@
  *   https://github.com/perjg/fourletterword
  * - A method for uploading the data file to the EEPROM
  *   (Either an Arduino Mega, or a normal Arduino with a micro SD card)
- *
- *
- * TODO:
- * - Allow changing random seed (currently the same sequence is always used)
  */
 
 #include <Wire.h>
 
 #include "flw.h"
-//#include "blacklist.h"
+#include "flw_blacklist.h"
+
+#include <avr/pgmspace.h>
 
 #define EEPROM_ADDR 0b1010000
+
+void FourLetterWord::rot13(char* w)
+{
+    while (*w != '\0') {
+        if (*w >= 'A' && *w <= 'M') {
+            *w += 13;
+        }
+        else if (*w >= 'N' && *w <= 'Z') {
+            *w -= 13;
+        }
+
+      w++;
+    }
+}
+
+bool FourLetterWord::binary_search(const char *key, int imin, int imax)
+{
+  int pos;
+  int cond = 0;
+  char buf[5];
+
+  while (imin <= imax) {
+    pos = (imin+imax) / 2;
+    
+    strcpy_P(buf, (char*)pgm_read_word(&(flw_blacklist[pos])));
+    rot13(buf);
+    cond = strcmp(key, buf);
+    
+    if (cond == 0)   return true;
+    else if (cond>0) imin = pos+1;
+    else             imax = pos-1;
+  }
+  
+  return false;
+}
+
 
 uint8_t FourLetterWord::read_byte(int device, unsigned int addr) {
   uint8_t rdata = 0xFF;
@@ -61,9 +95,10 @@ void FourLetterWord::read_buffer(int device, unsigned int addr, uint8_t *buffer,
 }
 
 
-void FourLetterWord::begin(uint32_t seed)
+void FourLetterWord::begin(uint32_t seed, bool censored)
 {
   m_lfsr = seed;
+  m_censored = censored;
 }
 
 uint32_t FourLetterWord::randomize()
@@ -84,7 +119,23 @@ bool FourLetterWord::has_eeprom()
    return false;
 }
 
-char* FourLetterWord::get_word()
+char* FourLetterWord::get_word_censored()
+{
+  char* w = get_word_uncensored();
+  
+  // assume a maximum of 5 censored words chosen in a row
+  for (uint8_t i = 0; i < 5; i++) {
+    if (binary_search(w, 0, BLACKLIST_SIZE)) { // censored
+      w = get_word_uncensored();
+    }
+    else
+      return w;
+  }
+  
+  return w;
+}
+
+char* FourLetterWord::get_word_uncensored()
 {
   unsigned char low = 0xFF, high = 0xFF;
   unsigned char count = 0;
@@ -101,7 +152,14 @@ char* FourLetterWord::get_word()
   low  = read_byte(EEPROM_ADDR, m_offset++);
 
   m_offset = (high << 8) | low;
-    
+
   return m_current_word;
 }
+
+char* FourLetterWord::get_word()
+{
+  if (m_censored) return get_word_censored();
+  return get_word_uncensored();
+}
+
 
