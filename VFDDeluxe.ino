@@ -295,7 +295,11 @@ void read_humidity()
 void read_flw()
 {
 #ifdef HAVE_FLW
-    set_string(flw.get_word());
+//    set_string(flw.get_word());
+
+  char* foo = flw.get_word();
+  Serial.println(foo);
+  set_string(foo);
 #endif
 }
 
@@ -333,6 +337,22 @@ void read_rtc(bool show_extra_info)
         read_flw();
     else
         show_time(tt, g_24h_clock, show_extra_info);        
+}
+
+void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
+  tt = rtc.getTime();
+  tt->year = yy;
+  tt->mon = mm;
+  tt->mday = dd;
+  rtc.setTime(tt);
+  
+#ifdef HAVE_AUTO_DST
+/*
+  DSTinit(tt, &dst_rules);  // re-compute DST start, end for new date
+  g_DST_updated = false;  // allow automatic DST adjustment again
+  setDSToffset(g_DST_mode);  // set DSToffset based on new date
+ */
+#endif // FEATURE_AUTO_DST 
 }
 
 void setup()
@@ -499,7 +519,7 @@ void loop()
 		}
 		// Left button enters menu
 		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
-			g_menu_state = STATE_MENU_BRIGHTNESS;
+                        first_menu_item();
 			show_setting_int("BRIT", "BRITE", g_brightness, false);
 			buttons.b2_keyup = 0; // clear state
 		}
@@ -529,10 +549,8 @@ void loop()
                         }
                         if (buttons.b2_keyup) {  // left button
                            menu_b1_first = true;  // reset first time flag
-                           g_menu_state = (menu_state_t)(g_menu_state + 1);
-      
-                           if (g_menu_state == STATE_MENU_LAST) g_menu_state = STATE_CLOCK;
-      
+                           
+                           next_menu_item();      
                            menu(false, false);
                            buttons.b2_keyup = 0; // clear state
                         }

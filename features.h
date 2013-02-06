@@ -88,6 +88,8 @@ enum shield_t {
 #define FEATURE_SERIAL_DEBUG YES // Wait for serial console to open before booting
 #define FEATURE_FLW YES
 #define FEATURE_RTC_SQW YES
+#define FEATURE_AUTO_DATE YES
+#define FEATURE_AUTO_DST YES
 
 // fixme: this can be automatic based on __AVR_ATmega32U4__ define
 
@@ -237,6 +239,26 @@ enum shield_t {
 
 #if FEATURE_RTC_SQW == YES
 #  define HAVE_RTC_SQW
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_AUTO_DATE) || FEATURE_AUTO_DATE < NO || FEATURE_AUTO_DATE > YES
+#  error Must define FEATURE_AUTO_DATE to be YES or NO
+#endif
+
+#if FEATURE_AUTO_DATE == YES
+#  define HAVE_AUTO_DATE
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_AUTO_DST) || FEATURE_AUTO_DST < NO || FEATURE_AUTO_DST > YES
+#  error Must define FEATURE_AUTO_DST to be YES or NO
+#endif
+
+#if FEATURE_AUTO_DST == YES
+#  define HAVE_AUTO_DST
 #endif
 
 #endif // FEATURES_H_

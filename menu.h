@@ -17,17 +17,27 @@
 
 // menu states
 typedef enum {
-	// basic states
-	STATE_CLOCK = 0,
-	STATE_SET_CLOCK,
-	STATE_SET_ALARM,
-	// menu
-	STATE_MENU_BRIGHTNESS,
-	STATE_MENU_24H,
-	STATE_MENU_VOL,
-	STATE_MENU_TEMP,
-	STATE_MENU_DOTS,
-	STATE_MENU_LAST,
+    // basic states
+    STATE_CLOCK = 0,
+    STATE_SET_CLOCK,
+    STATE_SET_ALARM,
+    // menu
+    STATE_MENU_BRIGHTNESS,
+    STATE_MENU_24H,
+    STATE_MENU_YEAR,
+    STATE_MENU_MONTH,
+    STATE_MENU_DAY,
+    STATE_MENU_AUTODATE,
+#ifdef HAVE_AUTO_DST
+    STATE_MENU_DST,
+#endif
+    STATE_MENU_REGION,
+    STATE_MENU_TEMP,
+    STATE_MENU_DOTS,
+#ifdef HAVE_FLW
+    STATE_MENU_FLW,
+#endif
+    STATE_MENU_LAST,
 } menu_state_t;
 
 extern menu_state_t g_menu_state;
@@ -37,6 +47,10 @@ void setDSToffset(uint8_t mode);
 #endif
 void menu_init(void);
 
+void menu_enable(menu_state_t item, bool enabled);
 void menu(bool update, bool show);
+
+void first_menu_item();
+void next_menu_item();
 
 #endif

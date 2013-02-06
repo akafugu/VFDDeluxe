@@ -23,16 +23,23 @@
 #define FLASH
 #endif
 
+// date format modes
+typedef enum {
+  FORMAT_YMD = 0,
+  FORMAT_DMY,
+  FORMAT_MDY,
+} date_format_t;
+
 extern uint8_t b_24h_clock;
 extern uint8_t b_show_temp;
 extern uint8_t b_show_dots;
 extern uint8_t b_brightness;
 extern uint8_t b_volume;
-#ifdef HAVE_SET_DATE
+
 extern uint8_t b_dateyear;
 extern uint8_t b_datemonth;
 extern uint8_t b_dateday;
-#endif
+
 #ifdef HAVE_FLW
 extern uint8_t b_flw_enabled;
 #endif
@@ -48,7 +55,7 @@ extern uint8_t b_DST_offset;  // DST offset in Hours
 extern uint8_t b_DST_updated;  // DST update flag = allow update only once per day
 #endif
 #ifdef HAVE_AUTO_DATE
-extern uint8_t b_Region;
+extern uint8_t b_date_format;
 extern uint8_t b_AutoDate;
 #endif
 #ifdef HAVE_AUTO_DIM
@@ -75,15 +82,16 @@ extern int8_t g_show_temp;
 extern int8_t g_show_dots;
 extern int8_t g_brightness;
 extern int8_t g_volume;
-#ifdef HAVE_SET_DATE
+
 extern int8_t g_dateyear;
 extern int8_t g_datemonth;
 extern int8_t g_dateday;
-#endif
+
 #ifdef HAVE_FLW
 extern uint8_t g_has_flw; // set to true if there is a four letter word EEPROM attached
 extern int8_t g_flw_enabled;
 #endif
+
 #ifdef HAVE_GPS 
 extern int8_t g_gps_enabled;
 extern int8_t g_TZ_hour;
@@ -94,6 +102,7 @@ extern int8_t g_gps_cks_errors;  // gps checksum error counter
 extern int8_t g_gps_parse_errors;  // gps parse error counter
 extern int8_t g_gps_time_errors;  // gps time error counter
 #endif
+
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 extern int8_t g_DST_mode;  // DST off, on, auto?
 extern int8_t g_DST_offset;  // DST offset in Hours
@@ -104,7 +113,7 @@ extern int8_t g_DST_updated;  // DST update flag = allow update only once per da
 extern int8_t g_DST_Rules[9];
 #endif
 #ifdef HAVE_AUTO_DATE
-extern int8_t g_Region;
+extern date_format_t g_date_format;
 extern int8_t g_AutoDate;
 #endif
 #ifdef HAVE_AUTO_DIM

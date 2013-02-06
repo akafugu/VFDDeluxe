@@ -32,6 +32,11 @@ uint8_t EEMEM b_show_temp = 0;
 uint8_t EEMEM b_show_dots = 1;
 uint8_t EEMEM b_brightness = 8;
 uint8_t EEMEM b_volume = 0;
+
+uint8_t EEMEM b_dateyear = 13;
+uint8_t EEMEM b_datemonth = 1;
+uint8_t EEMEM b_dateday = 1;
+
 #ifdef HAVE_FLW
 uint8_t EEMEM b_flw_enabled = 0;
 #endif
@@ -45,6 +50,7 @@ uint8_t EEMEM b_DST_mode = 0;  // 0: off, 1: on, 2: Auto
 uint8_t EEMEM b_DST_offset = 0;
 #endif
 #ifdef HAVE_AUTO_DATE
+uint8_t EEMEM b_date_format = FORMAT_YMD;
 uint8_t EEMEM b_Region = 0;  // default European date format Y/M/D
 uint8_t EEMEM b_AutoDate = 0;
 #endif
@@ -87,15 +93,17 @@ int8_t g_show_temp = true;
 int8_t g_show_dots = true;
 int8_t g_brightness = 5;
 int8_t g_volume = 0;
-#ifdef FEATURE_SET_DATE
+
 int8_t g_dateyear;
 int8_t g_datemonth;
 int8_t g_dateday;
-#endif
+extern int8_t g_autodate;
+
 #ifdef HAVE_FLW
 uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
 int8_t g_flw_enabled;
 #endif
+
 #ifdef HAVE_GPS 
 int8_t g_gps_enabled;
 int8_t g_TZ_hour;
@@ -106,6 +114,7 @@ int8_t g_gps_cks_errors;  // gps checksum error counter
 int8_t g_gps_parse_errors;  // gps parse error counter
 int8_t g_gps_time_errors;  // gps time error counter
 #endif
+
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 int8_t g_DST_mode;  // DST off, on, auto?
 int8_t g_DST_offset;  // DST offset in Hours
@@ -116,7 +125,7 @@ int8_t g_DST_updated;  // DST update flag = allow update only once per day
 int8_t g_DST_Rules[9];
 #endif
 #ifdef HAVE_AUTO_DATE
-int8_t g_Region;
+date_format_t g_date_format;
 int8_t g_AutoDate;
 #endif
 #ifdef HAVE_AUTO_DIM
@@ -155,7 +164,7 @@ void globals_init(void)
 	g_DST_updated = false;  // allow automatic DST update
 #endif
 #ifdef HAVE_AUTO_DATE
-	g_Region = eeprom_read_byte(&b_Region);
+	g_date_format = (date_format_t)eeprom_read_byte(&b_date_format);
 	g_AutoDate = eeprom_read_byte(&b_AutoDate);
 #endif
 #ifdef HAVE_AUTO_DIM
@@ -165,11 +174,9 @@ void globals_init(void)
 	g_AutoBrtHour = eeprom_read_byte(&b_AutoBrtHour);
 	g_AutoBrtLevel = eeprom_read_byte(&b_AutoBrtLevel);
 #endif
-#ifdef HAVE_SET_DATE
 	g_dateyear = 12;
 	g_datemonth = 1;
 	g_dateday = 1;
-#endif
 #ifdef HAVE_AUTO_DST
 //DST_Rules dst_rules = {{3,1,2,2},{11,1,1,2},1};   // initial values from US DST rules as of 2011
 	g_DST_Rules[0] = eeprom_read_byte(&b_DST_Rule0);  // DST start month
