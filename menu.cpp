@@ -27,6 +27,9 @@
 
 #include "menu.h"
 #include "display.h"
+#include "pitches.h"
+
+#include "adst.h"
 #include "flw.h"
 
 menu_state_t g_menu_state = STATE_CLOCK;
@@ -36,20 +39,10 @@ menu_state_t g_menu_state = STATE_CLOCK;
 
 void set_date(uint8_t yy, uint8_t mm, uint8_t dd);
 
-/*
-#include "global_vars.h"
-#include "display.h"
-#include "gps.h"
-#include "menu.h"
-#include "time.h"
-
-void beep(uint16_t freq, uint8_t times);
 extern WireRtcLib rtc;
-
-menu_state_t g_menu_state;
 extern WireRtcLib::tm* tt; // current local date and time as TimeElements (pointer)
 
-#if defined HAVE_GPS || defined HAVE_AUTO_DST
+#if defined HAVE_AUTO_DST
 void setDSToffset(uint8_t mode) {
 	int8_t adjOffset;
 	uint8_t newOffset;
@@ -61,24 +54,26 @@ void setDSToffset(uint8_t mode) {
 	}
 	else
 #endif // HAVE_AUTO_DST
-		newOffset = mode;  // 0 or 1
+	  newOffset = mode;  // 0 or 1
+
 	adjOffset = newOffset - g_DST_offset;  // offset delta
 	if (adjOffset == 0)  return;  // nothing to do
-	if (adjOffset > 0)
-		beep(880, 1);  // spring ahead
-	else
-		beep(440, 1);  // fall back
 
-	time_t tNow = 0; // fixme rtc_get_time_t();  // fetch current time from RTC as time_t
+        if (adjOffset > 0)
+            tone(PinMap::piezo, NOTE_A5, 100);  // spring ahead
+        else
+            tone(PinMap::piezo, NOTE_A4, 100);  // fall back
 
-	tNow += adjOffset * SECS_PER_HOUR;  // add or subtract new DST offset
-
-	//rtc_set_time_t(tNow);  // adjust RTC
-
-	g_DST_offset = newOffset;
-	//eeprom_update_byte(&b_DST_offset, g_DST_offset);
-	g_DST_updated = true;
-	// save DST_updated in ee ???
+        tt = rtc.getTime();
+        tt->year = y2kYearToTm(tt->year);
+        unsigned long tNow = makeTime(tt);  // fetch current time from RTC as time_t
+        tNow += adjOffset * SECS_PER_HOUR;  // add or subtract new DST offset
+        breakTime(tNow, tt);
+        tt->year = tmYearToY2k(tt->year);  // remove 1970 offset
+        rtc.setTime(tt);  // adjust RTC
+        g_DST_offset = newOffset;
+        eeprom_update_byte(&b_DST_offset, g_DST_offset);
+        g_DST_updated = true;
 }
 #endif
 
@@ -96,66 +91,6 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
 #endif
 }
 #endif
-
-void menu_action(menu_item * menuPtr)
-{
-    Serial.println("menu_action");
-    
-	switch(menuPtr->menuNum) {
-		case MENU_BRIGHTNESS:
-			set_brightness(*menuPtr->setting);
-			break;
-		case MENU_VOL:
-			//piezo_init();
-			//beep(1000, 1);
-			break;
-		case MENU_DATEYEAR:
-		case MENU_DATEMONTH:
-		case MENU_DATEDAY:
-			//set_date(g_dateyear, g_datemonth, g_dateday);
-			break;
-		case MENU_GPS_ENABLE:
-			gps_init(g_gps_enabled);  // change baud rate
-			break;
-		case MENU_RULE0:
-		case MENU_RULE1:
-		case MENU_RULE2:
-		case MENU_RULE3:
-		case MENU_RULE4:
-		case MENU_RULE5:
-		case MENU_RULE6:
-		case MENU_RULE7:
-		case MENU_RULE8:
-		case MENU_DST_ENABLE:
-			//g_DST_updated = false;  // allow automatic DST adjustment again
-			//DSTinit(tm_, g_DST_Rules);  // re-compute DST start, end for new data
-			//setDSToffset(g_DST_mode);
-			break;
-		case MENU_TZH:
-		case MENU_TZM:
-			tGPSupdate = 0;  // allow GPS to refresh
-			break;
-	}
-}
-
-volatile uint8_t menuIdx = 0;
-uint8_t update = false;  // right button updates value?
-uint8_t show = false;  // show value?
-
-void menu_enable(menu_number num, uint8_t enable)
-{
-	uint8_t idx = 0;
-//	menu_item * mPtr = (menu_item*) pgm_read_word(&menuItems[0]);  // start with first menu item
-	menu_item * mPtr = getItem(0);  // current menu item
-	while(mPtr != NULL) {
-		if (mPtr->menuNum == num) {
-			menu_disabled[idx] = !enable;  // default is enabled
-			return;  // there should only be one item that matches
-		}
-		mPtr = getItem(++idx);  // fetch next menu item
-	}
-}
-*/
 
 void menu(bool update, bool show)
 {
@@ -261,7 +196,7 @@ void menu(bool update, bool show)
 
       break;
 
-#ifdef FEATURE_AUTO_DST
+#ifdef HAVE_AUTO_DST
     case STATE_MENU_DST:
       if (update) {	
         g_DST_mode = (g_DST_mode+1)%3;  //  0: off, 1: on, 2: auto
@@ -277,7 +212,7 @@ void menu(bool update, bool show)
       else
         show_setting_string("DST", "DST", g_DST_mode == 1 ? "on" : "auto", show);
       break;
-#endif // FEATURE_AUTO_DST 
+#endif // HAVE_AUTO_DST 
 
 
 
@@ -298,17 +233,14 @@ void menu(bool update, bool show)
             show_setting_string("DOTS", "DOTS", g_show_dots ? " on" : " off", show);
             break;
             
+#ifdef HAVE_FLW
         case STATE_MENU_FLW:
             if (update) {
-                Serial.println("FLW update");
                 g_flw_enabled++;
                 if (g_flw_enabled > FLW_FULL) g_flw_enabled = FLW_OFF;
                 eeprom_update_byte(&b_flw_enabled, g_flw_enabled);
             }
-
-            Serial.print("g_flw_enabled = ");
-            Serial.println(g_flw_enabled);
-
+            
             if (g_flw_enabled == FLW_OFF)
                 show_setting_string("FLW", "FLW", " off", show);
             else if (g_flw_enabled == FLW_ON)
@@ -317,6 +249,7 @@ void menu(bool update, bool show)
                 show_setting_string("FLW", "FLW", "full", show);
         
             break;
+#endif // HAVE_FLW
         default:
             break; // do nothing
     }

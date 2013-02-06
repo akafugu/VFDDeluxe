@@ -62,9 +62,6 @@ uint8_t EEMEM b_AutoBrtHour = 7;
 uint8_t EEMEM b_AutoBrtLevel = 8;
 #endif
 #ifdef HAVE_AUTO_DST
-//DST_Rules dst_rules = {{3,1,2,2},{11,1,1,2},1};   // initial values from US DST rules as of 2011
-//DST_Rules dst_rules = {{10,1,1,2},{4,1,1,2},1};   // DST Rules for parts of OZ including NSW (for JG)
-//#define DST_NSW
 #ifdef DST_NSW
 uint8_t EEMEM b_DST_Rule0 = 10;  // DST start month
 uint8_t EEMEM b_DST_Rule1 = 1;  // DST start dotw
@@ -99,8 +96,8 @@ int8_t g_datemonth;
 int8_t g_dateday;
 extern int8_t g_autodate;
 
-#ifdef HAVE_FLW
 uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
+#ifdef HAVE_FLW
 int8_t g_flw_enabled;
 #endif
 
@@ -121,7 +118,6 @@ int8_t g_DST_offset;  // DST offset in Hours
 int8_t g_DST_updated;  // DST update flag = allow update only once per day
 #endif
 #ifdef HAVE_AUTO_DST  // DST rules
-//DST_Rules dst_rules = {{3,1,2,2},{11,1,1,2},1};   // initial values from US DST rules as of 2011
 int8_t g_DST_Rules[9];
 #endif
 #ifdef HAVE_AUTO_DATE
@@ -159,8 +155,8 @@ void globals_init(void)
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 	g_DST_mode = 0;
 	g_DST_offset = 1;
-//	g_DST_mode = eeprom_read_byte(&b_DST_mode);
-//	g_DST_offset = eeprom_read_byte(&b_DST_offset);
+	g_DST_mode = eeprom_read_byte(&b_DST_mode);
+	g_DST_offset = eeprom_read_byte(&b_DST_offset);
 	g_DST_updated = false;  // allow automatic DST update
 #endif
 #ifdef HAVE_AUTO_DATE
@@ -178,7 +174,6 @@ void globals_init(void)
 	g_datemonth = 1;
 	g_dateday = 1;
 #ifdef HAVE_AUTO_DST
-//DST_Rules dst_rules = {{3,1,2,2},{11,1,1,2},1};   // initial values from US DST rules as of 2011
 	g_DST_Rules[0] = eeprom_read_byte(&b_DST_Rule0);  // DST start month
 	g_DST_Rules[1] = eeprom_read_byte(&b_DST_Rule1);  // DST start dotw
 	g_DST_Rules[2] = eeprom_read_byte(&b_DST_Rule2);  // DST start week

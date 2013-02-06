@@ -87,8 +87,8 @@ extern int8_t g_dateyear;
 extern int8_t g_datemonth;
 extern int8_t g_dateday;
 
-#ifdef HAVE_FLW
 extern uint8_t g_has_flw; // set to true if there is a four letter word EEPROM attached
+#ifdef HAVE_FLW
 extern int8_t g_flw_enabled;
 #endif
 

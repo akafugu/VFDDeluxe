@@ -158,11 +158,13 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     digits = _digits;
     g_has_dots = true;
   }
+#ifdef HAVE_14SEG_SUPPORT
   else if (shield_type == SHIELD_14SEG) {
     shield = SHIELD_14SEG;
     digits = _digits;
     g_has_dots = true;
   }
+#endif
   else if (shield_type == SHIELD_16SEG) {
     shield = SHIELD_16SEG;
     digits = _digits;
@@ -314,6 +316,7 @@ void display_multiplex_7seg(void)
   if (multiplex_counter == 10) multiplex_counter = 0;
 }
 
+#ifdef HAVE_14SEG_SUPPORT
 void display_multiplex_14seg(void)
 {
   clear_display();
@@ -328,6 +331,7 @@ void display_multiplex_14seg(void)
   multiplex_counter++;	
   if (multiplex_counter == digits+1) multiplex_counter = 0;  
 }
+#endif // HAVE_14SEG_SUPPORT
 
 void display_multiplex_16seg(void)
 {
@@ -502,8 +506,10 @@ void display_multiplex(void)
     
 	if (shield == SHIELD_7SEG)
 		display_multiplex_7seg();
+#ifdef HAVE_14SEG_SUPPORT
 	else if (shield == SHIELD_14SEG)
 		display_multiplex_14seg();
+#endif // HAVE_14SEG_SUPPORT
 	else if (shield == SHIELD_16SEG)
 		display_multiplex_16seg();
 	else if (shield == SHIELD_IV6)
@@ -849,6 +855,7 @@ void show_pressure(uint8_t pressure)
 void set_string(const char* str)
 {
 	if (!str) return;
+
 	dots = 0;
 	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
 	

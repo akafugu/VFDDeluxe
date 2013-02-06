@@ -49,6 +49,7 @@
 
 //Encoder myEnc(6, 7);
 
+#include "adst.h"
 #include "gps.h"
 #include "flw.h"
 #include "rgbled.h"
@@ -169,7 +170,6 @@ void initialize(void)
   flw.setCensored(g_flw_enabled == FLW_ON);
 #else
   g_has_flw = false;
-  g_flw_enabled = FLW_OFF;
 #endif
 
 #ifdef HAVE_SHIELD_AUTODETECT
@@ -308,6 +308,17 @@ void read_rtc(bool show_extra_info)
     tt = rtc.getTime();
     if (tt == NULL) return;
 
+#ifdef HAVE_AUTO_DST
+    if (tt->sec % 10 == 0)  // check DST Offset every 10 seconds (60?)
+        setDSToffset(g_DST_mode); 
+        
+        if ((tt->hour == 0) && (tt->min == 0) && (tt->sec == 0)) {  // MIDNIGHT!
+            g_DST_updated = false;
+            if (g_DST_mode)
+                DSTinit(tt, g_DST_Rules);  // re-compute DST start, end
+        }
+#endif // HAVE_AUTO_DST
+
     g_second_dots_on = (g_menu_state == STATE_CLOCK && display_mode == MODE_NORMAL && tt->sec % 2 == 0) ? true : false;
 
 /*
@@ -332,8 +343,7 @@ void read_rtc(bool show_extra_info)
     else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
         show_time(tt, g_24h_clock, show_extra_info);
 //        read_humidity();
-    else if (g_has_flw  && tt->sec >= 10 && tt->sec <= 50)
-//        show_time(tt, g_24h_clock, show_extra_info);
+    else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 10 && tt->sec <= 50)
         read_flw();
     else
         show_time(tt, g_24h_clock, show_extra_info);        
@@ -347,12 +357,10 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
   rtc.setTime(tt);
   
 #ifdef HAVE_AUTO_DST
-/*
-  DSTinit(tt, &dst_rules);  // re-compute DST start, end for new date
+  DSTinit(tt, g_DST_Rules);  // re-compute DST start, end for new date
   g_DST_updated = false;  // allow automatic DST adjustment again
   setDSToffset(g_DST_mode);  // set DSToffset based on new date
- */
-#endif // FEATURE_AUTO_DST 
+#endif // HAVE_AUTO_DST 
 }
 
 void setup()

@@ -31,8 +31,6 @@ void write_vfd_8bit(uint8_t data);
 // 1/2 duty cycle 6-digit nixie shield (10x3 channels + 2 dot channels)
 void init_nixie_6digit()
 {
-    Serial.println("init_nixie_6digit");
-    
   digitalWrite(PinMap::blank, LOW);
 
   // Nixie anodes (digits)
@@ -60,20 +58,6 @@ void write_nixie_6digit(uint8_t digit, uint8_t value1, uint8_t value2, uint8_t v
 void write_nixie_6digit(uint8_t digit, uint8_t value1, uint8_t value2, uint8_t value3, bool dots)
 {
     nixie_clear_display();
-
-    /*
-    if (g_blink_on) {
-        if (g_blank == 4) { clear_display(); return; }
-        else if (g_blank == 1 && (digit == 0 || digit == 1)) { clear_display(); return; }
-        else if (g_blank == 2 && (digit == 2 || digit == 3)) { clear_display(); return; }
-        else if (g_blank == 3 && (digit == 4 || digit == 5)) { clear_display(); return; }
-    }
-
-    if (g_antipoison && g_randomize_on) {
-        value1 = rnd() % 10;
-        value2 = rnd() % 10;
-    }
-    */
 
     if (dots)
       write_nixie_dots();

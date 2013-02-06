@@ -89,7 +89,8 @@ enum shield_t {
 #define FEATURE_FLW YES
 #define FEATURE_RTC_SQW YES
 #define FEATURE_AUTO_DATE YES
-#define FEATURE_AUTO_DST YES
+#define FEATURE_AUTO_DST NO
+#define FEATURE_14SEG_SUPPORT NO
 
 // fixme: this can be automatic based on __AVR_ATmega32U4__ define
 
@@ -259,6 +260,16 @@ enum shield_t {
 
 #if FEATURE_AUTO_DST == YES
 #  define HAVE_AUTO_DST
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_14SEG_SUPPORT) || FEATURE_14SEG_SUPPORT < NO || FEATURE_14SEG_SUPPORT > YES
+#  error Must define FEATURE_14SEG_SUPPORT to be YES or NO
+#endif
+
+#if FEATURE_14SEG_SUPPORT == YES
+#  define HAVE_14SEG_SUPPORT
 #endif
 
 #endif // FEATURES_H_

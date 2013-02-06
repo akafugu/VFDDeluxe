@@ -14,6 +14,9 @@
  */
 
 #include "global.h"
+
+#ifdef HAVE_14SEG_SUPPORT
+
 #include <avr/io.h> 
 
 #define A  0
@@ -287,3 +290,7 @@ uint16_t calculate_segments_14(uint8_t character)
 	
 	return segments;
 }
+
+#endif // HAVE_FONT_14SEG
+
+
