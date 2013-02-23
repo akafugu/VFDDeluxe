@@ -102,14 +102,19 @@ bool menu_b1_first = false;
 
 // display modes
 typedef enum {
-	MODE_NORMAL = 0, // normal mode: show time/seconds
-	MODE_AMPM, // shows time AM/PM
-	MODE_LAST,
-	MODE_ALARM_TEXT,  // show "alarm" (wm)
-	MODE_ALARM_TIME,  // show alarm time (wm)
+    MODE_NORMAL = 0,  // Time mode 1 (HH:MM/HH:MM:SS)
+    MODE_AMPM,        // Time mode 2 (SS/HH-MM)
+    MODE_LAST,
+    MODE_ALARM_TEXT,  // Shows "ALRM" or "ALARM"
+    MODE_ALARM_TIME,  // Shows Alarm time
+    MODE_AUTO_DATE,   // Scrolls date across the screen
 } display_mode_t;
 
 display_mode_t display_mode = MODE_NORMAL;
+
+// Auto date
+String g_date_string; // string holding the date to scroll across the screen in ADATE mode
+uint8_t g_date_scroll_offset; // offset used when scrolling date across the screen
 
 void initialize(void)
 {
@@ -303,6 +308,66 @@ void read_flw()
 #endif
 }
 
+void update_date_string(WireRtcLib::tm* t)
+{
+  if (!t) return;
+  
+  String temp;
+  
+  switch (g_date_format) {
+  case FORMAT_YMD:
+    temp.concat(t->year+2000);
+    temp.concat('-');
+    if (t->mon < 10) temp.concat('0');
+    temp.concat(t->mon);
+    temp.concat('-');
+    if (t->mday < 10) temp.concat('0');    
+    temp.concat(t->mday);
+    break;
+  case FORMAT_DMY:
+    if (t->mday < 10) temp.concat('0');
+    temp.concat(t->mday);
+    temp.concat('-');
+    if (t->mon < 10) temp.concat('0');
+    temp.concat(t->mon);
+    temp.concat('-');
+    temp.concat(t->year+2000);
+    break;
+  case FORMAT_MDY:
+    if (t->mon < 10) temp.concat('0');
+    temp.concat(t->mon);
+    temp.concat('-');
+    if (t->mday < 10) temp.concat('0');
+    temp.concat(t->mday);
+    temp.concat('-');
+    temp.concat(t->year+2000);
+    break;
+  }
+
+  temp.concat("    ");
+
+  g_date_string = temp;
+}
+
+void scroll_date()
+{
+  char buf[16];
+  g_date_string.toCharArray(buf, 16);
+  
+  set_string(buf + g_date_scroll_offset);
+  g_date_scroll_offset++;
+  
+  if (g_date_scroll_offset == 14) // fixme: check length of buffer to allow scrolling other messages
+    display_mode = MODE_NORMAL;
+}
+
+void start_date_scroll()
+{
+  display_mode = MODE_AUTO_DATE;
+  g_date_scroll_offset = 0;
+  scroll_date();
+}
+
 void read_rtc(bool show_extra_info)
 {
     tt = rtc.getTime();
@@ -320,6 +385,8 @@ void read_rtc(bool show_extra_info)
 #endif // HAVE_AUTO_DST
 
     g_second_dots_on = (g_menu_state == STATE_CLOCK && display_mode == MODE_NORMAL && tt->sec % 2 == 0) ? true : false;
+    
+    update_date_string(tt);
 
 /*
     if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
@@ -343,8 +410,12 @@ void read_rtc(bool show_extra_info)
     else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
         show_time(tt, g_24h_clock, show_extra_info);
 //        read_humidity();
-    else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 10 && tt->sec <= 50)
+    else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 40 && tt->sec <= 50)
         read_flw();
+    else if (g_AutoDate && display_mode <= MODE_AMPM && tt->sec == 51)
+        start_date_scroll();
+    else if (display_mode == MODE_AUTO_DATE)
+        scroll_date();
     else
         show_time(tt, g_24h_clock, show_extra_info);        
 }

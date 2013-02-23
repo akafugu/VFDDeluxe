@@ -56,7 +56,18 @@ void setRTCTime(time_t t)
 {
     tmElements_t tm;
     breakTime(t, &tm);
-    rtc.setTime_s(tm.Hour, tm.Minute, tm.Second);   
+    
+    WireRtcLib::tm temp;
+
+    temp.hour = tm.Hour;
+    temp.min  = tm.Minute;
+    temp.sec  = tm.Second;
+    temp.mday = tm.Day;
+    temp.mon  = tm.Month;
+    temp.year = (1970+tm.Year)-2000;
+    temp.wday = tm.Wday;
+    
+    rtc.setTime(&temp);
 }
 
 void GPSread(void) 
@@ -155,11 +166,10 @@ void parseGPSdata(char *gpsBuffer) {
 //	char gpsMagD;  // Mag var E/W
 //	char gpsCKS[2];  // Checksum without asterisk
 	char *ptr;
-  uint32_t tmp;
+        uint32_t tmp;
 	if ( strncmp( gpsBuffer, "$GPRMC,", 7 ) == 0 ) {  
   
-    Serial.println("parseGPSData");
-  Serial.println(gpsBuffer);  
+	Serial.println(gpsBuffer);  
 
 		//beep(1000, 1);
 		//Calculate checksum from the received data
