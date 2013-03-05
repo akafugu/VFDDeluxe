@@ -97,21 +97,18 @@ int8_t g_dateday;
 extern int8_t g_autodate;
 
 uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
-#ifdef HAVE_FLW
 int8_t g_flw_enabled;
-#endif
 
 #ifdef HAVE_GPS 
 int8_t g_gps_enabled;
 int8_t g_TZ_hour;
 int8_t g_TZ_minute;
-int8_t g_gps_updating;  // for signalling GPS update on some displays
 // debugging counters 
 int8_t g_gps_cks_errors;  // gps checksum error counter
 int8_t g_gps_parse_errors;  // gps parse error counter
 int8_t g_gps_time_errors;  // gps time error counter
 #endif
-
+int8_t g_gps_updating;  // for signalling GPS update on some displays
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 int8_t g_DST_mode;  // DST off, on, auto?
 int8_t g_DST_offset;  // DST offset in Hours
@@ -143,21 +140,34 @@ void globals_init(void)
 	g_volume     = eeprom_read_byte(&b_volume);
 #ifdef HAVE_FLW
 	g_flw_enabled = eeprom_read_byte(&b_flw_enabled);
+#else
+        g_flw_enabled = 0;
 #endif
 #ifdef HAVE_GPS
-	g_gps_enabled = 96;
-	g_TZ_hour = 9;
-//	g_gps_enabled = eeprom_read_byte(&b_gps_enabled);
-//	g_TZ_hour = eeprom_read_byte(&b_TZ_hour) - 12;
+	g_gps_enabled = eeprom_read_byte(&b_gps_enabled);
+	if (g_gps_enabled != 0 && g_gps_enabled != 48 && g_gps_enabled != 96) g_gps_enabled = 0;
+	g_TZ_hour = eeprom_read_byte(&b_TZ_hour) - 12;
 	if ((g_TZ_hour<-12) || (g_TZ_hour>12))  g_TZ_hour = 0;  // add range check
 	g_TZ_minute = eeprom_read_byte(&b_TZ_minute);
+	if (g_TZ_minute % 15 != 0) g_TZ_minute = 0;
 #endif
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
-	g_DST_mode = 0;
-	g_DST_offset = 1;
 	g_DST_mode = eeprom_read_byte(&b_DST_mode);
+#ifdef HAVE_AUTO_DST
+	if (g_DST_mode < 0 || g_DST_mode > 2) g_DST_mode = 0;
+#else
+	if (g_DST_mode < 0 || g_DST_mode > 1) g_DST_mode = 0;
+#endif
+
 	g_DST_offset = eeprom_read_byte(&b_DST_offset);
+	g_DST_offset = 1; // use fixed offset for now
 	g_DST_updated = false;  // allow automatic DST update
+
+        Serial.print("g_DST_mode = ");
+        Serial.println(g_DST_mode);
+        Serial.print("g_DST_offset = ");
+        Serial.println(g_DST_offset);
+
 #endif
 #ifdef HAVE_AUTO_DATE
 	g_date_format = (date_format_t)eeprom_read_byte(&b_date_format);

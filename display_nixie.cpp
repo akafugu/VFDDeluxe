@@ -14,6 +14,9 @@
  */
 
 #include "global.h"
+
+#ifdef HAVE_NIXIE_SUPPORT
+
 #include "display.h"
 
 pin_direct_t nixie_a1_pin;
@@ -226,3 +229,10 @@ void nixie_clear_data()
     ndata[0] = ndata[1] = ndata[2] = ndata[3] = ndata[4] = ndata[5] = 10;  
 }
 
+#else
+
+void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss) {}
+void nixie_print_compact(uint8_t hh, uint8_t mm, uint8_t ss) {}
+void nixie_clear_data() {}
+
+#endif // HAVE_NIXIE_SUPPORT

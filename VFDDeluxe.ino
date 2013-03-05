@@ -14,6 +14,16 @@
  */
 
 /*
+ * CREDITS:
+ *
+ * William Phelps
+ *  - GPS functionality
+ *  - DTS and Date setting
+ *  - Misc improvements and new features
+ *
+ */
+
+/*
  * TODO:
  *
  * Implement brightness PWM
@@ -175,6 +185,7 @@ void initialize(void)
   flw.setCensored(g_flw_enabled == FLW_ON);
 #else
   g_has_flw = false;
+  g_flw_enabled = FLW_OFF;
 #endif
 
 #ifdef HAVE_SHIELD_AUTODETECT
@@ -186,8 +197,10 @@ void initialize(void)
   globals_init();
   display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, g_brightness);
 
+#ifdef HAVE_NIXIE_SUPPORT
   if (shield == SHIELD_IN14 || shield == SHIELD_IN8_2)
       init_nixie_6digit();
+#endif
 
   //g_alarm_switch = get_alarm_switch();
 
@@ -388,28 +401,12 @@ void read_rtc(bool show_extra_info)
     
     update_date_string(tt);
 
-/*
     if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
         read_temp();
     else if (have_pressure_sensor() && tt->sec >= 34 && tt->sec <= 36)
         read_pressure();
     else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
         read_humidity();
-    else if (g_has_flw  && tt->sec >= 40 && tt->sec <= 59)
-        read_flw();
-    else
-        show_time(tt, g_24h_clock, show_extra_info);
- */
-
-    if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
-        show_time(tt, g_24h_clock, show_extra_info);
-//        read_temp();
-    else if (have_pressure_sensor() && tt->sec >= 34 && tt->sec <= 36)
-        show_time(tt, g_24h_clock, show_extra_info);
-//        read_pressure();
-    else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
-        show_time(tt, g_24h_clock, show_extra_info);
-//        read_humidity();
     else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 40 && tt->sec <= 50)
         read_flw();
     else if (g_AutoDate && display_mode <= MODE_AMPM && tt->sec == 51)

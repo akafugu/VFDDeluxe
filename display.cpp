@@ -30,7 +30,7 @@ void write_vfd_16seg(uint8_t digit, uint16_t segments);
 void write_vfd_iv6(uint8_t digit, uint8_t segments);
 void write_vfd_iv17(uint8_t digit, uint16_t segments);
 void write_vfd_iv18(uint8_t digit, uint8_t segments);
-void write_vfd_iv22(uint8_t digit, uint8_t segments);
+//void write_vfd_iv22(uint8_t digit, uint8_t segments);
 
 // nixie shields
 void write_nixie_6digit(uint8_t digit, uint8_t value);
@@ -132,12 +132,14 @@ void detect_shield()
         //mpx_count = 8;
         g_has_dots = true;
         break;
+        /*
     case(6):  // IV-22 shield
         shield = SHIELD_IV22;
         digits = 4;
         //mpx_count = 8;
         g_has_dots = true;
         break;
+        */
     case(7):  // IV-18 shield (note: save value as no shield - all bits on)
         shield = SHIELD_IV18;
         digits = 8;
@@ -307,6 +309,7 @@ void flash_display(uint16_t ms)  // this does not work but why???
 
 //bool led = true;
 
+#ifdef HAVE_7SEG_SUPPORT
 void display_multiplex_7seg(void)
 {
   clear_display();
@@ -315,6 +318,7 @@ void display_multiplex_7seg(void)
   multiplex_counter++;	
   if (multiplex_counter == 10) multiplex_counter = 0;
 }
+#endif
 
 #ifdef HAVE_14SEG_SUPPORT
 void display_multiplex_14seg(void)
@@ -333,10 +337,12 @@ void display_multiplex_14seg(void)
 }
 #endif // HAVE_14SEG_SUPPORT
 
+#ifdef HAVE_16SEG_SUPPORT
 void display_multiplex_16seg(void)
 {
   
 }
+#endif
 
 int slow = 0;
 int counter = 'A';
@@ -458,7 +464,7 @@ void display_multiplex_iv18(void)
                     seg |= (1<<7);
                 if (g_gps_updating)
                     seg |= (1<<6);
-
+              
 		write_vfd_iv18(8, seg);
 	}
 	else {
@@ -470,6 +476,7 @@ void display_multiplex_iv18(void)
 	if (multiplex_counter == 9) multiplex_counter = 0;
 }
 
+/*
 // display multiplexing routine for IV6 shield: run once every 5us
 void display_multiplex_iv22(void)
 {
@@ -497,6 +504,7 @@ void display_multiplex_iv22(void)
 
 	if (multiplex_counter == 4) multiplex_counter = 0;
 }
+*/
 
 volatile uint8_t nixie_multiplex_counter;
 
@@ -504,26 +512,33 @@ void display_multiplex(void)
 {
     nixie_multiplex_counter = !nixie_multiplex_counter;
     
-	if (shield == SHIELD_7SEG)
-		display_multiplex_7seg();
-#ifdef HAVE_14SEG_SUPPORT
-	else if (shield == SHIELD_14SEG)
-		display_multiplex_14seg();
-#endif // HAVE_14SEG_SUPPORT
-	else if (shield == SHIELD_16SEG)
-		display_multiplex_16seg();
-	else if (shield == SHIELD_IV6)
+	if (shield == SHIELD_IV6)
 		display_multiplex_iv6();
 	else if (shield == SHIELD_IV17)
 		display_multiplex_iv17();
 	else if (shield == SHIELD_IV18)
 		display_multiplex_iv18();
-	else if (shield == SHIELD_IV22)
-		display_multiplex_iv22();
+//	else if (shield == SHIELD_IV22)
+//		display_multiplex_iv22();
+#ifdef HAVE_7SEG_SUPPORT
+	else if (shield == SHIELD_7SEG)
+		display_multiplex_7seg();
+#endif
+#ifdef HAVE_14SEG_SUPPORT
+	else if (shield == SHIELD_14SEG)
+		display_multiplex_14seg();
+#endif // HAVE_14SEG_SUPPORT
+#ifdef HAVE_16SEG_SUPPORT
+	else if (shield == SHIELD_16SEG)
+		display_multiplex_16seg();
+#endif
+
+#ifdef HAVE_NIXIE_SUPPORT
 	else if (shield == SHIELD_IN14 && nixie_multiplex_counter)
 		display_multiplex_in14();
 	else if (shield == SHIELD_IN8_2 && nixie_multiplex_counter)
 		display_multiplex_in14();
+#endif
 }
 
 void button_timer(void);
@@ -580,10 +595,15 @@ ISR(TIMER3_OVF_vect)
 
 // utility functions
 // fixme: generalize this to print any length of number
-uint8_t print_digits(uint8_t num, uint8_t offset)
+uint8_t print_digits(int8_t num, uint8_t offset)
 {
     uint8_t ret = (num >= 100) ? offset+3 : offset+2;
     
+    if (num < 0) {
+        data[offset-1] = '-';  // note assumption that offset is always positive!
+        num = -num;
+    }
+
     if (num >= 100) {
         data[offset+2] = num % 10;
         num /= 10;
@@ -890,6 +910,9 @@ void show_setting_string(const char* short_str, const char* long_str, const char
 
 void show_setting_int(const char* short_str, const char* long_str, int value, bool show_setting)
 {
+  Serial.print("show_setting_int ");
+  Serial.println(value);
+  
 	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
 
 	if (get_digits() == 8) {

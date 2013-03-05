@@ -28,10 +28,15 @@ typedef enum {
     STATE_MENU_MONTH,
     STATE_MENU_DAY,
     STATE_MENU_AUTODATE,
-#ifdef HAVE_AUTO_DST
+#if defined(HAVE_AUTO_DST) || defined(HAVE_GPS)
     STATE_MENU_DST,
 #endif
     STATE_MENU_REGION,
+#ifdef HAVE_GPS
+    STATE_MENU_GPS,
+    STATE_MENU_ZONEH,
+    STATE_MENU_ZONEM,
+#endif
     STATE_MENU_TEMP,
     STATE_MENU_DOTS,
 #ifdef HAVE_FLW

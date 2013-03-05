@@ -77,7 +77,8 @@ enum shield_t {
 #define YES 2
 #define NO  1
 
-#define FEATURE_SHIELD_AUTODETECT NO
+#define FEATURE_NIXIE_SUPPORT NO
+#define FEATURE_SHIELD_AUTODETECT YES
 #define FEATURE_MPL115A2 NO // Temperature and Atmospheric pressure sensor
 #define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY NO
@@ -90,7 +91,12 @@ enum shield_t {
 #define FEATURE_RTC_SQW YES
 #define FEATURE_AUTO_DATE YES
 #define FEATURE_AUTO_DST NO
+
+// Support for generic displays (excludes the standard shields)
+#define FEATURE_7SEG_SUPPORT NO
 #define FEATURE_14SEG_SUPPORT NO
+#define FEATURE_16SEG_SUPPORT NO
+
 
 // fixme: this can be automatic based on __AVR_ATmega32U4__ define
 
@@ -107,6 +113,18 @@ enum shield_t {
 // fixme: this should probably be generated from a script
 // list FEATURES and what each feature defines when set to on
 // could also do dependencies
+
+///////////////////////////////////////////
+
+// Experimental support for driving nixies
+#if !(defined FEATURE_NIXIE_SUPPORT) || FEATURE_NIXIE_SUPPORT < NO || FEATURE_NIXIE_SUPPORT > YES
+#  error Must define FEATURE_NIXIE_SUPPORT to be YES or NO
+#endif
+
+#if FEATURE_NIXIE_SUPPORT == YES
+#  define HAVE_NIXIE_SUPPORT
+#endif
+
 
 ///////////////////////////////////////////
 
@@ -264,12 +282,32 @@ enum shield_t {
 
 ///////////////////////////////////////////
 
+#if !(defined FEATURE_7SEG_SUPPORT) || FEATURE_7SEG_SUPPORT < NO || FEATURE_7SEG_SUPPORT > YES
+#  error Must define FEATURE_7SEG_SUPPORT to be YES or NO
+#endif
+
+#if FEATURE_7SEG_SUPPORT == YES
+#  define HAVE_7SEG_SUPPORT
+#endif
+
+///////////////////////////////////////////
+
 #if !(defined FEATURE_14SEG_SUPPORT) || FEATURE_14SEG_SUPPORT < NO || FEATURE_14SEG_SUPPORT > YES
 #  error Must define FEATURE_14SEG_SUPPORT to be YES or NO
 #endif
 
 #if FEATURE_14SEG_SUPPORT == YES
 #  define HAVE_14SEG_SUPPORT
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_16SEG_SUPPORT) || FEATURE_16SEG_SUPPORT < NO || FEATURE_16SEG_SUPPORT > YES
+#  error Must define FEATURE_16SEG_SUPPORT to be YES or NO
+#endif
+
+#if FEATURE_16SEG_SUPPORT == YES
+#  define HAVE_16SEG_SUPPORT
 #endif
 
 #endif // FEATURES_H_

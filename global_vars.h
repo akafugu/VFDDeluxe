@@ -47,7 +47,6 @@ extern uint8_t b_flw_enabled;
 extern uint8_t b_gps_enabled;
 extern uint8_t b_TZ_hour;
 extern uint8_t b_TZ_minute;
-extern uint8_t b_gps_updating;  // for signalling GPS update on some displays
 #endif
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 extern uint8_t b_DST_mode;  // DST off, on, auto?
@@ -88,20 +87,18 @@ extern int8_t g_datemonth;
 extern int8_t g_dateday;
 
 extern uint8_t g_has_flw; // set to true if there is a four letter word EEPROM attached
-#ifdef HAVE_FLW
 extern int8_t g_flw_enabled;
-#endif
 
 #ifdef HAVE_GPS 
 extern int8_t g_gps_enabled;
 extern int8_t g_TZ_hour;
 extern int8_t g_TZ_minute;
-extern int8_t g_gps_updating;  // for signalling GPS update on some displays
 // debugging counters 
 extern int8_t g_gps_cks_errors;  // gps checksum error counter
 extern int8_t g_gps_parse_errors;  // gps parse error counter
 extern int8_t g_gps_time_errors;  // gps time error counter
 #endif
+extern int8_t g_gps_updating;  // for signalling GPS update on some displays
 
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 extern int8_t g_DST_mode;  // DST off, on, auto?

@@ -17,6 +17,9 @@
 #define DISPLAY_NIXIE_H_
 
 #include "features.h"
+
+#ifdef HAVE_NIXIE_SUPPORT
+
 #include <stdbool.h>
 #include <avr/io.h>
 
@@ -30,5 +33,10 @@ void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss);
 void nixie_print_compact(uint8_t hh, uint8_t mm, uint8_t ss);
 void nixie_clear_data();
 
+#else
+void nixie_print(uint8_t hh, uint8_t mm, uint8_t ss);
+void nixie_print_compact(uint8_t hh, uint8_t mm, uint8_t ss);
+void nixie_clear_data();
+#endif // HAVE_NIXIE_SUPPORT
 #endif // DISPLAY_NIXIE_H
 

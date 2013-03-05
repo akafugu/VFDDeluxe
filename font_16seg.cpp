@@ -35,6 +35,31 @@ uint16_t calculate_segments_16(uint8_t character);
 #define segL  0b0100000000000000
 #define segM  0b1000000000000000
 
+#ifdef HAVE_ALTERNATE_FONT
+uint16_t segments_16_numerals[] = {
+	segA1+segA2+segB+segC+segD1+segD2+segE+segF+segJ+segM,
+	segB+segC+segJ,
+	segA1+segA2+segB+segG2+segM+segD1+segD2,
+	segA1+segA2+segC+segD1+segD2+segJ+segG2,
+	segB+segC+segG2+segH,
+	segA1+segA2+segC+segD1+segD2+segH+segG2,
+	segA1+segA2+segK+segD1+segD2+segE+segF+segG1,
+	segA1+segA2+segJ+segL,
+	segA1+segA2+segB+segC+segD1+segD2+segE+segH+segG1+segG2,
+	segA1+segA2+segB+segC+segD1+segD2+segH+segG2,
+	segA2+segB+segC+segD1+segL+segI+segE+segF,
+	segB+segC+segE+segF,
+	segA2+segB+segD1+segL+segG2+segE+segF,
+	segA2+segB+segC+segD1+segG2+segE+segF,
+	segB+segC+segI+segG2+segE+segF,
+	segA2+segC+segD1+segI+segG2+segE+segF,
+	segA2+segC+segD1+segL+segI+segG2+segE+segF,
+	segA2+segB+segC+segI+segE+segF,
+	segA2+segB+segC+segD1+segL+segI+segG2+segE+segF,
+	segA2+segB+segC+segD1+segI+segG2+segE+segF,
+	segA2+segB+segC+segD1+segL+segI+segH+segG1+segE+segD2
+};
+#else
 uint16_t segments_16_numerals[] = {
 	segA1+segA2+segB+segC+segD1+segD2+segE+segF+segJ+segM,
 	segB+segC+segJ,
@@ -58,6 +83,7 @@ uint16_t segments_16_numerals[] = {
 	segA2+segB+segC+segD1+segI+segG2+segE+segF,
 	segA2+segB+segC+segD1+segL+segI+segH+segG1+segE+segD2
 };
+#endif // HAVE_ALTERNATE_FONT
 
 uint16_t segments_16_alpha_upper[] = {
 	segA1+segA2+segB+segC+segE+segF+segG1+segG2,
@@ -88,41 +114,6 @@ uint16_t segments_16_alpha_upper[] = {
 	segA1+segA2+segD1+segD2+segJ+segM
 };
 
-/*
-#ifdef HAVE_ALTERNATE_FONT
-		case 2:
-		case '2':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<G2)|(1<<M)|(1<<D1)|(1<<D2);
-			break;
-		case 3:
-		case '3':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<J)|(1<<G2);
-			break;
-		case 4:
-		case '4':
-			segments = (1<<B)|(1<<C)|(1<<H)|(1<<G2);
-			break;
-		case 5:
-		case '5':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<H)|(1<<G2);
-			break;
-		case 6:
-		case '6':
-			segments = (1<<A1)|(1<<A2)|(1<<K)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G1);
-			break;
-		case 7:
-		case '7':
-			segments = (1<<A1)|(1<<A2)|(1<<J)|(1<<L);
-			break;
-		case 8:
-		case '8':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<H)|(1<<G1)|(1<<G2);
-			break;
-		case 9:
-		case '9':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<H)|(1<<G2);
-			break;
-*/
 /*
 #ifdef HAVE_LOWERCASE
 		case 'a':

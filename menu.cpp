@@ -1,6 +1,6 @@
 /*
- * Menu for VFD Modular Clock
- * (C) 2012 William B Phelps
+ * VFD Deluxe
+ * (C) 2011-13 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -29,8 +29,10 @@
 #include "display.h"
 #include "pitches.h"
 
+#include "gps.h"
 #include "adst.h"
 #include "flw.h"
+#include "time.h"
 
 menu_state_t g_menu_state = STATE_CLOCK;
 
@@ -42,7 +44,35 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd);
 extern WireRtcLib rtc;
 extern WireRtcLib::tm* tt; // current local date and time as TimeElements (pointer)
 
-#if defined HAVE_AUTO_DST
+void to_tmElements(WireRtcLib::tm* tm, tmElements_t* te)
+{
+  if (!te) return;
+  if (!tm) return;
+  
+  te->Second = tm->sec;
+  te->Minute = tm->min;
+  te->Hour   = tm->hour;
+  te->Day    = tm->mday;
+  te->Month  = tm->mon;
+  te->Year   = tm->year;
+  te->Wday   = tm->wday;
+}
+
+void to_tm(tmElements_t* te, WireRtcLib::tm* tm)
+{
+  if (!te) return;
+  if (!tm) return;
+  
+  tm->sec  = te->Second;
+  tm->min  = te->Minute;
+  tm->hour  = te->Hour;
+  tm->mday  = te->Day;
+  tm->mon  = te->Month;
+  tm->year  = te->Year;
+  tm->wday  = te->Wday;
+}
+
+#if defined(HAVE_AUTO_DST) || defined(HAVE_GPS)
 void setDSToffset(uint8_t mode) {
 	int8_t adjOffset;
 	uint8_t newOffset;
@@ -65,11 +95,16 @@ void setDSToffset(uint8_t mode) {
             tone(PinMap::piezo, NOTE_A4, 100);  // fall back
 
         tt = rtc.getTime();
-        tt->year = y2kYearToTm(tt->year);
-        unsigned long tNow = makeTime(tt);  // fetch current time from RTC as time_t
+        
+        tmElements_t tm;
+        to_tmElements(tt, &tm);   
+        
+        unsigned long tNow = makeTime(&tm);  // fetch current time from RTC as time_t     
         tNow += adjOffset * SECS_PER_HOUR;  // add or subtract new DST offset
-        breakTime(tNow, tt);
-        tt->year = tmYearToY2k(tt->year);  // remove 1970 offset
+        breakTime(tNow, &tm);
+        tm.Year = tmYearToY2k(tm.Year);  // remove 1970 offset
+        
+        to_tm(&tm, tt);        
         rtc.setTime(tt);  // adjust RTC
         g_DST_offset = newOffset;
         eeprom_update_byte(&b_DST_offset, g_DST_offset);
@@ -89,6 +124,27 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
 	g_DST_updated = false;  // allow automatic DST adjustment again
 	setDSToffset(g_DST_mode);  // set DSToffset based on new date
 #endif
+}
+#endif
+
+#ifdef HAVE_GPS
+char gps_setting_[4];
+char* gps_setting(uint8_t gps)
+{
+	switch (gps) {
+		case(0):
+			strcpy(gps_setting_,"off");
+			break;
+		case(48):
+			strcpy(gps_setting_," 48");
+			break;
+		case(96):
+			strcpy(gps_setting_," 96");
+			break;
+		default:
+			strcpy(gps_setting_," ??");
+	}
+	return gps_setting_;
 }
 #endif
 
@@ -157,6 +213,7 @@ void menu(bool update, bool show)
       show_setting_int("DAY", "DAY", g_dateday, show);
       break;
       
+#ifdef HAVE_AUTODATE
     case STATE_MENU_AUTODATE:
       if (update) {
         g_AutoDate = !g_AutoDate;
@@ -168,33 +225,31 @@ void menu(bool update, bool show)
       break;
       
     case STATE_MENU_REGION:
-    Serial.println("Region setting");
-    Serial.println(g_date_format);
-      if (update) {
-        if (g_date_format == FORMAT_YMD)
-          g_date_format = FORMAT_MDY;
-        else if (g_date_format == FORMAT_MDY)
-          g_date_format = FORMAT_DMY;
-        else if (g_date_format == FORMAT_DMY)
-          g_date_format = FORMAT_YMD;
-        else
-          g_date_format = FORMAT_YMD;
+        if (update) {
+            if (g_date_format == FORMAT_YMD)
+                g_date_format = FORMAT_MDY;
+            else if (g_date_format == FORMAT_MDY)
+                g_date_format = FORMAT_DMY;
+            else if (g_date_format == FORMAT_DMY)
+                g_date_format = FORMAT_YMD;
+            else
+                g_date_format = FORMAT_YMD;
         
-        eeprom_update_byte(&b_date_format, g_date_format);
+            eeprom_update_byte(&b_date_format, g_date_format);
       }
       
-          Serial.println(g_date_format);
-    
       if (g_date_format == FORMAT_YMD)
-        show_setting_string("REGN", "REGION", "YMD", show);
+          show_setting_string("REGN", "REGION", "YMD", show);
       else if (g_date_format == FORMAT_MDY)
-        show_setting_string("REGN", "REGION", "MDY", show);
+          show_setting_string("REGN", "REGION", "MDY", show);
       else if (g_date_format == FORMAT_DMY)
-        show_setting_string("REGN", "REGION", "DMY", show);
+          show_setting_string("REGN", "REGION", "DMY", show);
       else
-        show_setting_string("REGN", "REGION", "YMD", show);
+          show_setting_string("REGN", "REGION", "YMD", show);
 
       break;
+      
+#endif // HAVE_AUTO_DATE
 
 #ifdef HAVE_AUTO_DST
     case STATE_MENU_DST:
@@ -212,9 +267,54 @@ void menu(bool update, bool show)
       else
         show_setting_string("DST", "DST", g_DST_mode == 1 ? "on" : "auto", show);
       break;
+#elif defined HAVE_GPS
+    case STATE_MENU_DST:
+    if (update) {	
+        g_DST_mode = (g_DST_mode+1)%2;  //  0: off, 1: on
+        eeprom_update_byte(&b_DST_mode, g_DST_mode);
+        setDSToffset(g_DST_mode);
+    }
+    show_setting_string("DST", "DST", g_DST_mode ? " on" : " off", show);
+    break;
 #endif // HAVE_AUTO_DST 
 
+#ifdef HAVE_GPS
+    case STATE_MENU_GPS:
+        if (update) {
+            g_gps_enabled = (g_gps_enabled+48)%144;  // 0, 48, 96
+            eeprom_update_byte(&b_gps_enabled, g_gps_enabled);
+            gps_init(g_gps_enabled);  // change baud rate
+        }
+        
+        show_setting_string("GPS", "GPS", gps_setting(g_gps_enabled), show);
+        break;
 
+    case STATE_MENU_ZONEH:
+        if (update) {
+            g_TZ_hour++;
+            if (g_TZ_hour > 12) g_TZ_hour = -12;
+            
+            eeprom_update_byte(&b_TZ_hour, g_TZ_hour + 12);
+            tGPSupdate = 0;  // allow GPS to refresh
+        }
+                
+        show_setting_int("TZH", "TZH", g_TZ_hour, show);
+        break;
+
+    case STATE_MENU_ZONEM:
+        if (update) {
+            g_TZ_minute = (g_TZ_minute + 15) % 60;
+            
+            eeprom_update_byte(&b_TZ_minute, g_TZ_minute);
+            tGPSupdate = 0;  // allow GPS to refresh
+        }
+        
+        Serial.print("TZM: ");
+        Serial.println(g_TZ_minute);        
+        
+        show_setting_int("TZM", "TZM", g_TZ_minute, show);
+        break;
+#endif // HAVE_GPS
 
 	case STATE_MENU_TEMP:
             if (update) {
