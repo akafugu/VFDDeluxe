@@ -17,186 +17,75 @@
 
 uint8_t calculate_segments_7(uint8_t character);
 
-#define A	0
-#define B	1
-#define C	2
-#define D	3
-#define E	4
-#define F	5
-#define	G	6
-#define	DP	7
+#define segA 0b00000001
+#define segB 0b00000010
+#define segC 0b00000100
+#define segD 0b00001000
+#define segE 0b00010000
+#define segF 0b00100000
+#define segG 0b01000000
+#define segDP 0b10000000
 
-uint8_t calculate_segments_7(uint8_t character)
+char segments_7n[] = {
+	segA + segB + segC + segD + segE + segF,  //0
+	segB + segC, //1
+	segA + segB + segD + segE + segG, //2
+	segA + segB + segC + segD + segG, //3
+	segB + segC + segF + segG, //4
+	segA + segC + segD + segF + segG, //5 S
+	segA + segC + segD + segE + segF + segG, //6
+	segA + segB + segC, //7
+	segA + segB + segC + segD + segE + segF + segG, //8
+	segA + segB + segC + segD + segF + segG, //9
+	};
+char segments_7a[] = {
+	segA + segB + segC + segE + segF + segG, //10 A
+	segC + segD + segE + segF + segG, //11 B
+	segA + segD + segE + segF, //12 C
+	segB + segC + segD + segE + segG, //13 D
+	segA + segD + segE + segF + segG, //14 E
+	segA + segE + segF + segG, //15 F
+	segA + segC + segD + segE + segF, //G
+	segB + segC + segE + segF + segG, //H
+	segB + segC, // I
+	segB + segC + segD + segE, //J
+	segB + segE + segF + segG, //K
+	segD + segE + segF, //L
+	segA + segC + segE + segG, //M
+	segC + segE + segG, //N
+	segA + segB + segC + segD + segE + segF,  //0
+	segA + segB + segE + segF + segG, //P
+	segA + segB + segC + segF + segG, //Q
+	segE + segG, //R
+	segA + segC + segD + segF + segG, //5 S
+	segD + segE + segF + segG, //T
+	segB + segC + segD + segE + segF, //U
+	segC + segD + segE, //V
+	segA + segD + segG, //W
+	segA + segD + segG, //X
+	segB + segC + segD + segF + segG, //Y
+	segD + segG //Z
+};
+
+uint8_t calculate_segments_7(uint8_t ch)
 {
-	uint8_t segments = 0;
-	
-	switch (character)
-	{
-		case 0:
-		case '0':
-		case 'O':
-			segments = (1<<A)|(1<<B)|(1<<C)|(1<<D)|(1<<E)|(1<<F);
-			break;
-		case 1:
-		case '1':
-		case 'l':
-			segments = (1<<B)|(1<<C);
-			break;
-		case 2:
-		case '2':
-			segments = (1<<A)|(1<<B)|(1<<D)|(1<<E)|(1<<G);
-			break;
-		case 3:
-		case '3':
-			segments = (1<<A)|(1<<B)|(1<<C)|(1<<D)|(1<<G);
-			break;
-		case 4:
-		case '4':
-			segments = (1<<B)|(1<<C)|(1<<F)|(1<<G);
-			break;
-		case 5:
-		case '5':
-		case 'S':
-		case 's':
-			segments = (1<<A)|(1<<C)|(1<<D)|(1<<F)|(1<<G);
-			break;
-		case 6:
-		case '6':
-			segments = (1<<A)|(1<<C)|(1<<D)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 7:
-		case '7':
-			segments = (1<<A)|(1<<B)|(1<<C);
-			break;
-		case 8:
-		case '8':
-			segments = (1<<A)|(1<<B)|(1<<C)|(1<<D)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 9:
-		case '9':
-		case 'g':
-			segments = (1<<A)|(1<<B)|(1<<C)|(1<<D)|(1<<F)|(1<<G);
-			break;
-		case 10:
-		case 'A':
-		case 'a':
-			segments = (1<<A)|(1<<B)|(1<<C)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 11:
-		case 'B':
-		case 'b':
-			segments = (1<<C)|(1<<D)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 12:
-		case 'C':
-			segments = (1<<A)|(1<<D)|(1<<E)|(1<<F);
-			break;
-		case 'c':
-			segments = (1<<D)|(1<<E)|(1<<G);
-			break;
-		case 13:
-		case 'D':
-		case 'd':
-			segments = (1<<B)|(1<<C)|(1<<D)|(1<<E)|(1<<G);
-			break;
-		case 14:
-		case 'E':
-			segments = (1<<A)|(1<<D)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 'e':
-			segments = (1<<A)|(1<<B)|(1<<D)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 15:
-		case 'F':
-		case 'f':
-			segments = (1<<A)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 'G':
-			segments = (1<<A)|(1<<C)|(1<<D)|(1<<E)|(1<<F);
-			break;
-		case 'H':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 'h':
-			segments = (1<<C)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 'I':
-		case 'i':
-			segments = (1<<B)|(1<<C);
-			break;
-		case 'J':
-		case 'j':
-			segments = (1<<B)|(1<<C)|(1<<D)|(1<<E);
-			break;
-                case 'k':
-                case 'K':
-                        segments = (1<<E)|(1<<F)|(1<<G);
-                        break;
-		case 'L':
-			segments = (1<<D)|(1<<E)|(1<<F);
-			break;
-		case 'M':
-		case 'm':
-			segments = (1<<A)|(1<<C)|(1<<E)|(1<<G);
-			break;
-		case 'N':
-		case 'n':
-			segments = (1<<C)|(1<<E)|(1<<G);
-			break;
-		case 'o':
-			segments = (1<<C)|(1<<D)|(1<<E)|(1<<G);
-			break;
-		case 'P':
-		case 'p':
-			segments = (1<<A)|(1<<B)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 'Q':
-		case 'q':
-			segments = (1<<A)|(1<<B)|(1<<C)|(1<<F)|(1<<G);
-			break;
-		case 'R':
-		case 'r':
-			segments = (1<<E)|(1<<G);
-			break;
-		case 'T':
-		case 't':
-			segments = (1<<D)|(1<<E)|(1<<F)|(1<<G);
-			break;
-		case 'U':
-			segments = (1<<B)|(1<<C)|(1<<D)|(1<<E)|(1<<F);
-			break;
-		case 'u':
-			segments = (1<<C)|(1<<D)|(1<<E);
-			break;
-		case 'V':
-		case 'v':
-			segments = (1<<C)|(1<<D)|(1<<E);
-			break;
-		case 'W':
-		case 'w':
-			segments = (1<<A)|(1<<C)|(1<<D)|(1<<E);
-			break;
-		case 'Y':
-		case 'y':
-			segments = (1<<B)|(1<<C)|(1<<D)|(1<<F)|(1<<G);
-			break;
-		case '-':
-			segments = (1<<G);
-			break;
-		case '"':
-			segments = (1<<B)|(1<<F);
-			break;
-		case 0x27:	// "'"
-			segments = (1<<B);
-			break;
-		case '_':
-			segments = (1<<D);
-			break;
-		case ' ':
-		default:
-			segments = 0;
-			break;
-	}
-	
-	return segments;
+	uint8_t segs = 0;
+	if ((ch >= 'A') && (ch <= 'Z'))  // A-Z
+		segs = segments_7a[ch-'A'];
+	else if ((ch >= 'a') && (ch <= 'z'))  // a-z
+		segs = segments_7a[ch-'a'];
+	else if ((ch >= '0') && (ch <= '9'))
+		segs = segments_7n[ch-48];
+	else if (ch == '-')
+		segs = segG;
+	else if (ch == '"')
+		segs = segB+segF;
+	else if (ch == 0x27)  // "'"
+		segs = segB;
+	else if (ch == '_')
+		segs = segD;
+	else
+		segs = 0;
+	return segs;
 }
+

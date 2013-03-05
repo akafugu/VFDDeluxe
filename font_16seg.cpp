@@ -18,38 +18,77 @@
 
 uint16_t calculate_segments_16(uint8_t character);
 
-#define A1 0
-#define A2 1
-#define B  2
-#define C  3
-#define D1 5
-#define D2 4
-#define E  6
-#define F_ 7
-#define G1 8
-#define G2 9
-#define H  10
-#define I  11
-#define J  12
-#define K  13
-#define L  14
-#define M  15
+#define segA1 0b0000000000000001
+#define segA2 0b0000000000000010
+#define segB  0b0000000000000100
+#define segC  0b0000000000001000
+#define segD1 0b0000000000010000
+#define segD2 0b0000000000100000
+#define segE  0b0000000001000000
+#define segF  0b0000000010000000
+#define segG1 0b0000000100000000
+#define segG2 0b0000001000000000
+#define segH  0b0000010000000000
+#define segI  0b0000100000000000
+#define segJ  0b0001000000000000
+#define segK  0b0010000000000000
+#define segL  0b0100000000000000
+#define segM  0b1000000000000000
 
-uint16_t calculate_segments_16(uint8_t character)
-{
-	uint16_t segments = 0;
+uint16_t segments_16_numerals[] = {
+	segA1+segA2+segB+segC+segD1+segD2+segE+segF+segJ+segM,
+	segB+segC+segJ,
+	segA1+segA2+segB+segG1+segG2+segE+segD1+segD2,
+	segA1+segA2+segB+segC+segD1+segD2+segG1+segG2,
+	segB+segC+segG1+segG2+segF,
+	segA1+segA2+segC+segD1+segD2+segF+segG1+segG2,
+	segA1+segA2+segC+segD1+segD2+segE+segF+segG1+segG2,
+	segA1+segA2+segB+segC+segF,
+	segA1+segA2+segB+segC+segD1+segD2+segE+segF+segG1+segG2,
+	segA1+segA2+segB+segC+segD1+segD2+segF+segG1+segG2,
+	segA2+segB+segC+segD1+segL+segI+segE+segF,
+	segB+segC+segE+segF,
+	segA2+segB+segD1+segL+segG2+segE+segF,
+	segA2+segB+segC+segD1+segG2+segE+segF,
+	segB+segC+segI+segG2+segE+segF,
+	segA2+segC+segD1+segI+segG2+segE+segF,
+	segA2+segC+segD1+segL+segI+segG2+segE+segF,
+	segA2+segB+segC+segI+segE+segF,
+	segA2+segB+segC+segD1+segL+segI+segG2+segE+segF,
+	segA2+segB+segC+segD1+segI+segG2+segE+segF,
+	segA2+segB+segC+segD1+segL+segI+segH+segG1+segE+segD2
+};
 
-	switch (character)
-	{
-		case 0:
-		case '0':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<J)|(1<<M);
-			break;
-		case 1:
-		case '1':
-			//segments = (1<<I)|(1<<L);
-			segments = (1<<B)|(1<<C)|(1<<J);
-			break;
+uint16_t segments_16_alpha_upper[] = {
+	segA1+segA2+segB+segC+segE+segF+segG1+segG2,
+	segA1+segA2+segB+segC+segD1+segD2+segG2+segI+segL,
+	segA1+segA2+segD1+segD2+segE+segF,
+	segA1+segA2+segB+segC+segD1+segD2+segI+segL,
+	segA1+segA2+segD1+segD2+segE+segF+segG1+segG2,
+	segA1+segA2+segE+segF+segG1,
+	segA1+segA2+segC+segD1+segD2+segE+segF+segG2,
+	segB+segC+segE+segF+segG1+segG2,
+	segA1+segA2+segI+segL+segD1+segD2,
+	segB+segC+segD1+segD2+segE,
+	segE+segF+segG1+segJ+segK,
+	segD1+segD2+segE+segF,
+	segB+segC+segE+segF+segH+segJ,
+	segB+segC+segE+segF+segH+segK,
+	segA1+segA2+segB+segC+segD1+segD2+segE+segF,
+	segA1+segA2+segB+segE+segF+segG1+segG2,
+	segA1+segA2+segB+segC+segD1+segD2+segE+segF+segK,
+	segA1+segA2+segB+segE+segF+segG1+segG2+segK,
+	segA1+segA2+segC+segD1+segD2+segF+segG1+segG2,
+	segA1+segA2+segI+segL,
+	segB+segC+segD1+segD2+segE+segF,
+	segE+segF+segJ+segM,
+	segB+segC+segE+segF+segK+segM,
+	segH+segJ+segK+segM,
+	segH+segJ+segL,
+	segA1+segA2+segD1+segD2+segJ+segM
+};
+
+/*
 #ifdef HAVE_ALTERNATE_FONT
 		case 2:
 		case '2':
@@ -83,152 +122,8 @@ uint16_t calculate_segments_16(uint8_t character)
 		case '9':
 			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<H)|(1<<G2);
 			break;
-#else
-		case 2:
-		case '2':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<G1)|(1<<G2)|(1<<E)|(1<<D1)|(1<<D2);
-			break;
-		case 3:
-		case '3':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<G1)|(1<<G2);
-			break;
-		case 4:
-		case '4':
-			segments = (1<<B)|(1<<C)|(1<<G1)|(1<<G2)|(1<<F_);
-			break;
-		case 5:
-		case '5':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-		case 6:
-		case '6':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-		case 7:
-		case '7':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<F_);
-			break;
-		case 8:
-		case '8':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-		case 9:
-		case '9':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-#endif // HAVE_ALTERNATE_FONT
-		case 10:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<E)|(1<<F_);
-			break;
-		case 11:
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_);
-			break;
-		case 12:
-			segments = (1<<A2)|(1<<B)|(1<<D2)|(1<<L)|(1<<G2)|(1<<E)|(1<<F_);
-			break;
-		case 13:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<G2)|(1<<E)|(1<<F_);
-			break;
-		case 14:
-			segments = (1<<B)|(1<<C)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);
-			break;
-		case 15:
-			segments = (1<<A2)|(1<<C)|(1<<D2)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);
-			break;
-		case 16:
-			segments = (1<<A2)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);
-			break;
-		case 17:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<I)|(1<<E)|(1<<F_);
-			break;
-		case 18:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);
-			break;
-		case 19:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<I)|(1<<G2)|(1<<E)|(1<<F_);	
-			break;
-		case 20:
-			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<L)|(1<<I)|(1<<H)|(1<<G1)|(1<<E)|(1<<D2);
-			break;
-		case 'A':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-		case 'B':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<G2)|(1<<I)|(1<<L);
-			break;
-		case 'C':
-			segments = (1<<A1)|(1<<A2)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_);
-			break;
-		case 'D':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<I)|(1<<L);
-			break;
-		case 'E':
-			segments = (1<<A1)|(1<<A2)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-		case 'F':
-			segments = (1<<A1)|(1<<A2)|(1<<E)|(1<<F_)|(1<<G1);
-			break;
-		case 'G':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<G2);
-			break;
-		case 'H':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-		case 'I':
-			segments = (1<<A1)|(1<<A2)|(1<<I)|(1<<L)|(1<<D1)|(1<<D2);
-			break;
-		case 'J':
-			segments = (1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E);
-			break;
-		case 'K':
-			segments = (1<<E)|(1<<F_)|(1<<G1)|(1<<J)|(1<<K);
-			break;
-		case 'L':
-			segments = (1<<D1)|(1<<D2)|(1<<E)|(1<<F_);
-			break;
-		case 'M':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<H)|(1<<J);
-			break;
-		case 'N':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<H)|(1<<K);
-			break;
-		case 'O':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_);
-			break;
-		case 'P':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-		case 'Q':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_)|(1<<K);
-			break;
-		case 'R':
-			segments = (1<<A1)|(1<<A2)|(1<<B)|(1<<E)|(1<<F_)|(1<<G1)|(1<<G2)|(1<<K);
-			break;
-		case 'S':
-			segments = (1<<A1)|(1<<A2)|(1<<C)|(1<<D1)|(1<<D2)|(1<<F_)|(1<<G1)|(1<<G2);
-			break;
-		case 'T':
-			segments = (1<<A1)|(1<<A2)|(1<<I)|(1<<L);
-			break;
-		case 'U':
-			segments = (1<<B)|(1<<C)|(1<<D1)|(1<<D2)|(1<<E)|(1<<F_);
-			break;
-		case 'V':
-			segments = (1<<E)|(1<<F_)|(1<<J)|(1<<M);
-			break;
-		case 'W':
-			segments = (1<<B)|(1<<C)|(1<<E)|(1<<F_)|(1<<K)|(1<<M);
-			break;
-		case 'X':
-		case 'x':
-			segments = (1<<H)|(1<<J)|(1<<K)|(1<<M);
-			break;
-		case 'Y':
-			segments = (1<<H)|(1<<J)|(1<<L);
-			break;
-		case 'Z':
-			segments = (1<<A1)|(1<<A2)|(1<<D1)|(1<<D2)|(1<<J)|(1<<M);
-			break;
+*/
+/*
 #ifdef HAVE_LOWERCASE
 		case 'a':
 			segments = (1<<A2)|(1<<B)|(1<<C)|(1<<D2)|(1<<G2)|(1<<L);
@@ -300,36 +195,47 @@ uint16_t calculate_segments_16(uint8_t character)
 		case 'w':
 			segments = (1<<C)|(1<<D2)|(1<<E)|(1<<M)|(1<<L);
 			break;
+		case 'x':
+			segments = (1<<H)|(1<<J)|(1<<K)|(1<<M);
+			break;
 		case 'y':
 			segments = (1<<H)|(1<<I)|(1<<L);
 			break;
 		case 'z':
 			segments = (1<<D1)|(1<<G1)|(1<<M);
 			break;
-#endif
-		case ' ':
-			segments = 0;
-			break;
-		case '-':
-			segments = (1<<G1)|(1<<G2);
-			break;
+
 		case '/':
 			segments = (1<<J)|(1<<M);
 			break;
-		case '+':
-			segments = (1<<G1)|(1<<G2)|(1<<I)|(1<<L);
-			break;
-		case '<':
-			segments = (1<<J)|(1<<K);
-			break;
-		case '>':
-			segments = (1<<H)|(1<<M);
-			break;
-		case '*':
-		default:
-			segments = (1<<H)|(1<<I)|(1<<J)|(1<<K)|(1<<L)|(1<<M)|(1<<G1)|(1<<G2);
-			break;
-	}
-	
-	return segments;
+
+*/
+
+uint16_t calculate_segments_16(uint8_t ch)
+{
+	uint16_t segs = 0;
+	if ((ch >= 'A') && (ch <= 'Z'))
+		segs = segments_16_alpha_upper[ch-'A'];  // A-Z
+	else if ((ch >= 'a') && (ch <= 'z'))
+		segs = segments_16_alpha_upper[ch-'a'];  // a-z
+	else if ((ch >= '0') && (ch <= '9'))
+		segs = segments_16_numerals[ch-48];  // 0-9
+	else if ((ch >= 0) && (ch <= 20))
+		segs = segments_16_numerals[ch];  // 0-20
+	else if (ch == ' ')
+		segs = 0;
+	else if (ch == '-')
+		segs = segG1+segG2;
+	else if (ch == '+')
+		segs = segG1+segG2+segI+segL;
+	else if (ch == '<')
+		segs = segJ+segK;
+	else if (ch == '>')
+		segs = segH+segM;
+	else if (ch == '/')
+		segs = segJ+segM;
+	else
+		segs = segH+segI+segJ+segK+segL+segM+segG1+segG2;  // asterisk
+	return segs;
 }
+
