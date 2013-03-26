@@ -16,7 +16,7 @@
 #include "global.h"
 #include "global_vars.h"
 
-#include <util/delay.h>
+//#include <util/delay.h>
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
 #include <string.h>
@@ -89,10 +89,14 @@ void setDSToffset(uint8_t mode) {
 	adjOffset = newOffset - g_DST_offset;  // offset delta
 	if (adjOffset == 0)  return;  // nothing to do
 
-        if (adjOffset > 0)
-            tone(PinMap::piezo, NOTE_A5, 100);  // spring ahead
-        else
-            tone(PinMap::piezo, NOTE_A4, 100);  // fall back
+//        Serial.println("adjusting DST");
+
+//        if (adjOffset > 0)
+//            tone(PinMap::piezo, NOTE_A5, 100);  // spring ahead
+//            tone(11, 880, 100);
+//        else
+//            tone(PinMap::piezo, NOTE_A4, 100);  // fall back
+//            tone(11, 440, 100);
 
         tt = rtc.getTime();
         
@@ -150,11 +154,11 @@ char* gps_setting(uint8_t gps)
 
 void menu(bool update, bool show)
 {
-    Serial.print("menu(");
-    Serial.print(update);
-    Serial.print(", ");
-    Serial.print(show);
-    Serial.println(")");
+//    Serial.print("menu(");
+//    Serial.print(update);
+//    Serial.print(", ");
+//    Serial.print(show);
+//    Serial.println(")");
     
     switch (g_menu_state) {
       
@@ -309,8 +313,8 @@ void menu(bool update, bool show)
             tGPSupdate = 0;  // allow GPS to refresh
         }
         
-        Serial.print("TZM: ");
-        Serial.println(g_TZ_minute);        
+//        Serial.print("TZM: ");
+//        Serial.println(g_TZ_minute);        
         
         show_setting_int("TZM", "TZM", g_TZ_minute, show);
         break;

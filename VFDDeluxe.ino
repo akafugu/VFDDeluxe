@@ -48,7 +48,7 @@
 #include "display.h"
 #include "display_nixie.h"
 #include "button.h"
-#include "pitches.h"
+//#include "pitches.h"
 //#include "rotary.h"
 
 #ifdef HAVE_MPL115A2
@@ -81,11 +81,12 @@ WireRtcLib rtc;
 
 uint8_t g_second_dots_on = true;
 uint8_t g_alarm_switch;
-#define MENU_TIMEOUT 200
+#define MENU_TIMEOUT 20 // 20*100 ms = 2 seconds
 
 uint8_t g_alarming = false;
 bool g_update_rtc = true;
 uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
+#define SHOW_TIMEOUT 10 // 10*100 ms = 1 seconds
 WireRtcLib::tm* tt = NULL; // for holding RTC values
 
 volatile uint16_t g_rotary_moved_timer;
@@ -141,7 +142,8 @@ void initialize(void)
 
   // initialize button
   // fixme: change depending on HAVE_ROTARY define
-  initialize_button(PinMap::button1, PinMap::button2);
+//  initialize_button(PinMap::button1, PinMap::button2);
+  initialize_button(PinMap::button2, PinMap::button1);
 
   // initialize alarm switch
   pinMode(PinMap::alarm_switch, OUTPUT);
@@ -235,7 +237,7 @@ ISR( PCINT0_vect )
 #endif
 
 uint8_t print_digits(uint8_t num, uint8_t offset);
-void clear_data(void);
+//void clear_data(void);
 
 bool have_temp_sensor(void)
 {
@@ -362,35 +364,39 @@ void update_date_string(WireRtcLib::tm* t)
   g_date_string = temp;
 }
 
-void scroll_date()
-{
-  char buf[16];
-  g_date_string.toCharArray(buf, 16);
-  
-  set_string(buf + g_date_scroll_offset);
-  g_date_scroll_offset++;
-  
-  if (g_date_scroll_offset == 14) // fixme: check length of buffer to allow scrolling other messages
-    display_mode = MODE_NORMAL;
-}
-
-void start_date_scroll()
-{
-  display_mode = MODE_AUTO_DATE;
-  g_date_scroll_offset = 0;
-  scroll_date();
-}
+//void scroll_date()
+//{
+//  char buf[16];
+//  g_date_string.toCharArray(buf, 16);
+//  
+//  set_string(buf + g_date_scroll_offset);
+//  g_date_scroll_offset++;
+//  
+//  if (g_date_scroll_offset == 14) // fixme: check length of buffer to allow scrolling other messages
+//    display_mode = MODE_NORMAL;
+//}
+//
+//void start_date_scroll()
+//{
+//  display_mode = MODE_AUTO_DATE;
+//  g_date_scroll_offset = 0;
+//  scroll_date();
+//}
 
 void read_rtc(bool show_extra_info)
 {
     tt = rtc.getTime();
-    if (tt == NULL) return;
+    if (tt == NULL) {
+//      Serial.println("no RTC!");  // temp
+      return;
+    }
 
 #ifdef HAVE_AUTO_DST
     if (tt->sec % 10 == 0)  // check DST Offset every 10 seconds (60?)
         setDSToffset(g_DST_mode); 
         
         if ((tt->hour == 0) && (tt->min == 0) && (tt->sec == 0)) {  // MIDNIGHT!
+//          Serial.println("Midnight");  // wbp debug
             g_DST_updated = false;
             if (g_DST_mode)
                 DSTinit(tt, g_DST_Rules);  // re-compute DST start, end
@@ -399,7 +405,7 @@ void read_rtc(bool show_extra_info)
 
     g_second_dots_on = (g_menu_state == STATE_CLOCK && display_mode == MODE_NORMAL && tt->sec % 2 == 0) ? true : false;
     
-    update_date_string(tt);
+//    update_date_string(tt);
 
     if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
         read_temp();
@@ -409,10 +415,15 @@ void read_rtc(bool show_extra_info)
         read_humidity();
     else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 40 && tt->sec <= 50)
         read_flw();
-    else if (g_AutoDate && display_mode <= MODE_AMPM && tt->sec == 51)
-        start_date_scroll();
-    else if (display_mode == MODE_AUTO_DATE)
-        scroll_date();
+    else if (g_AutoDate && display_mode <= MODE_AMPM && tt->sec == 55) {
+//        start_date_scroll();
+//    else if (display_mode == MODE_AUTO_DATE)
+//        scroll_date();
+        scroll_speed(300);  // display date at 3 cps
+	scroll_date(tt, g_date_format);  // show date from last rtc_get_time() call
+        while (scrolling())
+          wDelay(100); // wait a bit (temp)
+    }
     else
         show_time(tt, g_24h_clock, show_extra_info);        
 }
@@ -433,11 +444,23 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
 
 void setup()
 {
+
+//  for (int i=0; i<46; i++) {
+//    pinMode(i, OUTPUT);  // set pins to OUTPUT to save power
+//  }
+
+//  tone(PinMap::piezo, NOTE_A5, 500);  // test tone
+//  tone(11, 880, 200);  // test tone
+//  _delay_ms(500);
+    
+  Serial.begin(9600);
 #ifdef HAVE_SERIAL_DEBUG
   while (!Serial) ;
 #endif
-    
-  Serial.begin(9600);
+  _delay_ms(500); // temp
+#ifdef HAVE_SERIAL_DEBUG
+  while (!Serial) ;  // second time's the charm...
+#endif
   Serial.println("VFD Deluxe");
   
 #ifdef HAVE_MPL115A2
@@ -446,10 +469,31 @@ void setup()
 #endif // HAVE_MPL115A2
 
   initialize();
-}
 
-void loop()
-{
+//  delay(500);
+//  tone(11, 880, 500);  // test tone
+//  wDelay(500);
+	
+  switch (shield) {
+    case(SHIELD_IV6):
+      set_string("IV-6");
+      break;
+    case(SHIELD_IV17):
+      set_string("IV17");
+      break;
+    case(SHIELD_IV18):
+      set_string("IV-18");
+      break;
+    case(SHIELD_IV22):
+      set_string("IV22");
+      break;
+    default:
+      break;
+   }
+
+  Serial.println("setup done");
+  wDelay(1000);
+  
   /*
   // test: write alphabet
   while (1) {
@@ -469,42 +513,27 @@ void loop()
     }
   }
   */
-  
-  uint8_t hour = 0, min = 0, sec = 0;
 
+}
+
+void loop()
+{
+  unsigned long t1, t2;
+  uint8_t hour = 0, min = 0, sec = 0;
   // Counters used when setting time
   int16_t time_to_set = 0;
   uint16_t button_released_timer = 0;
   uint16_t button_speed = 25;
-	
-  switch (shield) {
-    case(SHIELD_IV6):
-      set_string("IV-6");
-      break;
-    case(SHIELD_IV17):
-      set_string("IV17");
-      break;
-    case(SHIELD_IV18):
-      set_string("IV-18");
-      break;
-    case(SHIELD_IV22):
-      set_string("IV22");
-      break;
-    default:
-      break;
-   }
-
-  delay(500);
-  set_string("--------");
-
-	while (1) {
+  
+  while (1) {
+		t1 = wMillis();
 		get_button_state(&buttons);
                 //long pos = myEnc.read();
            
-                if (buttons.b1_keyup)
-                    Serial.println("Got buttons.b1_keyup");
-                if (buttons.b2_keyup)
-                    Serial.println("Got buttons.b2_keyup");
+//                if (buttons.b1_keyup)
+//                    Serial.println("Got buttons.b1_keyup");
+//                if (buttons.b2_keyup)
+//                    Serial.println("Got buttons.b2_keyup");
 		
 		// When alarming:
 		// any button press cancels alarm
@@ -547,7 +576,7 @@ void loop()
 			
 			// wait until both buttons are released
 			while (1) {
-				_delay_ms(50);
+				wDelay(50);
 				get_button_state(&buttons);
 				if (buttons.none_held)
 					break;
@@ -602,8 +631,8 @@ void loop()
 		// Right button toggles display mode
 		else if (g_menu_state == STATE_CLOCK && buttons.b1_keyup) {
 			display_mode = (display_mode_t)((int)display_mode + 1);
-//			if (display_mode == MODE_ALARM_TEXT)  g_show_special_cnt = 100;  // show alarm text for 1 second
-//			if (display_mode == MODE_ALARM_TIME)  g_show_special_cnt = 100;  // show alarm time for 1 second
+//			if (display_mode == MODE_ALARM_TEXT)  g_show_special_cnt = SHOW_TIMEOUT;  // show alarm text for 1 second
+//			if (display_mode == MODE_ALARM_TIME)  g_show_special_cnt = SHOW_TIMEOUT;  // show alarm time for 1 second
 			if (display_mode == MODE_LAST) display_mode = MODE_NORMAL;
 			buttons.b1_keyup = 0; // clear state
 		}
@@ -638,7 +667,7 @@ void loop()
 					switch (display_mode) {
 						case MODE_ALARM_TEXT:
 							display_mode = MODE_ALARM_TIME;
-							g_show_special_cnt = 100;
+							g_show_special_cnt = SHOW_TIMEOUT;
 							break;
 						case MODE_ALARM_TIME:
 							display_mode = MODE_NORMAL;
@@ -654,11 +683,10 @@ void loop()
                             read_rtc(display_mode);  // read RTC and display time
                         }    
 #else
-			// read RTC approx every 200ms
+			// read RTC approx ever other time thru loop (every 200ms)
 			static uint8_t cnt = 0;
-			if (cnt++ > 7) {
+			if (++cnt%2) {
 				read_rtc(display_mode);  // read RTC and display time
-				cnt = 0;
 				}
 #endif // HAVE_RTC_SQW
 		}
@@ -670,20 +698,14 @@ void loop()
 			g_alarming = true;
 
 #ifdef HAVE_GPS
-		if (g_gps_enabled && g_menu_state == STATE_CLOCK) {
-			if (gpsDataReady()) {
-				parseGPSdata(gpsNMEA());  // get the GPS serial stream and possibly update the clock 
-				}
-			else {
-				_delay_ms(2);
-			}
-		}
-		else
-			_delay_ms(2);
-#else
-		delay(74);  // roughly 10 ms per loop
+        if (g_gps_enabled && g_menu_state == STATE_CLOCK) {
+            if (gpsDataReady()) {
+                parseGPSdata(gpsNMEA());  // get the GPS serial stream and possibly update the clock 
+            }
+        }
 #endif
-	}
+        while ((wMillis()-t1)<100) ; // wait until 100 ms since start of loop
+    }
 
 }
 

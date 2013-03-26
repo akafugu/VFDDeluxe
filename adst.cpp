@@ -152,6 +152,7 @@ long DSTseconds(uint16_t year, uint8_t month, uint8_t doftw, uint8_t week, uint8
 
 void DSTinit(WireRtcLib::tm* te, int8_t rules[9])
 {
+  Serial.println("DSTinit");  // wbp debug
   uint16_t yr = 2000 + te->year;  // Year as 20yy; te.Year is not 1970 based
   // seconds til start of DST this year
   DSTstart = DSTseconds(yr, rules[0], rules[1], rules[2], rules[3]);  

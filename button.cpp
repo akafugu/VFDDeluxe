@@ -40,22 +40,22 @@ void initialize_button(uint8_t pin1, int8_t pin2)
     // It has buttons on PB6 and PB7 which have no assigned Arduino pin numbers
   
     // Set buttons as inputs
-    DDRB &= ~(_BV(PORTB6));
-    DDRB &= ~(_BV(PORTB7));
+    DDRB &= ~(_BV(BUTTON_BIT_1));
+    DDRB &= ~(_BV(BUTTON_BIT_2));
     
     // Enable pullups for buttons
-    PORTB |= _BV(PORTB6);
-    PORTB |= _BV(PORTB7);
+    PORTB |= _BV(BUTTON_BIT_1);
+    PORTB |= _BV(BUTTON_BIT_2);
 
     button1.pin = -1;
-    button1.reg = &PINB;
-    button1.bitmask = _BV(PORTB6);
-    button_bit[0]   = _BV(PORTB6);
+    button1.reg = &BUTTON_PIN;
+    button1.bitmask = _BV(BUTTON_BIT_1);
+    button_bit[0]   = _BV(BUTTON_BIT_2);
 
     button2.pin = -1;
-    button2.reg = &PINB;
-    button2.bitmask = _BV(PORTB7);
-    button_bit[1]   = _BV(PORTB7);
+    button2.reg = &BUTTON_PIN;
+    button2.bitmask = _BV(BUTTON_BIT_1);
+    button_bit[1]   = _BV(BUTTON_BIT_2);
 }
 #else
 void initialize_button(uint8_t pin1, int8_t pin2)

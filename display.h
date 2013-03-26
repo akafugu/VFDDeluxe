@@ -30,6 +30,9 @@
 #define SIGNATURE_BIT_1 PD4
 #define SIGNATURE_BIT_2 PD5
 
+unsigned long wMillis(void);
+void wDelay(unsigned long ms);
+
 void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uint8_t brightness);
 int get_digits(void);
 
@@ -39,6 +42,10 @@ void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec);
 void show_temp(int8_t t, uint8_t f);
 void show_humidity(uint8_t hum);
 void show_pressure(uint8_t pressure);
+void scroll_date(WireRtcLib::tm* te, uint8_t region);
+void scroll_stop(void);
+uint8_t scrolling(void);
+void scroll_speed(uint16_t speed);
 
 // gps integration
 void set_gps_updated(bool b);
@@ -50,6 +57,7 @@ void show_set_time(void);
 void show_set_alarm(void);
 
 void set_string(const char* str);
+void set_scroll(char* str);
 void set_char_at(char c, uint8_t offset);
 
 void set_brightness(uint8_t brightness);

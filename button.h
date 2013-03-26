@@ -18,6 +18,13 @@
 
 #include <stdbool.h>
 
+// Button port & pins
+#define BUTTON_PORT  PORTB
+#define BUTTON_DDR   DDRDB
+#define BUTTON_PIN   PINB
+#define BUTTON_BIT_1 BUTTON_PORT6
+#define BUTTON_BIT_2 BUTTON_PORT7
+
 struct BUTTON_STATE
 {
 	bool b1_keydown : 1;

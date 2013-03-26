@@ -22,7 +22,7 @@
 
 #include <avr/interrupt.h>
 #include <string.h>
-#include <util/delay.h>
+//#include <util/delay.h>
 #include "gps.h"
 #include "display.h"
 #include "Time.h"
@@ -169,7 +169,7 @@ void parseGPSdata(char *gpsBuffer) {
         uint32_t tmp;
 	if ( strncmp( gpsBuffer, "$GPRMC,", 7 ) == 0 ) {  
   
-	Serial.println(gpsBuffer);  
+//	Serial.println(gpsBuffer);  // only for debugging, otherwise it slows things down too much
 
 		//beep(1000, 1);
 		//Calculate checksum from the received data
