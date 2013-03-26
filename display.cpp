@@ -410,6 +410,18 @@ uint8_t print_digits (int8_t num, uint8_t offset)
     return ret;
 }
 
+uint8_t print_hour(uint8_t num, uint8_t offset, bool _24h_clock)
+{
+	data[offset+1] = num % 10;  // units
+	//num /= 10;
+	uint8_t h2 = num / 10 % 10;  // tens
+	data[offset] = h2;
+	if (!_24h_clock && (h2 == 0)) {
+		data[offset] = ' ';  // blank leading zero
+	}
+	return offset+2;
+}
+
 uint8_t print_ch(char ch, uint8_t offset)
 {
 	data[offset++] = ch;
@@ -476,30 +488,30 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
                 else
                     offset = print_ch(' ', offset); 
 
-                offset = print_digits(hour, offset);
+                offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
                 offset = print_digits(t->sec, offset);
                 offset = print_ch(' ', offset);
                 offset = print_ch(' ', offset);
             }
-            else if (digits == 8) { // " HH.MM.SS "
+            else if (digits == 8) { // "P HH.MM.SS "
                 if (!_24h_clock && !t->am)
                     offset = print_ch('P', offset);
                 else
                     offset = print_ch(' ', offset);
                 offset = print_ch(' ', offset); // shift time 1 space to rig
-                offset = print_digits(hour, offset);
+                offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
                 offset = print_digits(t->sec, offset);
                 offset = print_ch(' ', offset);
             }
             else if (digits == 6) { // "HH.MM.SS"
-                offset = print_digits(hour, offset);
+                offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
                 offset = print_digits(t->sec, offset);			
             }
             else { // HH.MM
-                offset = print_digits(hour, offset);
+                offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
             }
 	}
@@ -508,7 +520,7 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 
 		if (digits == 10) { // " HH-MM-SS "
 			offset = print_ch('-', offset);
-			offset = print_digits(hour, offset);
+			offset = print_hour(hour, offset, _24h_clock);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->min, offset);
 			offset = print_ch('-', offset);
@@ -517,14 +529,14 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 
 		}
 		else if (digits == 8) { // "HH-MM-SS"
-			offset = print_digits(hour, offset);
+			offset = print_hour(hour, offset, _24h_clock);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->min, offset);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->sec, offset);
 		}
 		else if (digits == 6) { // " HH-MM"
-			offset = print_digits(hour, offset);
+			offset = print_hour(hour, offset, _24h_clock);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->min, offset);
 			if (!_24h_clock && !t->am)
