@@ -184,14 +184,25 @@ void globals_init(void)
 	g_datemonth = 1;
 	g_dateday = 1;
 #ifdef HAVE_AUTO_DST
-	g_DST_Rules[0] = eeprom_read_byte(&b_DST_Rule0);  // DST start month
-	g_DST_Rules[1] = eeprom_read_byte(&b_DST_Rule1);  // DST start dotw
-	g_DST_Rules[2] = eeprom_read_byte(&b_DST_Rule2);  // DST start week
-	g_DST_Rules[3] = eeprom_read_byte(&b_DST_Rule3);  // DST start hour
-	g_DST_Rules[4] = eeprom_read_byte(&b_DST_Rule4); // DST end month
-	g_DST_Rules[5] = eeprom_read_byte(&b_DST_Rule5);  // DST end dotw
-	g_DST_Rules[6] = eeprom_read_byte(&b_DST_Rule6);  // DST end week
-	g_DST_Rules[7] = eeprom_read_byte(&b_DST_Rule7);  // DST end hour
-	g_DST_Rules[8] = eeprom_read_byte(&b_DST_Rule8);  // DST offset
+//	g_DST_Rules[0] = eeprom_read_byte(&b_DST_Rule0);  // DST start month
+//	g_DST_Rules[1] = eeprom_read_byte(&b_DST_Rule1);  // DST start dotw
+//	g_DST_Rules[2] = eeprom_read_byte(&b_DST_Rule2);  // DST start week
+//	g_DST_Rules[3] = eeprom_read_byte(&b_DST_Rule3);  // DST start hour
+//	g_DST_Rules[4] = eeprom_read_byte(&b_DST_Rule4); // DST end month
+//	g_DST_Rules[5] = eeprom_read_byte(&b_DST_Rule5);  // DST end dotw
+//	g_DST_Rules[6] = eeprom_read_byte(&b_DST_Rule6);  // DST end week
+//	g_DST_Rules[7] = eeprom_read_byte(&b_DST_Rule7);  // DST end hour
+//	g_DST_Rules[8] = eeprom_read_byte(&b_DST_Rule8);  // DST offset
+//        g_DST_Rules[] = {3,1,2,2,11,1,1,2,1};  // TEMP 26mar13/wbp
+// temp - set rules for USA until menu is sorted out and rules are in EE again
+        g_DST_Rules[0] = 3;  // TEMP 26mar13/wbp
+        g_DST_Rules[1] = 1;  // TEMP 26mar13/wbp
+        g_DST_Rules[2] = 2;  // TEMP 26mar13/wbp
+        g_DST_Rules[3] = 2;  // TEMP 26mar13/wbp
+        g_DST_Rules[4] = 11;  // TEMP 26mar13/wbp
+        g_DST_Rules[5] = 1;  // TEMP 26mar13/wbp
+        g_DST_Rules[6] = 1;  // TEMP 26mar13/wbp
+        g_DST_Rules[7] = 2;  // TEMP 26mar13/wbp
+        g_DST_Rules[8] = 1;  // TEMP 26mar13/wbp
 #endif
  }

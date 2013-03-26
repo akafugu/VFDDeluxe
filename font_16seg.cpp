@@ -205,12 +205,12 @@ uint16_t segments_16_alpha_upper[] = {
 uint16_t calculate_segments_16(uint8_t ch)
 {
 	uint16_t segs = 0;
-	if ((ch >= 'A') && (ch <= 'Z'))
-		segs = segments_16_alpha_upper[ch-'A'];  // A-Z
+	if ((ch >= '0') && (ch <= '9'))
+		segs = segments_16_numerals[ch-48];  // 0-9
 	else if ((ch >= 'a') && (ch <= 'z'))
 		segs = segments_16_alpha_upper[ch-'a'];  // a-z
-	else if ((ch >= '0') && (ch <= '9'))
-		segs = segments_16_numerals[ch-48];  // 0-9
+	else if ((ch >= 'A') && (ch <= 'Z'))
+		segs = segments_16_alpha_upper[ch-'A'];  // A-Z
 	else if ((ch >= 0) && (ch <= 20))
 		segs = segments_16_numerals[ch];  // 0-20
 	else if (ch == ' ')

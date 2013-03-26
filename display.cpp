@@ -17,7 +17,7 @@
 #include "global_vars.h"
 
 #include "display.h"
-#include "display_nixie.h"
+//#include "display_nixie.h"
 #include "gps.h"
 
 #include <Wire.h>
@@ -71,7 +71,7 @@ byte dummy1;
 volatile char data[16]; // Digit data
 uint8_t us_counter = 0; // microsecond counter
 uint8_t multiplex_counter = 0;
-volatile uint8_t multiplex_limit = 8;
+uint8_t multiplex_limit = 8;
 uint8_t reverse_display = false;
 #ifdef HAVE_GPS
 uint8_t gps_counter = 0;
@@ -367,8 +367,13 @@ void clear_sData(void)
 
 void set_blink(bool on)
 {
-	blink = on;
-	if (!blink) display_on = 1;
+  blink = on;
+  if (!blink) display_on = 1;
+}
+
+void set_display(bool on)
+{
+  display_on = on;
 }
 
 void flash_display(uint16_t ms)  // this does not work but why???
@@ -461,7 +466,7 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 	print_dots(mode, t->sec);
 
 	if (mode == 0) { // normal display mode
-            nixie_print(hour, t->min, t->sec);
+//            nixie_print(hour, t->min, t->sec);
 
             if (digits == 10) { // "  HH.MM.SS  "
                 offset = print_ch(' ', offset); 
@@ -499,7 +504,7 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
             }
 	}
 	else if (mode == 1) { // extra display mode
-            nixie_print_compact(hour, t->min, t->sec);
+//            nixie_print_compact(hour, t->min, t->sec);
 
 		if (digits == 10) { // " HH-MM-SS "
 			offset = print_ch('-', offset);
@@ -549,7 +554,7 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 // shows time - used when setting time
 void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec)
 {
-	nixie_print_compact(hour, min, sec);
+//	nixie_print_compact(hour, min, sec);
 
 	dots = 0;
 	uint8_t offset = 0;
@@ -576,7 +581,7 @@ void show_temp(int8_t t, uint8_t f)
 	dots = 0;
 	uint8_t offset = 0;
 
-	nixie_print(0, t, f);
+//	nixie_print(0, t, f);
 	
 	switch (digits) {
 	case 10:
@@ -609,7 +614,7 @@ void show_humidity(uint8_t hum)
 	dots = 0;
 	uint8_t offset = 0;
 	
-	nixie_print(0, 0, hum);
+//	nixie_print(0, 0, hum);
 
 	switch (digits) {
 	case 10:
@@ -640,7 +645,7 @@ void show_pressure(uint8_t pressure)
 	uint8_t temp  = pressure % 10;
 	uint8_t temp2 = pressure/= 10;
 
-	nixie_print(0, temp2, temp);
+//	nixie_print(0, temp2, temp);
 
 	switch (digits) {
 	case 10:
@@ -771,6 +776,7 @@ void scroll_date(WireRtcLib::tm* te_, uint8_t region)
 			break;
 		}
 	sd[12] = 0;  // null terminate
+//  Serial.print("date: "); Serial.println(sd);
 	set_scroll(sd);
 }
 #endif
@@ -1039,14 +1045,14 @@ void display_multiplex(void)
     multiplex_counter++;	
     if (multiplex_counter > multiplex_limit)
         multiplex_counter = 0;  
-    clear_display();
-    nixie_multiplex_counter = !nixie_multiplex_counter;
+//    clear_display();  // not needed?
+//    nixie_multiplex_counter = !nixie_multiplex_counter;
     char d;
     if (_scrolling) {
       if (reverse_display)
         d = sData[digits-multiplex_counter-1+scroll_index];
       else
-        d = data[multiplex_counter+scroll_index];
+        d = sData[multiplex_counter+scroll_index];
     }
     else {
       if (reverse_display)
@@ -1132,19 +1138,23 @@ ISR(TIMER1_COMPA_vect)
   TCNT2 = 0x0;
 #elif defined (HAVE_LEONARDO)
 //    TCNT1 = 0xff00;
-  TCNT1 = 0;
+  TCNT1 = 0x0;
 #endif
-    display_multiplex();
     _millis++;
+    if (display_on)  display_multiplex();
 
     // control blinking: on time is slightly longer than off time
-    if (blink && display_on && ++blink_counter >= 590) { // on time 0.59 secs
-      display_on = false;
-      blink_counter = 0;
+    if (blink) {
+      blink_counter++;
+      if (display_on && blink_counter >= 550) { // on time 0.55 secs
+        display_on = false;
+        blink_counter = 0;
+        clear_display();
+        }
+      else if (!display_on && blink_counter >= 450) { // off time 0.45 secs
+        display_on = true;
+        blink_counter = 0;
       }
-    else if (blink && !display_on && ++blink_counter >= 480) { // off time 0.48 secs
-      display_on = true;
-      blink_counter = 0;
     }
 
 #ifdef HAVE_GPS
@@ -1155,7 +1165,8 @@ ISR(TIMER1_COMPA_vect)
 #endif // HAVE_GPS
 
     // button polling
-    if (++button_counter == BUTTON_TIMER_MAX) {
+    button_counter++;
+    if (button_counter == BUTTON_TIMER_MAX) {
       button_timer();
       button_counter = 0;
     }
