@@ -44,6 +44,10 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd);
 extern WireRtcLib rtc;
 extern WireRtcLib::tm* tt; // current local date and time as TimeElements (pointer)
 
+#ifdef HAVE_FLW
+extern FourLetterWord flw;
+#endif
+
 void to_tmElements(WireRtcLib::tm* tm, tmElements_t* te)
 {
   if (!te) return;
@@ -342,6 +346,7 @@ void menu(bool update, bool show)
             if (update) {
                 g_flw_enabled++;
                 if (g_flw_enabled > FLW_FULL) g_flw_enabled = FLW_OFF;
+                flw.setCensored(g_flw_enabled == FLW_ON);
                 eeprom_update_byte(&b_flw_enabled, g_flw_enabled);
             }
             

@@ -181,24 +181,19 @@ void initialize(void)
 
   globals_init();
   display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, g_brightness);
-  
-#ifdef HAVE_FLW
-  flw.begin();
-  g_has_flw = flw.has_eeprom();
-  Serial.print("has_eeprom = ");
-  Serial.println(g_has_flw);
-  
-//  if(g_has_flw)
-//    g_flw_enabled = FLW_ON;
-//  flw.setCensored(g_flw_enabled == FLW_ON);
-#else
-  g_has_flw = false;
-  g_flw_enabled = FLW_OFF;
-#endif
 
 #ifdef HAVE_NIXIE_SUPPORT
   if (shield == SHIELD_IN14 || shield == SHIELD_IN8_2)
       init_nixie_6digit();
+#endif
+
+#ifdef HAVE_FLW
+  flw.begin();
+  g_has_flw = flw.has_eeprom();
+  flw.setCensored(g_flw_enabled == FLW_ON);
+#else
+  g_has_flw = false;
+  g_flw_enabled = FLW_OFF;
 #endif
 
   //g_alarm_switch = get_alarm_switch();
@@ -470,7 +465,6 @@ void setup()
   tone(PinMap::piezo, 880, 100);  // test tone
 //  _delay_ms(500);
     
-  Serial.begin(9600);
 #ifdef HAVE_SERIAL_DEBUG
   while (!Serial) ;
 #endif
@@ -478,6 +472,8 @@ void setup()
 #ifdef HAVE_SERIAL_DEBUG
   while (!Serial) ;  // second time's the charm...
 #endif
+
+  Serial.begin(9600);
   Serial.println("VFD Deluxe");
   
 #ifdef HAVE_MPL115A2
