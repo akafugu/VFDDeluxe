@@ -225,6 +225,8 @@ uint16_t calculate_segments_16(uint8_t ch)
 		segs = segH+segM;
 	else if (ch == '/')
 		segs = segJ+segM;
+	else if (ch == '&') // stand-in for degree symbol
+		segs = segA2+segB+segG2+segI;
 	else
 		segs = segH+segI+segJ+segK+segL+segM+segG1+segG2;  // asterisk
 	return segs;

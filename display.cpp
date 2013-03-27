@@ -67,6 +67,7 @@ pin_direct_t blank_pin;
 
 enum shield_t shield = SHIELD_NONE;
 uint8_t digits = 6;
+uint8_t segments = 7;
 byte dummy1;
 volatile char data[16]; // Digit data
 uint8_t us_counter = 0; // microsecond counter
@@ -249,6 +250,7 @@ void detect_shield()
         //mpx_count = 4;
         g_has_dots = false;
         reverse_display = false;
+        segments = 16;
         break;
     case(2):  // IV-6 shield
         shield = SHIELD_IV6;
@@ -298,6 +300,7 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     digits = _digits;
     g_has_dots = true;
     reverse_display = true;
+    segments = 14;
   }
 #endif
   else if (shield_type == SHIELD_16SEG) {
@@ -306,6 +309,7 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     multiplex_limit = digits;
     g_has_dots = true;
     reverse_display = true;
+    segments = 16;
   }
   else if (shield_type == SHIELD_IV6) {
     shield = SHIELD_IV6;
@@ -320,6 +324,7 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     multiplex_limit = digits;
     g_has_dots = true;
     reverse_display = false;
+    segments = 16;
   }
   else if (shield_type == SHIELD_IV18) {
     shield = SHIELD_IV18;
@@ -595,13 +600,14 @@ void show_temp(int8_t t, uint8_t f)
 		break;
 	case 4:
 		offset = print_digits(t, offset);
-		offset = print_digits(f, offset);		
+		offset = print_ch('&', offset);		
+		offset = print_ch('C', offset);  
 	}
 
   if (digits == 10) dots = (1<<3);
   else if (digits == 8) dots = (1<<3);
   else if (digits == 6) dots = (1<<2);
-  else if (digits == 4) dots = (1<<1);
+  else if (digits == 4) dots = 0;
 }
 
 void show_humidity(uint8_t hum)
@@ -628,6 +634,7 @@ void show_humidity(uint8_t hum)
 		break;
 	case 4:
 		offset = print_digits(hum, offset);
+		offset = print_ch(' ', offset);
 		offset = print_ch('H', offset);
 	}
 }
