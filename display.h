@@ -63,6 +63,7 @@ void set_char_at(char c, uint8_t offset);
 void set_brightness(uint8_t brightness);
 
 void set_blink(bool on);
+void set_display(bool on);
 void flash_display(uint16_t ms);
 
 void set_shield(shield_t shield_type, uint8_t digits = 4);

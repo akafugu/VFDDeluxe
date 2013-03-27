@@ -17,16 +17,23 @@
  * CREDITS:
  *
  * William Phelps
+ *  - Arduino Timer interrupts
  *  - GPS functionality
  *  - DTS and Date setting
  *  - Misc improvements and new features
  *
  */
 
+/* DONE:
+ * Implement brightness PWM
+ * resolve speaker/tone
+*/
+
 /*
  * TODO:
- *
- * Implement brightness PWM
+ * fix region
+ * add GPS "sanity check"
+ * fix default DST rules (where did they go?)
  * Test FLW
  * Refactor FLW
  * Add menu items for GPS etc.
@@ -76,6 +83,7 @@ WireRtcLib rtc;
 #define PIEZO 10
 #define PIEZO_GND 9
 #elif defined(HAVE_LEONARDO)
+// Digital 11, PB7 (PCINT7/OC0A/OC1C/#RTS)
 #define PIEZO 11
 #endif
 
@@ -123,27 +131,22 @@ typedef enum {
 
 display_mode_t display_mode = MODE_NORMAL;
 
-// Auto date
-String g_date_string; // string holding the date to scroll across the screen in ADATE mode
-uint8_t g_date_scroll_offset; // offset used when scrolling date across the screen
+//// Auto date
+//String g_date_string; // string holding the date to scroll across the screen in ADATE mode
+//uint8_t g_date_scroll_offset; // offset used when scrolling date across the screen
 
 void initialize(void)
 {
   // read eeprom
   // fixme: implement
 
-  pinMode(PIEZO, OUTPUT);
-  digitalWrite(PIEZO, LOW);
+//  pinMode(PIEZO, OUTPUT);
+//  digitalWrite(PIEZO, LOW);
 
 #ifdef HAVE_ATMEGA328
   pinMode(PIEZO_GND, OUTPUT);
   digitalWrite(PIEZO_GND, LOW);
 #endif
-
-  // initialize button
-  // fixme: change depending on HAVE_ROTARY define
-//  initialize_button(PinMap::button1, PinMap::button2);
-  initialize_button(PinMap::button2, PinMap::button1);
 
   // initialize alarm switch
   pinMode(PinMap::alarm_switch, OUTPUT);
@@ -169,21 +172,6 @@ void initialize(void)
 
   //rtc.setTime_s(16, 10, 0);
   //rtc_set_alarm_s(17,0,0);
-  
-#ifdef HAVE_FLW
-  flw.begin();
-  g_has_flw = flw.has_eeprom();
-  Serial.print("has_eeprom = ");
-  Serial.println(g_has_flw);
-  
-  if(g_has_flw)
-    g_flw_enabled = FLW_ON;
-    
-  flw.setCensored(g_flw_enabled == FLW_ON);
-#else
-  g_has_flw = false;
-  g_flw_enabled = FLW_OFF;
-#endif
 
 #ifdef HAVE_SHIELD_AUTODETECT
   detect_shield();
@@ -193,6 +181,20 @@ void initialize(void)
 
   globals_init();
   display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, g_brightness);
+  
+#ifdef HAVE_FLW
+  flw.begin();
+  g_has_flw = flw.has_eeprom();
+  Serial.print("has_eeprom = ");
+  Serial.println(g_has_flw);
+  
+//  if(g_has_flw)
+//    g_flw_enabled = FLW_ON;
+//  flw.setCensored(g_flw_enabled == FLW_ON);
+#else
+  g_has_flw = false;
+  g_flw_enabled = FLW_OFF;
+#endif
 
 #ifdef HAVE_NIXIE_SUPPORT
   if (shield == SHIELD_IN14 || shield == SHIELD_IN8_2)
@@ -220,6 +222,12 @@ void initialize(void)
     // setup UART for GPS
     gps_init(g_gps_enabled);
 #endif // HAVE_GPS
+
+  // initialize button
+  // fixme: change depending on HAVE_ROTARY define
+//  initialize_button(PinMap::button1, PinMap::button2);
+  initialize_button(PinMap::button2, PinMap::button1);
+
 }
 
 #ifdef HAVE_RTC_SQW
@@ -319,46 +327,46 @@ void read_flw()
 #endif
 }
 
-void update_date_string(WireRtcLib::tm* t)
-{
-  if (!t) return;
-  
-  String temp;
-  
-  switch (g_date_format) {
-  case FORMAT_YMD:
-    temp.concat(t->year+2000);
-    temp.concat('-');
-    if (t->mon < 10) temp.concat('0');
-    temp.concat(t->mon);
-    temp.concat('-');
-    if (t->mday < 10) temp.concat('0');    
-    temp.concat(t->mday);
-    break;
-  case FORMAT_DMY:
-    if (t->mday < 10) temp.concat('0');
-    temp.concat(t->mday);
-    temp.concat('-');
-    if (t->mon < 10) temp.concat('0');
-    temp.concat(t->mon);
-    temp.concat('-');
-    temp.concat(t->year+2000);
-    break;
-  case FORMAT_MDY:
-    if (t->mon < 10) temp.concat('0');
-    temp.concat(t->mon);
-    temp.concat('-');
-    if (t->mday < 10) temp.concat('0');
-    temp.concat(t->mday);
-    temp.concat('-');
-    temp.concat(t->year+2000);
-    break;
-  }
-
-  temp.concat("    ");
-
-  g_date_string = temp;
-}
+//void update_date_string(WireRtcLib::tm* t)
+//{
+//  if (!t) return;
+//  
+//  String temp;
+//  
+//  switch (g_date_format) {
+//  case FORMAT_YMD:
+//    temp.concat(t->year+2000);
+//    temp.concat('-');
+//    if (t->mon < 10) temp.concat('0');
+//    temp.concat(t->mon);
+//    temp.concat('-');
+//    if (t->mday < 10) temp.concat('0');    
+//    temp.concat(t->mday);
+//    break;
+//  case FORMAT_DMY:
+//    if (t->mday < 10) temp.concat('0');
+//    temp.concat(t->mday);
+//    temp.concat('-');
+//    if (t->mon < 10) temp.concat('0');
+//    temp.concat(t->mon);
+//    temp.concat('-');
+//    temp.concat(t->year+2000);
+//    break;
+//  case FORMAT_MDY:
+//    if (t->mon < 10) temp.concat('0');
+//    temp.concat(t->mon);
+//    temp.concat('-');
+//    if (t->mday < 10) temp.concat('0');
+//    temp.concat(t->mday);
+//    temp.concat('-');
+//    temp.concat(t->year+2000);
+//    break;
+//  }
+//
+//  temp.concat("    ");
+//
+//  g_date_string = temp;
+//}
 
 //void scroll_date()
 //{
@@ -458,8 +466,8 @@ void setup()
 //    pinMode(i, OUTPUT);  // set pins to OUTPUT to save power
 //  }
 
-//  tone(PinMap::piezo, NOTE_A5, 500);  // test tone
-//  tone(11, 880, 200);  // test tone
+//  tone(PinMap::piezo, NOTE_A5, 100);  // test tone
+  tone(PinMap::piezo, 880, 100);  // test tone
 //  _delay_ms(500);
     
   Serial.begin(9600);
@@ -478,10 +486,12 @@ void setup()
 #endif // HAVE_MPL115A2
 
   initialize();
+//  set_string("0000");
 
-//  delay(500);
-//  tone(11, 880, 500);  // test tone
+//  set_display(0);
+//  tone(11, 440, 500);  // test tone
 //  wDelay(500);
+//  set_display(1);
 	
   switch (shield) {
     case(SHIELD_IV6):
@@ -537,6 +547,10 @@ void loop()
   while (1) {
 		t1 = wMillis();
 		get_button_state(&buttons);
+
+  if (buttons.b1_keyup)  tone(11, 1000, 1);  
+  if (buttons.b2_keyup)  tone(11, 1000, 1);  
+
                 //long pos = myEnc.read();
            
 //                if (buttons.b1_keyup)

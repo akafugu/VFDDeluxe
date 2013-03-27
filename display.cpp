@@ -17,7 +17,7 @@
 #include "global_vars.h"
 
 #include "display.h"
-#include "display_nixie.h"
+//#include "display_nixie.h"
 #include "gps.h"
 
 #include <Wire.h>
@@ -72,7 +72,7 @@ byte dummy1;
 volatile char data[16]; // Digit data
 uint8_t us_counter = 0; // microsecond counter
 uint8_t multiplex_counter = 0;
-volatile uint8_t multiplex_limit = 8;
+uint8_t multiplex_limit = 8;
 uint8_t reverse_display = false;
 #ifdef HAVE_GPS
 uint8_t gps_counter = 0;
@@ -372,8 +372,13 @@ void clear_sData(void)
 
 void set_blink(bool on)
 {
-	blink = on;
-	if (!blink) display_on = 1;
+  blink = on;
+  if (!blink) display_on = 1;
+}
+
+void set_display(bool on)
+{
+  display_on = on;
 }
 
 void flash_display(uint16_t ms)  // this does not work but why???
@@ -408,6 +413,18 @@ uint8_t print_digits (int8_t num, uint8_t offset)
     data[offset] = num % 10 + '0';
     
     return ret;
+}
+
+uint8_t print_hour(uint8_t num, uint8_t offset, bool _24h_clock)
+{
+	data[offset+1] = num % 10;  // units
+	//num /= 10;
+	uint8_t h2 = num / 10 % 10;  // tens
+	data[offset] = h2;
+	if (!_24h_clock && (h2 == 0)) {
+		data[offset] = ' ';  // blank leading zero
+	}
+	return offset+2;
 }
 
 uint8_t print_ch(char ch, uint8_t offset)
@@ -466,7 +483,7 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 	print_dots(mode, t->sec);
 
 	if (mode == 0) { // normal display mode
-            nixie_print(hour, t->min, t->sec);
+//            nixie_print(hour, t->min, t->sec);
 
             if (digits == 10) { // "  HH.MM.SS  "
                 offset = print_ch(' ', offset); 
@@ -476,39 +493,39 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
                 else
                     offset = print_ch(' ', offset); 
 
-                offset = print_digits(hour, offset);
+                offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
                 offset = print_digits(t->sec, offset);
                 offset = print_ch(' ', offset);
                 offset = print_ch(' ', offset);
             }
-            else if (digits == 8) { // " HH.MM.SS "
+            else if (digits == 8) { // "P HH.MM.SS "
                 if (!_24h_clock && !t->am)
                     offset = print_ch('P', offset);
                 else
                     offset = print_ch(' ', offset);
                 offset = print_ch(' ', offset); // shift time 1 space to rig
-                offset = print_digits(hour, offset);
+                offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
                 offset = print_digits(t->sec, offset);
                 offset = print_ch(' ', offset);
             }
             else if (digits == 6) { // "HH.MM.SS"
-                offset = print_digits(hour, offset);
+                offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
                 offset = print_digits(t->sec, offset);			
             }
             else { // HH.MM
-                offset = print_digits(hour, offset);
+                offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
             }
 	}
 	else if (mode == 1) { // extra display mode
-            nixie_print_compact(hour, t->min, t->sec);
+//            nixie_print_compact(hour, t->min, t->sec);
 
 		if (digits == 10) { // " HH-MM-SS "
 			offset = print_ch('-', offset);
-			offset = print_digits(hour, offset);
+			offset = print_hour(hour, offset, _24h_clock);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->min, offset);
 			offset = print_ch('-', offset);
@@ -517,14 +534,14 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 
 		}
 		else if (digits == 8) { // "HH-MM-SS"
-			offset = print_digits(hour, offset);
+			offset = print_hour(hour, offset, _24h_clock);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->min, offset);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->sec, offset);
 		}
 		else if (digits == 6) { // " HH-MM"
-			offset = print_digits(hour, offset);
+			offset = print_hour(hour, offset, _24h_clock);
 			offset = print_ch('-', offset);
 			offset = print_digits(t->min, offset);
 			if (!_24h_clock && !t->am)
@@ -554,7 +571,7 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 // shows time - used when setting time
 void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec)
 {
-	nixie_print_compact(hour, min, sec);
+//	nixie_print_compact(hour, min, sec);
 
 	dots = 0;
 	uint8_t offset = 0;
@@ -581,7 +598,7 @@ void show_temp(int8_t t, uint8_t f)
 	dots = 0;
 	uint8_t offset = 0;
 
-	nixie_print(0, t, f);
+//	nixie_print(0, t, f);
 	
 	switch (digits) {
 	case 10:
@@ -615,7 +632,7 @@ void show_humidity(uint8_t hum)
 	dots = 0;
 	uint8_t offset = 0;
 	
-	nixie_print(0, 0, hum);
+//	nixie_print(0, 0, hum);
 
 	switch (digits) {
 	case 10:
@@ -647,7 +664,7 @@ void show_pressure(uint8_t pressure)
 	uint8_t temp  = pressure % 10;
 	uint8_t temp2 = pressure/= 10;
 
-	nixie_print(0, temp2, temp);
+//	nixie_print(0, temp2, temp);
 
 	switch (digits) {
 	case 10:
@@ -778,6 +795,7 @@ void scroll_date(WireRtcLib::tm* te_, uint8_t region)
 			break;
 		}
 	sd[12] = 0;  // null terminate
+//  Serial.print("date: "); Serial.println(sd);
 	set_scroll(sd);
 }
 #endif
@@ -1041,19 +1059,21 @@ void clear_display(void)
 
 volatile uint8_t nixie_multiplex_counter;
 
+extern uint16_t segments_16[];
+
 void display_multiplex(void)
 {
     multiplex_counter++;	
     if (multiplex_counter > multiplex_limit)
         multiplex_counter = 0;  
-    clear_display();
-    nixie_multiplex_counter = !nixie_multiplex_counter;
+//    clear_display();  // not needed?
+//    nixie_multiplex_counter = !nixie_multiplex_counter;
     char d;
     if (_scrolling) {
       if (reverse_display)
         d = sData[digits-multiplex_counter-1+scroll_index];
       else
-        d = data[multiplex_counter+scroll_index];
+        d = sData[multiplex_counter+scroll_index];
     }
     else {
       if (reverse_display)
@@ -1066,7 +1086,8 @@ void display_multiplex(void)
           write_vfd_iv6(multiplex_counter, display_on ? calculate_segments_7(d) : 0);
           break;
       case(SHIELD_IV17): {
-          uint16_t seg = calculate_segments_16(d);
+//          uint16_t seg = calculate_segments_16(d);
+          uint16_t seg = segments_16[d];
           if (multiplex_counter == 0) {
             if (g_gps_updating)
             seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));
@@ -1139,30 +1160,35 @@ ISR(TIMER1_COMPA_vect)
   TCNT2 = 0x0;
 #elif defined (HAVE_LEONARDO)
 //    TCNT1 = 0xff00;
-  TCNT1 = 0;
+  TCNT1 = 0x0;
 #endif
-    display_multiplex();
     _millis++;
 
+    sei(); // enable interrupts during display mux to allow tone() to run
+    if (display_on)  display_multiplex();
+    cli();
+
     // control blinking: on time is slightly longer than off time
-    if (blink && display_on && ++blink_counter >= 590) { // on time 0.59 secs
-      display_on = false;
-      blink_counter = 0;
+    if (blink) {
+      blink_counter++;
+      if (display_on && blink_counter >= 550) { // on time 0.55 secs
+        display_on = false;
+        blink_counter = 0;
+        clear_display();
+        }
+      else if (!display_on && blink_counter >= 450) { // off time 0.45 secs
+        display_on = true;
+        blink_counter = 0;
       }
-    else if (blink && !display_on && ++blink_counter >= 480) { // off time 0.48 secs
-      display_on = true;
-      blink_counter = 0;
     }
 
 #ifdef HAVE_GPS
-//    if (++gps_counter == 4) {  // every 0.001024 seconds
-    GPSread();  // check for data on the serial port every 1 ms
-//        gps_counter = 0;
-//    }
+  GPSread();  // check for data on the serial port every 1 ms
 #endif // HAVE_GPS
 
     // button polling
-    if (++button_counter == BUTTON_TIMER_MAX) {
+    button_counter++;
+    if (button_counter == BUTTON_TIMER_MAX) {
       button_timer();
       button_counter = 0;
     }
