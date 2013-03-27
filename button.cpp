@@ -60,8 +60,9 @@ void initialize_button(uint8_t pin1, int8_t pin2)
 #else
 void initialize_button(uint8_t pin1, int8_t pin2)
 {
-    pinMode(pin1, INPUT);
-    digitalWrite(pin1, HIGH); // enable pullup
+//    pinMode(pin1, INPUT);
+//    digitalWrite(pin1, HIGH); // enable pullup
+    pinMode(pin1, INPUT_PULLUP);
     
     button1.pin = pin1;
     button1.reg = PIN_TO_INPUT_REG(pin1);
@@ -69,8 +70,9 @@ void initialize_button(uint8_t pin1, int8_t pin2)
     button_bit[0]   = PIN_TO_BITMASK(pin1);
     
     if (pin2 != -1) {
-        pinMode(pin2, INPUT);
-        digitalWrite(pin2, HIGH); // enable pullup
+//        pinMode(pin2, INPUT);
+//        digitalWrite(pin2, HIGH); // enable pullup
+        pinMode(pin2, INPUT_PULLUP);
 
         button2.pin = pin2;
         button2.reg = PIN_TO_INPUT_REG(pin2);

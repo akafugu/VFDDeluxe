@@ -70,7 +70,7 @@ uint8_t digits = 6;
 uint8_t segments = 7;
 byte dummy1;
 volatile char data[16]; // Digit data
-uint8_t us_counter = 0; // microsecond counter
+//uint8_t us_counter = 0; // microsecond counter
 uint8_t multiplex_counter = 0;
 uint8_t multiplex_limit = 8;
 uint8_t reverse_display = false;
@@ -384,6 +384,7 @@ void set_display(bool on)
 void flash_display(uint16_t ms)  // this does not work but why???
 {
     display_on = false;
+    clear_display();
 //	_delay_ms(ms);
     wDelay(ms);
     display_on = true;
@@ -1084,7 +1085,7 @@ void display_multiplex(void)
     }
     switch (shield) {
       case(SHIELD_IV6):
-          write_vfd_iv6(multiplex_counter, display_on ? calculate_segments_7(d) : 0);
+          write_vfd_iv6(multiplex_counter, calculate_segments_7(d));
           break;
       case(SHIELD_IV17): {
 //          uint16_t seg = calculate_segments_16(d);
@@ -1093,13 +1094,13 @@ void display_multiplex(void)
             if (g_gps_updating)
             seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));
           }
-          write_vfd_iv17(multiplex_counter, display_on ? seg : 0);
+          write_vfd_iv17(multiplex_counter, seg);
           break;
       }
       case(SHIELD_IV18): {
           uint8_t seg = 0;
           if (multiplex_counter < 8) {
-              write_vfd_iv18(multiplex_counter, display_on ? calculate_segments_7(d) : 0);
+              write_vfd_iv18(multiplex_counter, calculate_segments_7(d));
           }
           else { // show alarm switch & gps status
               if (g_alarm_switch)
@@ -1115,7 +1116,7 @@ void display_multiplex(void)
 //      break;
 #ifdef HAVE_7SEG_SUPPORT
       case(SHIELD_7SEG):
-          write_vfd_7seg(multiplex_counter, display_on ? calculate_segments_7(d) : 0);
+          write_vfd_7seg(multiplex_counter, calculate_segments_7(d));
       break;
 #endif
 #ifdef HAVE_14SEG_SUPPORT
@@ -1123,7 +1124,7 @@ void display_multiplex(void)
           uint16_t segments = calculate_segments_14(data[digits-multiplex_counter-1]);
           if ((segments & 1<<6) || (segments & 1<<8) || (segments & 1<<10)) // left dash is set (segment G1)
             segments |= 1<<12;
-          write_vfd_standard(multiplex_counter, display_on ? segments : 0);
+          write_vfd_standard(multiplex_counter, segments);
       break;
 #endif
 #ifdef HAVE_16SEG_SUPPORT

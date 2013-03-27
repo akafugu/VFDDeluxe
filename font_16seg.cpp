@@ -269,8 +269,8 @@ uint16_t segments_16[128] = {
   
 };
 
-uint16_t calculate_segments_16(uint8_t ch)
-{
-  return segments_16[ch];
-}
+//uint16_t calculate_segments_16(uint8_t ch)
+//{
+//  return segments_16[ch];
+//}
 

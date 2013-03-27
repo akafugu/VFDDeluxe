@@ -152,8 +152,9 @@ void initialize(void)
 #endif
 
   // initialize alarm switch
-  pinMode(PinMap::alarm_switch, OUTPUT);
-  digitalWrite(PinMap::alarm_switch, HIGH); // enable pullup
+//  pinMode(PinMap::alarm_switch, OUTPUT);
+//  digitalWrite(PinMap::alarm_switch, HIGH); // enable pullup
+  pinMode(PinMap::alarm_switch, INPUT_PULLUP);  // input with pullup
   g_alarm_switch = digitalRead(PinMap::alarm_switch);
 
   //rot.begin();
@@ -733,6 +734,9 @@ void loop()
 		}
 
                 uint8_t sw = digitalRead(PinMap::alarm_switch);
+//                uint8_t sw = digitalRead(12);
+//                uint8_t sw = bitRead(PORTD, 6);
+//                uint8_t sw = DIRECT_PIN_READ(PORTC, B0100000);
                 
                 if (sw != g_alarm_switch) {
                     g_alarm_switch = sw;
