@@ -759,7 +759,7 @@ void scroll_date(WireRtcLib::tm* te_, uint8_t region)
 	else
 		sl = '-';
 	switch (region) {
-		case 0:  // DMY
+		case FORMAT_DMY:
 			sd[2] = te_->mday / 10 + '0';
 			sd[3] = te_->mday % 10 + '0';
 			sd[4] = sd[7] = sl;
@@ -770,7 +770,7 @@ void scroll_date(WireRtcLib::tm* te_, uint8_t region)
 			sd[10] = te_->year / 10 + '0';
 			sd[11] = te_->year % 10 + '0';
 			break;
-		case 1:  // MDY
+		case FORMAT_MDY:
 			sd[2] = te_->mon / 10 + '0';
 			sd[3] = te_->mon % 10 + '0';
 			sd[4] = sd[7] = sl;
@@ -781,7 +781,7 @@ void scroll_date(WireRtcLib::tm* te_, uint8_t region)
 			sd[10] = te_->year / 10 + '0';
 			sd[11] = te_->year % 10 + '0';
 			break;
-		case 2:  // YMD
+		case FORMAT_YMD:
 		default:  
 			sd[2] = '2';
 			sd[3] = '0';
