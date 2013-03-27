@@ -70,12 +70,14 @@ char segments_7a[] = {
 uint8_t calculate_segments_7(uint8_t ch)
 {
 	uint8_t segs = 0;
-	if ((ch >= 'A') && (ch <= 'Z'))  // A-Z
+	if ((ch >= 0) && (ch <= 9))
+		segs = segments_7n[ch];
+	else if ((ch >= '0') && (ch <= '9'))
+		segs = segments_7n[ch-48];
+	else if ((ch >= 'A') && (ch <= 'Z'))  // A-Z
 		segs = segments_7a[ch-'A'];
 	else if ((ch >= 'a') && (ch <= 'z'))  // a-z
 		segs = segments_7a[ch-'a'];
-	else if ((ch >= '0') && (ch <= '9'))
-		segs = segments_7n[ch-48];
 	else if (ch == '-')
 		segs = segG;
 	else if (ch == '"')

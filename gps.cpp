@@ -249,7 +249,7 @@ void parseGPSdata(char *gpsBuffer) {
 					else
 						tNow = tNow + (long)g_TZ_minute * SECS_PER_HOUR;
 					setRTCTime(tNow);  // set RTC from adjusted GPS time & date
-					if (shield != SHIELD_IV18)
+					if ((shield != SHIELD_IV18) && (shield != SHIELD_IV17))
 						flash_display(100);  // flash display to show GPS update 28oct12/wbp - shorter blink
 				}
 				else

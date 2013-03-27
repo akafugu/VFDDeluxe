@@ -27,19 +27,21 @@
 /* DONE:
  * Implement brightness PWM
  * resolve speaker/tone
+ * fix region
+ * Port Date scrolling function (from William's newest branch)
+ * Implement show alarm time when flipping switch
+ * Implement alarm
 */
 
 /*
  * TODO:
- * fix region
+ * reveille alarm?
+ * scroll time with date
  * add GPS "sanity check"
  * fix default DST rules (where did they go?)
  * Test FLW
  * Refactor FLW
  * Add menu items for GPS etc.
- * Port Date scrolling function (from William's newest branch)
- * Implement show alarm time when flipping switch
- * Implement alarm
  * Port William's new menu system
  * Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
  * serial slave feature

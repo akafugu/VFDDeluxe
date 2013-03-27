@@ -404,13 +404,13 @@ uint8_t print_digits (int8_t num, uint8_t offset)
 
     if (num >= 100) {
         ret = offset+3;
-        data[offset+2] = num % 10 + '0';
+        data[offset+2] = num % 10;
         num /= 10;
     }
     
-    data[offset+1] = num % 10 + '0';
+    data[offset+1] = num % 10;
     num /= 10;
-    data[offset] = num % 10 + '0';
+    data[offset] = num % 10;
     
     return ret;
 }
