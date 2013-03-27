@@ -539,8 +539,8 @@ void loop()
 		t1 = wMillis();
 		get_button_state(&buttons);
 
-  if (buttons.b1_keyup)  tone(11, 440, 1);  
-  if (buttons.b2_keyup)  tone(11, 880, 1);  
+  if (buttons.b1_keyup)  tone(11, 1000, 1);  
+  if (buttons.b2_keyup)  tone(11, 1000, 1);  
 
                 //long pos = myEnc.read();
            
