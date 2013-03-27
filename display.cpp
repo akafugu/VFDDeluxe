@@ -91,7 +91,7 @@ extern uint8_t g_alarm_switch;
 // variables for controlling display blink
 uint8_t blink;
 uint16_t blink_counter = 0;
-uint8_t display_on = 1;
+volatile uint8_t display_on = 1;
 
 extern uint8_t g_second_dots_on;
 
@@ -1056,7 +1056,7 @@ void display_multiplex(void)
     }
     switch (shield) {
       case(SHIELD_IV6):
-          write_vfd_iv6(multiplex_counter, calculate_segments_7(d));
+          write_vfd_iv6(multiplex_counter, display_on ? calculate_segments_7(d) : 0);
           break;
       case(SHIELD_IV17): {
           uint16_t seg = calculate_segments_16(d);
@@ -1064,13 +1064,13 @@ void display_multiplex(void)
             if (g_gps_updating)
             seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));
           }
-          write_vfd_iv17(multiplex_counter, seg);
+          write_vfd_iv17(multiplex_counter, display_on ? seg : 0);
           break;
       }
       case(SHIELD_IV18): {
           uint8_t seg = 0;
           if (multiplex_counter < 8) {
-              write_vfd_iv18(multiplex_counter, calculate_segments_7(d));
+              write_vfd_iv18(multiplex_counter, display_on ? calculate_segments_7(d) : 0);
           }
           else { // show alarm switch & gps status
               if (g_alarm_switch)
@@ -1086,7 +1086,7 @@ void display_multiplex(void)
 //      break;
 #ifdef HAVE_7SEG_SUPPORT
       case(SHIELD_7SEG):
-          write_vfd_7seg(multiplex_counter, calculate_segments_7(d));
+          write_vfd_7seg(multiplex_counter, display_on ? calculate_segments_7(d) : 0);
       break;
 #endif
 #ifdef HAVE_14SEG_SUPPORT
@@ -1094,7 +1094,7 @@ void display_multiplex(void)
           uint16_t segments = calculate_segments_14(data[digits-multiplex_counter-1]);
           if ((segments & 1<<6) || (segments & 1<<8) || (segments & 1<<10)) // left dash is set (segment G1)
             segments |= 1<<12;
-          write_vfd_standard(multiplex_counter, segments);
+          write_vfd_standard(multiplex_counter, display_on ? segments : 0);
       break;
 #endif
 #ifdef HAVE_16SEG_SUPPORT
