@@ -1157,7 +1157,7 @@ ISR(TIMER1_COMPA_vect)
 #endif
     _millis++;
 
-    sei();
+    sei(); // enable interrupts during display mux to allow tone() to run
     if (display_on)  display_multiplex();
     cli();
 

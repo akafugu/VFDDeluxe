@@ -26,12 +26,14 @@
 
 /* DONE:
  * Implement brightness PWM
+ * resolve speaker/tone
 */
 
 /*
  * TODO:
+ * fix region
+ * add GPS "sanity check"
  * fix default DST rules (where did they go?)
- * resolve speaker/tone
  * Test FLW
  * Refactor FLW
  * Add menu items for GPS etc.
@@ -191,10 +193,9 @@ void initialize(void)
   Serial.print("has_eeprom = ");
   Serial.println(g_has_flw);
   
-  if(g_has_flw)
-    g_flw_enabled = FLW_ON;
-    
-  flw.setCensored(g_flw_enabled == FLW_ON);
+//  if(g_has_flw)
+//    g_flw_enabled = FLW_ON;
+//  flw.setCensored(g_flw_enabled == FLW_ON);
 #else
   g_has_flw = false;
   g_flw_enabled = FLW_OFF;
@@ -456,8 +457,8 @@ void setup()
 //    pinMode(i, OUTPUT);  // set pins to OUTPUT to save power
 //  }
 
-//  tone(PinMap::piezo, NOTE_A5, 500);  // test tone
-  tone(11, 880, 200);  // test tone
+//  tone(PinMap::piezo, NOTE_A5, 100);  // test tone
+  tone(PinMap::piezo, 880, 100);  // test tone
 //  _delay_ms(500);
     
   Serial.begin(9600);
@@ -479,8 +480,8 @@ void setup()
 //  set_string("0000");
 
 //  set_display(0);
-  tone(11, 440, 500);  // test tone
-  wDelay(500);
+//  tone(11, 440, 500);  // test tone
+//  wDelay(500);
 //  set_display(1);
 	
   switch (shield) {
@@ -537,6 +538,10 @@ void loop()
   while (1) {
 		t1 = wMillis();
 		get_button_state(&buttons);
+
+  if (buttons.b1_keyup)  tone(11, 440, 1);  
+  if (buttons.b2_keyup)  tone(11, 880, 1);  
+
                 //long pos = myEnc.read();
            
 //                if (buttons.b1_keyup)

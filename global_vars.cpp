@@ -140,11 +140,15 @@ void globals_init(void)
 	g_volume     = eeprom_read_byte(&b_volume);
 #ifdef HAVE_FLW
 	g_flw_enabled = eeprom_read_byte(&b_flw_enabled);
+    Serial.print("g_flw_enabled = ");
+    Serial.println(g_flw_enabled);
 #else
         g_flw_enabled = 0;
 #endif
 #ifdef HAVE_GPS
 	g_gps_enabled = eeprom_read_byte(&b_gps_enabled);
+    Serial.print("g_gps_enabled = ");
+    Serial.println(g_gps_enabled);
 	if (g_gps_enabled != 0 && g_gps_enabled != 48 && g_gps_enabled != 96) g_gps_enabled = 0;
 	g_TZ_hour = eeprom_read_byte(&b_TZ_hour) - 12;
 	if ((g_TZ_hour<-12) || (g_TZ_hour>12))  g_TZ_hour = 0;  // add range check
