@@ -175,15 +175,15 @@ uint16_t segments_16[128] = {
 	segA2+segB+segC+segD1+segI+segG2+segE+segF,
 	segA2+segB+segC+segD1+segL+segI+segH+segG1+segE+segD2,
 
-  asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk,
+	asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk,
   
-  0, // 32 - space
-  asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk,
-  segG1+segG2+segI+segL, // +
-  asterisk,
-  segG1+segG2, // -
-  asterisk,
-  segJ+segM, // /
+	0, // 32 - space
+	asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk,
+	segG1+segG2+segI+segL, // +
+	asterisk,
+	segG1+segG2, // -
+	asterisk,
+	segJ+segM, // /
 
 	segA1+segA2+segB+segC+segD1+segD2+segE+segF+segJ+segM, // '0' - '9'
 	segB+segC+segJ,
