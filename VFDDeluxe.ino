@@ -92,6 +92,11 @@ uint8_t g_alarm_switch;
 #define MENU_TIMEOUT 20 // 20*100 ms = 2 seconds
 
 uint8_t g_alarming = false;
+uint16_t snooze_count = 0; // alarm snooze counter
+uint16_t alarm_timer = 0; // how long has alarm been beeping?
+uint16_t alarm_count, alarm_cycle, beep_count, beep_cycle;
+uint8_t g_snooze_time = 7; // snooze for 7 minutes
+
 bool g_update_rtc = true;
 uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
 #define SHOW_TIMEOUT 10 // 10*100 ms = 1 seconds
@@ -130,10 +135,6 @@ typedef enum {
 } display_mode_t;
 
 display_mode_t display_mode = MODE_NORMAL;
-
-//// Auto date
-//String g_date_string; // string holding the date to scroll across the screen in ADATE mode
-//uint8_t g_date_scroll_offset; // offset used when scrolling date across the screen
 
 void initialize(void)
 {
@@ -322,66 +323,6 @@ void read_flw()
 #endif
 }
 
-//void update_date_string(WireRtcLib::tm* t)
-//{
-//  if (!t) return;
-//  
-//  String temp;
-//  
-//  switch (g_date_format) {
-//  case FORMAT_YMD:
-//    temp.concat(t->year+2000);
-//    temp.concat('-');
-//    if (t->mon < 10) temp.concat('0');
-//    temp.concat(t->mon);
-//    temp.concat('-');
-//    if (t->mday < 10) temp.concat('0');    
-//    temp.concat(t->mday);
-//    break;
-//  case FORMAT_DMY:
-//    if (t->mday < 10) temp.concat('0');
-//    temp.concat(t->mday);
-//    temp.concat('-');
-//    if (t->mon < 10) temp.concat('0');
-//    temp.concat(t->mon);
-//    temp.concat('-');
-//    temp.concat(t->year+2000);
-//    break;
-//  case FORMAT_MDY:
-//    if (t->mon < 10) temp.concat('0');
-//    temp.concat(t->mon);
-//    temp.concat('-');
-//    if (t->mday < 10) temp.concat('0');
-//    temp.concat(t->mday);
-//    temp.concat('-');
-//    temp.concat(t->year+2000);
-//    break;
-//  }
-//
-//  temp.concat("    ");
-//
-//  g_date_string = temp;
-//}
-
-//void scroll_date()
-//{
-//  char buf[16];
-//  g_date_string.toCharArray(buf, 16);
-//  
-//  set_string(buf + g_date_scroll_offset);
-//  g_date_scroll_offset++;
-//  
-//  if (g_date_scroll_offset == 14) // fixme: check length of buffer to allow scrolling other messages
-//    display_mode = MODE_NORMAL;
-//}
-//
-//void start_date_scroll()
-//{
-//  display_mode = MODE_AUTO_DATE;
-//  g_date_scroll_offset = 0;
-//  scroll_date();
-//}
-
 void read_rtc(bool show_extra_info)
 {
     tt = rtc.getTime();
@@ -413,6 +354,7 @@ void read_rtc(bool show_extra_info)
     else if (display_mode == MODE_ALARM_TIME) {
         if (g_alarm_switch) {
             tt = rtc.getAlarm();
+//  Serial.print("alarm "); Serial.print(tt->hour); Serial.print(":"); Serial.println(tt->min);
             show_time(tt, g_24h_clock, false);
         }
         else {
@@ -428,9 +370,6 @@ void read_rtc(bool show_extra_info)
     else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 40 && tt->sec <= 50)
         read_flw();
     else if (g_AutoDate && display_mode <= MODE_AMPM && tt->sec == 55) {
-//        start_date_scroll();
-//    else if (display_mode == MODE_AUTO_DATE)
-//        scroll_date();
         scroll_speed(300);  // display date at 3 cps
 	scroll_date(tt, g_date_format);  // show date from last rtc_get_time() call
         while (scrolling())
@@ -452,6 +391,29 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
   g_DST_updated = false;  // allow automatic DST adjustment again
   setDSToffset(g_DST_mode);  // set DSToffset based on new date
 #endif // HAVE_AUTO_DST 
+}
+
+void start_alarm(void)
+{
+  g_alarming = true;
+  snooze_count = 0;
+  alarm_cycle = 200;  // 20 second initial cycle
+  alarm_count = 0;  // reset cycle count
+  beep_cycle = 1;  // start with single beep
+  alarm_timer = 0;  // restart start alarm timer
+  set_blink(true);
+}
+
+void stop_alarm(void)
+{
+  g_alarming = false;  // stop alarm
+  snooze_count = 0;  // and snooze
+  set_blink(false);  // and blink
+}
+
+void alarm(void)
+{
+  tone(PinMap::piezo, 880, 100);  // test tone
 }
 
 void setup()
@@ -556,25 +518,83 @@ void loop()
 		
 		// When alarming:
 		// any button press cancels alarm
-		if (g_alarming) {
-			read_rtc(display_mode);  // read and display time (??)
+//		if (g_alarming) {
+//			read_rtc(display_mode);  // read and display time (??)
+//
+//			// fixme: if keydown is detected here, wait for keyup and clear state
+//			// this prevents going into the menu when disabling the alarm
+//			if (buttons.b1_keydown || buttons.b1_keyup || buttons.b2_keydown || buttons.b2_keyup) {
+//				buttons.b1_keyup = 0; // clear state
+//				buttons.b2_keyup = 0; // clear state
+//				g_alarming = false;
+//			}
+//			else {
+//			    alarm();
+//			}
+//		}
 
-			// fixme: if keydown is detected here, wait for keyup and clear state
-			// this prevents going into the menu when disabling the alarm
+		if (scrolling()) {
+			if (buttons.b1_keyup || buttons.b2_keyup) {  // either button down stops scrolling
+				scroll_stop();
+				buttons.b2_keyup = 0;  // don't change time display
+			}
+		}
+
+		if (snooze_count>0)
+			snooze_count--;
+
+		if (g_alarming) {
+			alarm_timer ++;
+			if (alarm_timer > 30*60*10) {  // alarm has been sounding for 30 minutes, turn it off
+				stop_alarm();
+			}
+		}
+
+		// When alarming: any button press snoozes alarm
+		if (g_alarming && (snooze_count==0)) {
+//			display_time();  // read and display time
+			read_rtc(display_mode);  // read and display time (??)
+			// fixed: if keydown is detected here, wait for keyup and clear state
+			// this prevents going into the menu when disabling the alarm 
 			if (buttons.b1_keydown || buttons.b1_keyup || buttons.b2_keydown || buttons.b2_keyup) {
 				buttons.b1_keyup = 0; // clear state
 				buttons.b2_keyup = 0; // clear state
-				g_alarming = false;
+				start_alarm();  // restart alarm sequence
+				snooze_count = g_snooze_time*60*10;  // start snooze timer
+//				show_snooze();
+				if (get_digits() == 8)
+				  set_string(" Snooze ");
+				else
+				  set_string("snze");
+				wDelay(500);
+				while (buttons.b1_keydown || buttons.b2_keydown) {  // wait for button to be released
+					wDelay(100);
+					get_button_state(&buttons);
+				}
 			}
 			else {
-				//alarm();	
+				alarm_count++;
+				if (alarm_count > alarm_cycle) {  // once every alarm_cycle
+					beep_count = alarm_count = 0;  // restart cycle 
+					if (alarm_cycle>20)  // if more than 2 seconds
+						alarm_cycle = alarm_cycle - 20;  // shorten delay by 2 seconds
+					if (beep_cycle<20)
+						beep_cycle += 2;  // add another beep
+				}
+				beep_count++;
+				if (beep_count <= beep_cycle) {  // how many beeps this cycle?
+					if (beep_count%2)  // odd = beep
+						alarm();
+				}
 			}
 		}
+
 		// If both buttons are held:
 		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
 		//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
 		else if (g_menu_state == STATE_CLOCK && buttons.both_held) {
                         //Serial.println("Both held");
+                        stop_alarm();  // setting time or alarm, cancel alarm
     
 			if (g_alarm_switch) {
 				g_menu_state = STATE_SET_ALARM;
@@ -714,6 +734,8 @@ void loop()
                 
                 if (sw != g_alarm_switch) {
                     g_alarm_switch = sw;
+                    if (!g_alarm_switch)
+			stop_alarm();  // cancel alarm
                     display_mode = MODE_ALARM_TEXT;
                     g_show_special_cnt = 10;
                     g_update_rtc = true;
@@ -721,7 +743,7 @@ void loop()
 
 		// fixme: alarm should not be checked when setting time or alarm
 		if (g_alarm_switch && rtc.checkAlarm())
-			g_alarming = true;
+			start_alarm();
 
 #ifdef HAVE_GPS
         if (g_gps_enabled && g_menu_state == STATE_CLOCK) {

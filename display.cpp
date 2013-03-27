@@ -476,7 +476,8 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 	dots = 0;
 
 	uint8_t offset = 0;
-	uint8_t hour = _24h_clock ? t->hour : t->twelveHour;
+//	uint8_t hour = _24h_clock ? t->hour : t->twelveHour;
+	uint8_t hour = _24h_clock ? t->hour : t->hour%12;
         if (!_24h_clock && hour == 0)  // show 12 for midnight and noon
           hour = 12;  // wbp
 
