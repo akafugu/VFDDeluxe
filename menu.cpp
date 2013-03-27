@@ -217,7 +217,7 @@ void menu(bool update, bool show)
       show_setting_int("DAY", "DAY", g_dateday, show);
       break;
       
-#ifdef HAVE_AUTODATE
+#ifdef HAVE_AUTO_DATE
     case STATE_MENU_AUTODATE:
       if (update) {
         g_AutoDate = !g_AutoDate;
