@@ -315,11 +315,12 @@ void read_humidity()
 void read_flw()
 {
 #ifdef HAVE_FLW
-//    set_string(flw.get_word());
-
-  char* foo = flw.get_word();
-  Serial.println(foo);
-  set_string(foo);
+  static uint8_t flw_counter = 0;
+  
+  if (flw_counter++ == 2) {
+    set_string(flw.get_word());
+    flw_counter = 0;
+  }  
 #endif
 }
 
