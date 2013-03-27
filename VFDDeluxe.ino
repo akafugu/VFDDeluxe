@@ -150,11 +150,6 @@ void initialize(void)
   digitalWrite(PinMap::alarm_switch, HIGH); // enable pullup
   g_alarm_switch = digitalRead(PinMap::alarm_switch);
 
-  // fixme: move to button class?
-  // Set switch as input and enable pullup
-  //SWITCH_DDR  &= ~(_BV(SWITCH_BIT));
-  //SWITCH_PORT |= _BV(SWITCH_BIT);
-
   //rot.begin();
 
   sei();
@@ -408,7 +403,20 @@ void read_rtc(bool show_extra_info)
     
 //    update_date_string(tt);
 
-    if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
+    if (display_mode == MODE_ALARM_TEXT) {
+        if (get_digits() == 4) set_string("ALRM");
+        else set_string("ALARM");
+    }
+    else if (display_mode == MODE_ALARM_TIME) {
+        if (g_alarm_switch) {
+            tt = rtc.getAlarm();
+            show_time(tt, g_24h_clock, false);
+        }
+        else {
+            set_string("OFF");          
+        }
+    }
+    else if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
         read_temp();
     else if (have_pressure_sensor() && tt->sec >= 34 && tt->sec <= 36)
         read_pressure();
@@ -692,7 +700,14 @@ void loop()
 #endif // HAVE_RTC_SQW
 		}
 
-                g_alarm_switch = digitalRead(PinMap::alarm_switch);
+                uint8_t sw = digitalRead(PinMap::alarm_switch);
+                
+                if (sw != g_alarm_switch) {
+                    g_alarm_switch = sw;
+                    display_mode = MODE_ALARM_TEXT;
+                    g_show_special_cnt = 10;
+                    g_update_rtc = true;
+                }
 
 		// fixme: alarm should not be checked when setting time or alarm
 		if (g_alarm_switch && rtc.checkAlarm())
