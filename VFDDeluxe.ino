@@ -478,10 +478,10 @@ void setup()
   initialize();
 //  set_string("0000");
 
-  set_display(0);
+//  set_display(0);
   tone(11, 440, 500);  // test tone
   wDelay(500);
-  set_display(1);
+//  set_display(1);
 	
   switch (shield) {
     case(SHIELD_IV6):

@@ -1052,6 +1052,8 @@ void clear_display(void)
 
 volatile uint8_t nixie_multiplex_counter;
 
+extern uint16_t segments_16[];
+
 void display_multiplex(void)
 {
     multiplex_counter++;	
@@ -1077,7 +1079,8 @@ void display_multiplex(void)
           write_vfd_iv6(multiplex_counter, calculate_segments_7(d));
           break;
       case(SHIELD_IV17): {
-          uint16_t seg = calculate_segments_16(d);
+//          uint16_t seg = calculate_segments_16(d);
+          uint16_t seg = segments_16[d];
           if (multiplex_counter == 0) {
             if (g_gps_updating)
             seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));
@@ -1153,7 +1156,10 @@ ISR(TIMER1_COMPA_vect)
   TCNT1 = 0x0;
 #endif
     _millis++;
+
+    sei();
     if (display_on)  display_multiplex();
+    cli();
 
     // control blinking: on time is slightly longer than off time
     if (blink) {
@@ -1170,10 +1176,7 @@ ISR(TIMER1_COMPA_vect)
     }
 
 #ifdef HAVE_GPS
-//    if (++gps_counter == 4) {  // every 0.001024 seconds
-    GPSread();  // check for data on the serial port every 1 ms
-//        gps_counter = 0;
-//    }
+  GPSread();  // check for data on the serial port every 1 ms
 #endif // HAVE_GPS
 
     // button polling
