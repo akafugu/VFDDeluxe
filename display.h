@@ -63,6 +63,7 @@ void set_char_at(char c, uint8_t offset);
 void set_brightness(uint8_t brightness);
 
 void set_blink(bool on);
+void set_dimming(bool on);
 void set_display(bool on);
 void flash_display(uint16_t ms);
 

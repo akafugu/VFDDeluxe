@@ -90,9 +90,13 @@ uint8_t scroll_limit = 0;
 extern uint8_t g_alarm_switch;
 
 // variables for controlling display blink
-uint8_t blink;
+uint8_t blinking;
 uint16_t blink_counter = 0;
 volatile uint8_t display_on = 1;
+
+uint8_t dimming;
+uint16_t dimming_counter = 0;
+volatile uint8_t dimming_on = 0;
 
 extern uint8_t g_second_dots_on;
 
@@ -207,8 +211,8 @@ byte brt[] = {3, 15, 27, 42, 59, 79, 103, 135, 179, 255};
 void set_brightness(uint8_t brightness) {
 
   if (brightness > 10) brightness = 10;
-//  _brightness = brt[brightness-1];
-  OCR4D = brt[brightness-1];  // set PWM comparand for given brightness 
+  _brightness = brt[brightness-1];
+  OCR4D = _brightness;  // set PWM comparand for given brightness 
   TCNT4 = 0; // restart timer counter
 //  digitalWrite(blank_pin.pin, LOW);  // blanking off
   PORTD &= B01111111; // set PD7 LOW
@@ -370,10 +374,18 @@ void clear_sData(void)
   }
 }
 
-void set_blink(bool on)
+void set_blink(bool onOff)
 {
-  blink = on;
-  if (!blink) display_on = 1;
+  blinking = onOff;
+  if (!blinking) display_on = 1;
+// Serial.print("blink "); Serial.println(blinking);
+}
+
+void set_dimming(bool onOff)
+{
+  dimming = onOff;
+  if (!dimming)
+    OCR4D = _brightness;  // restore brightness
 }
 
 void set_display(bool on)
@@ -1068,7 +1080,7 @@ void display_multiplex(void)
     multiplex_counter++;	
     if (multiplex_counter > multiplex_limit)
         multiplex_counter = 0;  
-//    clear_display();  // not needed?
+    clear_display();  // not needed?
 //    nixie_multiplex_counter = !nixie_multiplex_counter;
     char d;
     if (_scrolling) {
@@ -1171,16 +1183,30 @@ ISR(TIMER1_COMPA_vect)
     cli();
 
     // control blinking: on time is slightly longer than off time
-    if (blink) {
+    if (blinking) {
       blink_counter++;
       if (display_on && blink_counter >= 550) { // on time 0.55 secs
         display_on = false;
-        blink_counter = 0;
         clear_display();
+        blink_counter = 0;
         }
       else if (!display_on && blink_counter >= 450) { // off time 0.45 secs
         display_on = true;
         blink_counter = 0;
+      }
+    }
+    
+    if (dimming) {
+      dimming_counter++;
+      if (dimming_on && dimming_counter >= 1000) {
+        dimming_on = false;
+        dimming_counter = 0;
+        OCR4D = _brightness;  // restore brightness
+      }
+      else if (!dimming_on && dimming_counter >= 1000) {
+        dimming_on = true;
+        dimming_counter = 0;
+        OCR4D = _brightness >> 1;  // half brightness
       }
     }
 

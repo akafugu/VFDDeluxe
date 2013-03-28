@@ -98,6 +98,7 @@ uint16_t snooze_count = 0; // alarm snooze counter
 uint16_t alarm_timer = 0; // how long has alarm been beeping?
 uint16_t alarm_count, alarm_cycle, beep_count, beep_cycle;
 uint8_t g_snooze_time = 7; // snooze for 7 minutes
+//uint8_t g_snooze_time = 1; // snooze test
 
 bool g_update_rtc = true;
 uint8_t g_show_special_cnt = 0;  // display something special ("time", "alarm", etc)
@@ -404,7 +405,8 @@ void start_alarm(void)
   alarm_count = 0;  // reset cycle count
   beep_cycle = 1;  // start with single beep
   alarm_timer = 0;  // restart start alarm timer
-  set_blink(true);
+  set_dimming(false);  // stop dimming if on
+  set_blink(true);  // start blinking
 }
 
 void stop_alarm(void)
@@ -412,6 +414,7 @@ void stop_alarm(void)
   g_alarming = false;  // stop alarm
   snooze_count = 0;  // and snooze
   set_blink(false);  // and blink
+  set_dimming(false); // and dimming
 }
 
 void alarm(void)
@@ -543,8 +546,13 @@ void loop()
 			}
 		}
 
-		if (snooze_count>0)
-			snooze_count--;
+		if (snooze_count>0) {
+                    snooze_count--;
+                    if (snooze_count == 0) {
+			start_alarm();  // restart alarm sequence
+			alarm();  // restart alarm sequence
+                    }
+		}
 
 		if (g_alarming) {
 			alarm_timer ++;
@@ -562,8 +570,10 @@ void loop()
 			if (buttons.b1_keydown || buttons.b1_keyup || buttons.b2_keydown || buttons.b2_keyup) {
 				buttons.b1_keyup = 0; // clear state
 				buttons.b2_keyup = 0; // clear state
-				start_alarm();  // restart alarm sequence
+//				start_alarm();  // restart alarm sequence
 				snooze_count = g_snooze_time*60*10;  // start snooze timer
+				set_blink(false);  // stop blinking
+				set_dimming(true);  // start dimming
 //				show_snooze();
 				if (get_digits() == 8)
 				  set_string(" Snooze ");
@@ -628,12 +638,12 @@ void loop()
 		else if (g_menu_state == STATE_SET_CLOCK || g_menu_state == STATE_SET_ALARM) {
 			// Check if we should exit STATE_SET_CLOCK or STATE_SET_ALARM
 			if (buttons.none_held) {
-				set_blink(true);
+//				set_blink(true);
 				button_released_timer++;
 				button_speed = 1;
 			}
 			else {
-				set_blink(false);
+//				set_blink(false);
 				button_released_timer = 0;
 				button_speed++;
 			}
@@ -733,9 +743,9 @@ void loop()
 #endif // HAVE_RTC_SQW
 		}
 
-                uint8_t sw = digitalRead(PinMap::alarm_switch);
+//                uint8_t sw = digitalRead(PinMap::alarm_switch);
 //                uint8_t sw = digitalRead(12);
-//                uint8_t sw = bitRead(PORTD, 6);
+                uint8_t sw = bitRead(PIND, 6);
 //                uint8_t sw = DIRECT_PIN_READ(PORTC, B0100000);
                 
                 if (sw != g_alarm_switch) {
