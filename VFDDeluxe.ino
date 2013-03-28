@@ -112,6 +112,8 @@ extern enum shield_t shield;
 
 struct BUTTON_STATE buttons;
 
+pin_direct_t switch_pin;
+
 extern menu_state_t g_menu_state;
 bool menu_b1_first = false;
 
@@ -155,7 +157,12 @@ void initialize(void)
 //  pinMode(PinMap::alarm_switch, OUTPUT);
 //  digitalWrite(PinMap::alarm_switch, HIGH); // enable pullup
   pinMode(PinMap::alarm_switch, INPUT_PULLUP);  // input with pullup
-  g_alarm_switch = digitalRead(PinMap::alarm_switch);
+  
+  switch_pin.pin = PinMap::alarm_switch;
+  switch_pin.reg = PIN_TO_INPUT_REG(switch_pin.pin);
+  switch_pin.bitmask = PIN_TO_BITMASK(switch_pin.pin);
+  
+  g_alarm_switch = DIRECT_PIN_READ(switch_pin.reg,  switch_pin.bitmask);
 
   //rot.begin();
 
@@ -733,10 +740,7 @@ void loop()
 #endif // HAVE_RTC_SQW
 		}
 
-                uint8_t sw = digitalRead(PinMap::alarm_switch);
-//                uint8_t sw = digitalRead(12);
-//                uint8_t sw = bitRead(PORTD, 6);
-//                uint8_t sw = DIRECT_PIN_READ(PORTC, B0100000);
+                uint8_t sw = DIRECT_PIN_READ(switch_pin.reg,  switch_pin.bitmask);
                 
                 if (sw != g_alarm_switch) {
                     g_alarm_switch = sw;
