@@ -178,7 +178,9 @@ uint16_t segments_16[128] = {
 	asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk,
   
 	0, // 32 - space
-	asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk,
+	asterisk, asterisk, asterisk, asterisk, asterisk, 
+	segA2+segB+segG2+segI, // & - used as degree symbol
+	asterisk, asterisk, asterisk, asterisk,
 	segG1+segG2+segI+segL, // +
 	asterisk,
 	segG1+segG2, // -
