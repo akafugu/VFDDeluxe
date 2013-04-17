@@ -663,11 +663,6 @@ void show_pressure(uint8_t pressure)
 	dots = 0;
 	uint8_t offset = 0;
 	
-	uint8_t temp  = pressure % 10;
-	uint8_t temp2 = pressure/= 10;
-
-//	nixie_print(0, temp2, temp);
-
 	switch (digits) {
 	case 10:
 		offset = print_ch(' ', offset);

@@ -31,6 +31,9 @@
  * Port Date scrolling function (from William's newest branch)
  * Implement show alarm time when flipping switch
  * Implement alarm
+ * Test FLW
+ * Refactor FLW
+ * Add menu items for GPS etc.
 */
 
 /*
@@ -39,9 +42,6 @@
  * scroll time with date
  * add GPS "sanity check"
  * fix default DST rules (where did they go?)
- * Test FLW
- * Refactor FLW
- * Add menu items for GPS etc.
  * Port William's new menu system
  * Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
  * serial slave feature
@@ -505,7 +505,7 @@ void setup()
 
 void loop()
 {
-  unsigned long t1, t2;
+  unsigned long t1;
   uint8_t hour = 0, min = 0, sec = 0;
   // Counters used when setting time
   int16_t time_to_set = 0;
