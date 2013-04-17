@@ -364,21 +364,35 @@ void menu(bool update, bool show)
     }
 }
 
+/*
 void menu_enable(menu_state_t item, bool enabled)
 {
     
 }
+*/
 
 void first_menu_item()
 {
     g_menu_state = STATE_MENU_BRIGHTNESS;
 }
 
+bool have_temp_sensor(void);
+
 void next_menu_item()
 {
     g_menu_state = (menu_state_t)(g_menu_state + 1);
     
-    // fixme: check enabled and disabled menu items here
+    // Check for menu items that should be skipped
+    if (g_menu_state == STATE_MENU_TEMP && !have_temp_sensor())
+        g_menu_state = (menu_state_t)(g_menu_state + 1);
+
+    if (g_menu_state == STATE_MENU_DOTS && !g_has_dots)
+        g_menu_state = (menu_state_t)(g_menu_state + 1);
+        
+#ifdef HAVE_FLW
+    if (g_menu_state == STATE_MENU_FLW && !g_has_flw)
+        g_menu_state = (menu_state_t)(g_menu_state + 1);
+#endif
     
     if (g_menu_state == STATE_MENU_LAST)
         g_menu_state = STATE_CLOCK;   
