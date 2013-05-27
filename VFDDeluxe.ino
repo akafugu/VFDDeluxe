@@ -38,6 +38,11 @@
 
 /*
  * TODO:
+ * FLW mode when FLW is on/full
+ * IV-18/8+ digit improvements:
+ * - FLW movement
+ * - Show "Alarm off" on one screen
+ * - dot blinks when showing temperature
  * reveille alarm?
  * scroll time with date
  * add GPS "sanity check"
@@ -62,6 +67,11 @@
 
 #ifdef HAVE_MPL115A2
 #include <MPL115A2.h>
+#endif
+
+#ifdef HAVE_HIH6121
+#include <HIH61XX.h>
+HIH61XX hih(0x27);
 #endif
 
 //#include <Encoder.h>
@@ -180,6 +190,11 @@ void initialize(void)
 
   rtc.begin();
   rtc.runClock(true);
+  
+  if (rtc.isDS3231())
+    Serial.println("Clock detected as DS3231");
+  else
+    Serial.println("Clock detected as DS1307");
 
   //rtc.setTime_s(16, 10, 0);
   //rtc_set_alarm_s(17,0,0);
@@ -263,7 +278,17 @@ bool have_temp_sensor(void)
 void read_temp()
 {
 #ifdef HAVE_HIH6121
-    // fixme: implement
+    hih.start();
+    hih.update();
+    float temp = hih.temperature();
+
+    int8_t t;
+    uint8_t f;
+    
+    t = (int)temp;
+    f = (int)((temp-t)*100);
+
+    show_temp(t, f);
 #elif defined(HAVE_MPL115A2)
     MPL115A2.ReadSensor();
     MPL115A2.shutdown();
@@ -317,8 +342,12 @@ inline bool have_humidity_sensor()
 
 void read_humidity()
 {
-    //fixme: implement
-    show_humidity(96);    
+#ifdef HAVE_HIH6121
+    hih.start();
+    hih.update();
+    int hum = (int)hih.humidity();
+    show_humidity(hum);
+#endif
 }
 
 void read_flw()
