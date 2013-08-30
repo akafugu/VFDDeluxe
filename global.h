@@ -89,8 +89,9 @@ struct PinMap
     // RTC SQW interrupt
     static const uint8_t sqw = 8; // PB4 / PCINT4
     
-    // ofhter
-    static const uint8_t piezo = 11;
+    // other
+    static const uint8_t piezo  = 11;
+    static const uint8_t pizeo2 = 10;
 };
 
 #endif
