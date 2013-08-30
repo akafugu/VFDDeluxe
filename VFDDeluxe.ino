@@ -400,11 +400,11 @@ void read_rtc(bool show_extra_info)
             set_string("OFF");          
         }
     }
-    else if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
+    else if (have_temp_sensor() && g_show_temp && tt->sec >= 31 && tt->sec <= 33)
         read_temp();
-    else if (have_pressure_sensor() && tt->sec >= 34 && tt->sec <= 36)
+    else if (have_pressure_sensor() && g_show_temp && tt->sec >= 34 && tt->sec <= 36)
         read_pressure();
-    else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
+    else if (have_humidity_sensor() && g_show_temp && tt->sec >= 37 && tt->sec <= 39)
         read_humidity();
     else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 40 && tt->sec <= 50)
         read_flw();
