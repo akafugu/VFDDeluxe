@@ -710,11 +710,9 @@ void set_scroll(char* str)
 	}
 	scroll_limit = i+1;
 	scroll_index = 0;
-//	display_scroll(0);
+
 	scroll_counter = scroll_time;  // start scrolling
 	_scrolling = true;
-//	while (scrolling)  // wait for scrolling to finish
-//		;
 }
 
 // shows setting string

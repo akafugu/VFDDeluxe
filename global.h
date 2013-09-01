@@ -77,8 +77,8 @@ struct PinMap
     static const uint8_t nixie_a4 = 16;
     
     // Input buttons / alarm sitch
-    static const uint8_t button1 = 7;
-    static const uint8_t button2 = 9;
+    static const uint8_t button1 = 9;
+    static const uint8_t button2 = 7;
     static const uint8_t alarm_switch = 12;
     
     // Shield signature pins

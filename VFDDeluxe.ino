@@ -146,17 +146,31 @@ typedef enum {
     MODE_ALARM_TEXT,  // Shows "ALRM" or "ALARM"
     MODE_ALARM_TIME,  // Shows Alarm time
     MODE_AUTO_DATE,   // Scrolls date across the screen
+    MODE_AUTO_FLW,    // Shows FLW for 5 seconds
+    MODE_AUTO_TEMP,   // Shows temperature/humidity/pressure for 2 seconds each
 } display_mode_t;
 
 display_mode_t display_mode = MODE_NORMAL;
+display_mode_t saved_display_mode = MODE_NORMAL;
+
+void push_display_mode(display_mode_t d)
+{
+    saved_display_mode = display_mode;
+    display_mode = d;
+}
+
+void pop_display_mode()
+{
+    display_mode = saved_display_mode;    
+}
 
 void initialize(void)
 {
   // read eeprom
   // fixme: implement
 
-//  pinMode(PIEZO, OUTPUT);
-//  digitalWrite(PIEZO, LOW);
+  pinMode(PIEZO, OUTPUT);
+  digitalWrite(PIEZO, LOW);
 
 #ifdef HAVE_ATMEGA328
   pinMode(PIEZO_GND, OUTPUT);
@@ -362,11 +376,10 @@ void read_flw()
 #endif
 }
 
-void read_rtc(bool show_extra_info)
+void update_display(bool show_extra_info)
 {
     tt = rtc.getTime();
     if (tt == NULL) {
-//      Serial.println("no RTC!");  // temp
       return;
     }
 
@@ -383,8 +396,6 @@ void read_rtc(bool show_extra_info)
 #endif // HAVE_AUTO_DST
 
     g_second_dots_on = (g_menu_state == STATE_CLOCK && display_mode == MODE_NORMAL && tt->sec % 2 == 0) ? true : false;
-    
-//    update_date_string(tt);
 
     if (display_mode == MODE_ALARM_TEXT) {
         if (get_digits() == 4) set_string("ALRM");
@@ -393,26 +404,35 @@ void read_rtc(bool show_extra_info)
     else if (display_mode == MODE_ALARM_TIME) {
         if (g_alarm_switch) {
             tt = rtc.getAlarm();
-//  Serial.print("alarm "); Serial.print(tt->hour); Serial.print(":"); Serial.println(tt->min);
             show_time(tt, g_24h_clock, false);
         }
         else {
             set_string("OFF");          
         }
     }
-    else if (have_temp_sensor() && g_show_temp && tt->sec >= 31 && tt->sec <= 33)
+    else if (display_mode == MODE_AUTO_TEMP) {
+        Serial.println("Auto temp");
+        read_temp(); // fixme, encapsulate temp/pressure/humidity here
+        if (tt->sec >= 33) pop_display_mode();
+    }
+    else if (have_temp_sensor() && g_show_temp && tt->sec == 30) {
+        push_display_mode(MODE_AUTO_TEMP);
         read_temp();
-    else if (have_pressure_sensor() && g_show_temp && tt->sec >= 34 && tt->sec <= 36)
-        read_pressure();
-    else if (have_humidity_sensor() && g_show_temp && tt->sec >= 37 && tt->sec <= 39)
-        read_humidity();
-    else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 40 && tt->sec <= 50)
+        // fixme: implement temp sub mode 0-temp,1-pressure,2-humidity
+    }
+    else if (display_mode == MODE_AUTO_FLW) {
+       read_flw();    
+       if (tt->sec >= 50) pop_display_mode();
+    }
+    else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec == 40) {
         read_flw();
+        push_display_mode(MODE_AUTO_FLW);
+    }
     else if (g_AutoDate && display_mode <= MODE_AMPM && tt->sec == 55) {
         scroll_speed(300);  // display date at 3 cps
 	scroll_date(tt, g_date_format);  // show date from last rtc_get_time() call
-        while (scrolling())
-          wDelay(100); // wait a bit (temp)
+
+        push_display_mode(MODE_AUTO_DATE);
     }
     else
         show_time(tt, g_24h_clock, show_extra_info);        
@@ -545,8 +565,8 @@ void loop()
 		t1 = wMillis();
 		get_button_state(&buttons);
 
-  if (buttons.b1_keyup)  tone(11, 1000, 1);  
-  if (buttons.b2_keyup)  tone(11, 1000, 1);  
+                if (buttons.b1_keyup)  tone(11, 1000, 1);  
+                if (buttons.b2_keyup)  tone(11, 1000, 1);  
 
                 //long pos = myEnc.read();
            
@@ -558,7 +578,7 @@ void loop()
 		// When alarming:
 		// any button press cancels alarm
 //		if (g_alarming) {
-//			read_rtc(display_mode);  // read and display time (??)
+//			update_display(display_mode);  // read and display time (??)
 //
 //			// fixme: if keydown is detected here, wait for keyup and clear state
 //			// this prevents going into the menu when disabling the alarm
@@ -572,13 +592,6 @@ void loop()
 //			}
 //		}
 
-		if (scrolling()) {
-			if (buttons.b1_keyup || buttons.b2_keyup) {  // either button down stops scrolling
-				scroll_stop();
-				buttons.b2_keyup = 0;  // don't change time display
-			}
-		}
-
 		if (snooze_count>0)
 			snooze_count--;
 
@@ -591,8 +604,8 @@ void loop()
 
 		// When alarming: any button press snoozes alarm
 		if (g_alarming && (snooze_count==0)) {
-//			display_time();  // read and display time
-			read_rtc(display_mode);  // read and display time (??)
+			update_display(display_mode);
+
 			// fixed: if keydown is detected here, wait for keyup and clear state
 			// this prevents going into the menu when disabling the alarm 
 			if (buttons.b1_keydown || buttons.b1_keyup || buttons.b2_keydown || buttons.b2_keyup) {
@@ -700,6 +713,24 @@ void loop()
 
 			show_time_setting(time_to_set / 60, time_to_set % 60, 0);
 		}
+                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
+                    pop_display_mode();
+                    update_display(display_mode);
+                }
+                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_FLW && (buttons.b1_keyup || buttons.b2_keyup)) {
+                    pop_display_mode();
+                    update_display(display_mode);
+                }
+                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && !scrolling()) {
+                    pop_display_mode();
+                    update_display(display_mode);
+                }
+                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && (buttons.b1_keyup || buttons.b2_keyup)) {
+        	    scroll_stop();
+
+                    pop_display_mode();
+                    update_display(display_mode);
+                }
 		// Left button enters menu
 		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
                         first_menu_item();
@@ -758,13 +789,13 @@ void loop()
 #ifdef HAVE_RTC_SQW
                         if (g_update_rtc) {
                             g_update_rtc = false;
-                            read_rtc(display_mode);  // read RTC and display time
+                            update_display(display_mode);  // read RTC and display time
                         }    
 #else
 			// read RTC approx ever other time thru loop (every 200ms)
 			static uint8_t cnt = 0;
 			if (++cnt%2) {
-				read_rtc(display_mode);  // read RTC and display time
+				update_display(display_mode);  // read RTC and display time
 				}
 #endif // HAVE_RTC_SQW
 		}
