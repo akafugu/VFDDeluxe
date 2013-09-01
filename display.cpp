@@ -684,7 +684,7 @@ void show_pressure(uint8_t pressure)
 	}
 }
 
-void set_string(const char* str)
+void set_string(const char* str, uint8_t offset /* =0 */)
 {
 	if (!str) return;
 
@@ -692,7 +692,7 @@ void set_string(const char* str)
 //	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
         clear_data();
 	
-	for (int i = 0; i <= digits-1; i++) {
+	for (int i = offset; i <= digits-1; i++) {
 		if (!*str) break;
 		data[i] = *(str++);
 	}

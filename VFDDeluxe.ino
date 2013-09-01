@@ -368,10 +368,20 @@ void read_flw()
 {
 #ifdef HAVE_FLW
   static uint8_t flw_counter = 0;
+  static uint8_t flw_offset = 0;
+  static int8_t flw_offset_direction = 1;
   
   if (flw_counter++ == 2) {
-    set_string(flw.get_word());
+    set_string(flw.get_word(), flw_offset);
     flw_counter = 0;
+    
+    if (get_digits() > 4)
+        flw_offset += flw_offset_direction;
+    
+    if (flw_offset_direction == 1 && flw_offset > get_digits()-5)
+        flw_offset_direction = -1;
+    else if (flw_offset_direction == -1 && flw_offset == 0)
+        flw_offset_direction = 1;
   }  
 #endif
 }
@@ -568,13 +578,6 @@ void loop()
                 if (buttons.b1_keyup)  tone(11, 1000, 1);  
                 if (buttons.b2_keyup)  tone(11, 1000, 1);  
 
-                //long pos = myEnc.read();
-           
-//                if (buttons.b1_keyup)
-//                    Serial.println("Got buttons.b1_keyup");
-//                if (buttons.b2_keyup)
-//                    Serial.println("Got buttons.b2_keyup");
-		
 		// When alarming:
 		// any button press cancels alarm
 //		if (g_alarming) {
