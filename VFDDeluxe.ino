@@ -151,6 +151,7 @@ typedef enum {
     MODE_AUTO_DATE,   // Scrolls date across the screen
     MODE_AUTO_FLW,    // Shows FLW for 5 seconds
     MODE_AUTO_TEMP,   // Shows temperature/humidity/pressure for 2 seconds each
+    MODE_AUTO_TIME,   // Shows time for 5 seconds (for FLW mode)
 } display_mode_t;
 
 display_mode_t display_mode = MODE_NORMAL;
@@ -424,7 +425,6 @@ void update_display()
         }
     }
     else if (display_mode == MODE_AUTO_TEMP) {
-        Serial.println("Auto temp");
         read_temp(); // fixme, encapsulate temp/pressure/humidity here
         if (tt->sec >= 33) pop_display_mode();
     }
@@ -437,9 +437,17 @@ void update_display()
        read_flw();    
        if (tt->sec >= 50) pop_display_mode();
     }
-    else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec == 40) {
+    else if (g_has_flw && g_flw_enabled != FLW_OFF && tt->sec == 40) {
         read_flw();
         push_display_mode(MODE_AUTO_FLW);
+    }
+    else if (g_has_flw && display_mode == MODE_FLW && tt->sec == 58) {
+        push_display_mode(MODE_AUTO_TIME);
+        show_time(tt, g_24h_clock, MODE_NORMAL);   
+    }
+    else if (display_mode == MODE_AUTO_TIME) {
+        show_time(tt, g_24h_clock, MODE_NORMAL);
+       if (tt->sec >= 4 && tt->sec < 5) pop_display_mode();
     }
     else if (g_AutoDate && display_mode < MODE_LAST && tt->sec == 55) {
         scroll_speed(300);  // display date at 3 cps
@@ -733,6 +741,10 @@ void loop()
                     pop_display_mode();
                     update_display();
                 }
+                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TIME && (buttons.b1_keyup || buttons.b2_keyup)) {
+                    pop_display_mode();
+                    update_display();
+                }                
                 else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && !scrolling()) {
                     pop_display_mode();
                     update_display();
