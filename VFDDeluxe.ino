@@ -142,6 +142,9 @@ bool menu_b1_first = false;
 typedef enum {
     MODE_NORMAL = 0,  // Time mode 1 (HH:MM/HH:MM:SS)
     MODE_AMPM,        // Time mode 2 (SS/HH-MM)
+#ifdef HAVE_FLW
+    MODE_FLW,         // Time mode 3: Shows FLW with time and date scrolling
+#endif
     MODE_LAST,
     MODE_ALARM_TEXT,  // Shows "ALRM" or "ALARM"
     MODE_ALARM_TIME,  // Shows Alarm time
@@ -386,7 +389,7 @@ void read_flw()
 #endif
 }
 
-void update_display(bool show_extra_info)
+void update_display()
 {
     tt = rtc.getTime();
     if (tt == NULL) {
@@ -438,14 +441,20 @@ void update_display(bool show_extra_info)
         read_flw();
         push_display_mode(MODE_AUTO_FLW);
     }
-    else if (g_AutoDate && display_mode <= MODE_AMPM && tt->sec == 55) {
+    else if (g_AutoDate && display_mode < MODE_LAST && tt->sec == 55) {
         scroll_speed(300);  // display date at 3 cps
 	scroll_date(tt, g_date_format);  // show date from last rtc_get_time() call
 
         push_display_mode(MODE_AUTO_DATE);
     }
-    else
-        show_time(tt, g_24h_clock, show_extra_info);        
+#ifdef HAVE_FLW
+    else if (display_mode == MODE_FLW) {
+        read_flw();
+    }
+#endif
+    else {
+        show_time(tt, g_24h_clock, display_mode);   
+    } 
 }
 
 void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
@@ -607,7 +616,7 @@ void loop()
 
 		// When alarming: any button press snoozes alarm
 		if (g_alarming && (snooze_count==0)) {
-			update_display(display_mode);
+			update_display();
 
 			// fixed: if keydown is detected here, wait for keyup and clear state
 			// this prevents going into the menu when disabling the alarm 
@@ -718,21 +727,21 @@ void loop()
 		}
                 else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
                     pop_display_mode();
-                    update_display(display_mode);
+                    update_display();
                 }
                 else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_FLW && (buttons.b1_keyup || buttons.b2_keyup)) {
                     pop_display_mode();
-                    update_display(display_mode);
+                    update_display();
                 }
                 else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && !scrolling()) {
                     pop_display_mode();
-                    update_display(display_mode);
+                    update_display();
                 }
                 else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && (buttons.b1_keyup || buttons.b2_keyup)) {
         	    scroll_stop();
 
                     pop_display_mode();
-                    update_display(display_mode);
+                    update_display();
                 }
 		// Left button enters menu
 		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
@@ -743,8 +752,11 @@ void loop()
 		// Right button toggles display mode
 		else if (g_menu_state == STATE_CLOCK && buttons.b1_keyup) {
 			display_mode = (display_mode_t)((int)display_mode + 1);
-//			if (display_mode == MODE_ALARM_TEXT)  g_show_special_cnt = SHOW_TIMEOUT;  // show alarm text for 1 second
-//			if (display_mode == MODE_ALARM_TIME)  g_show_special_cnt = SHOW_TIMEOUT;  // show alarm time for 1 second
+        
+#ifdef HAVE_FLW
+                        if (!g_has_flw) display_mode = (display_mode_t)((int)display_mode + 1); // skip if no EEPROM
+#endif
+
 			if (display_mode == MODE_LAST) display_mode = MODE_NORMAL;
 			buttons.b1_keyup = 0; // clear state
 		}
@@ -792,13 +804,13 @@ void loop()
 #ifdef HAVE_RTC_SQW
                         if (g_update_rtc) {
                             g_update_rtc = false;
-                            update_display(display_mode);  // read RTC and display time
+                            update_display();  // read RTC and display time
                         }    
 #else
 			// read RTC approx ever other time thru loop (every 200ms)
 			static uint8_t cnt = 0;
 			if (++cnt%2) {
-				update_display(display_mode);  // read RTC and display time
+				update_display();  // read RTC and display time
 				}
 #endif // HAVE_RTC_SQW
 		}
