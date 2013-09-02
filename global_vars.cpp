@@ -26,7 +26,10 @@
 #include "global_vars.h"
 
 // Settings saved to eeprom
-uint8_t EEMEM b_dummy = 0;  // dummy item to test for bug
+
+#define EEPROM_GUARD_BYTE 0x42
+uint8_t EEMEM b_guard = EEPROM_GUARD_BYTE; // Guard byte to test if EEPROM is initialized or not
+
 uint8_t EEMEM b_24h_clock = 1;
 uint8_t EEMEM b_show_temp = 0;
 uint8_t EEMEM b_show_dots = 1;
@@ -41,8 +44,8 @@ uint8_t EEMEM b_dateday = 1;
 uint8_t EEMEM b_flw_enabled = 0;
 #endif
 #ifdef HAVE_GPS
-uint8_t EEMEM b_gps_enabled = 96;  // 0, 48, or 96 - default no gps
-uint8_t EEMEM b_TZ_hour = -8 + 12;
+uint8_t EEMEM b_gps_enabled = 0;  // 0, 48, or 96 - default no gps
+uint8_t EEMEM b_TZ_hour = 0;
 uint8_t EEMEM b_TZ_minute = 0;
 #endif
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
@@ -130,8 +133,81 @@ int8_t g_AutoBrtLevel;
 #endif
 uint8_t g_has_dots; // can current shield show dot (decimal points)
 
+// workaround: Arduino avr-gcc toolchain is missing eeprom_update_byte
+#define eeprom_update_byte eeprom_write_byte
+
+void clean_eeprom()
+{
+    eeprom_update_byte(&b_24h_clock, 1);    
+    eeprom_update_byte(&b_show_temp, 0);    
+    eeprom_update_byte(&b_show_dots, 1);    
+    eeprom_update_byte(&b_brightness, 8);    
+    eeprom_update_byte(&b_volume, 0);    
+
+    eeprom_update_byte(&b_dateyear, 13);    
+    eeprom_update_byte(&b_datemonth, 1);    
+    eeprom_update_byte(&b_dateday, 1);
+#ifdef HAVE_FLW
+    eeprom_update_byte(&b_flw_enabled, 0);
+#endif
+#ifdef HAVE_GPS
+    eeprom_update_byte(&b_gps_enabled, 0);    
+    eeprom_update_byte(&b_TZ_hour, 0);    
+    eeprom_update_byte(&b_TZ_minute, 0);    
+#endif
+#if defined HAVE_GPS || defined HAVE_AUTO_DST
+    eeprom_update_byte(&b_DST_mode, 0);    
+    eeprom_update_byte(&b_DST_offset, 0);
+#endif
+#ifdef HAVE_AUTO_DATE
+    eeprom_update_byte(&b_date_format, 0);    
+    eeprom_update_byte(&b_Region, 0);    
+    eeprom_update_byte(&b_AutoDate, 0);
+#endif
+#ifdef HAVE_AUTO_DIM
+    eeprom_update_byte(&b_AutoDim, 0);    
+    eeprom_update_byte(&b_AutoDimHour, 0);    
+    eeprom_update_byte(&b_AutoDimLevel, 0);
+    eeprom_update_byte(&b_AutoBrtHour, 0);    
+    eeprom_update_byte(&b_AutoBrtLevel, 0);
+#endif
+#ifdef HAVE_AUTO_DST
+#ifdef DST_NSW
+    eeprom_update_byte(&b_DST_Rule0, 10);
+    eeprom_update_byte(&b_DST_Rule1, 1);
+    eeprom_update_byte(&b_DST_Rule2, 1);
+    eeprom_update_byte(&b_DST_Rule3, 2);
+    eeprom_update_byte(&b_DST_Rule4, 3);
+    eeprom_update_byte(&b_DST_Rule5, 1);
+    eeprom_update_byte(&b_DST_Rule6, 1);
+    eeprom_update_byte(&b_DST_Rule7, 2);
+    eeprom_update_byte(&b_DST_Rule8, 1);
+#else
+    eeprom_update_byte(&b_DST_Rule0, 3);
+    eeprom_update_byte(&b_DST_Rule1, 1);
+    eeprom_update_byte(&b_DST_Rule2, 2);
+    eeprom_update_byte(&b_DST_Rule3, 2);
+    eeprom_update_byte(&b_DST_Rule4, 11);
+    eeprom_update_byte(&b_DST_Rule5, 1);
+    eeprom_update_byte(&b_DST_Rule6, 1);
+    eeprom_update_byte(&b_DST_Rule7, 2);
+    eeprom_update_byte(&b_DST_Rule8, 1);
+#endif
+#endif
+
+    eeprom_update_byte(&b_guard, EEPROM_GUARD_BYTE);    
+}
+
 void globals_init(void)
 {
+    // check if EEPROM is initialized
+    uint8_t guard = eeprom_read_byte(&b_guard);
+    
+    if (guard != EEPROM_GUARD_BYTE) {
+        Serial.println("Initializing EEPROM for first time use");
+        clean_eeprom();
+    }
+    
 	// read eeprom
 	g_24h_clock  = eeprom_read_byte(&b_24h_clock);
 	g_show_temp  = eeprom_read_byte(&b_show_temp);
