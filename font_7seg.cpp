@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe
- * (C) 2011-12 Akafugu Corporation
+ * VFD Deluxe - Firmware for VFD Modular Clock mk2
+ * (C) 2011-13 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software

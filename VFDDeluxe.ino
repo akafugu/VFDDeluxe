@@ -1,5 +1,5 @@
 /*
- * VFD Deluxe
+ * VFD Deluxe - Firmware for VFD Modular Clock mk2
  * (C) 2011-13 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
@@ -170,9 +170,6 @@ void pop_display_mode()
 
 void initialize(void)
 {
-  // read eeprom
-  // fixme: implement
-
   pinMode(PIEZO, OUTPUT);
   digitalWrite(PIEZO, LOW);
 
@@ -182,8 +179,6 @@ void initialize(void)
 #endif
 
   // initialize alarm switch
-//  pinMode(PinMap::alarm_switch, OUTPUT);
-//  digitalWrite(PinMap::alarm_switch, HIGH); // enable pullup
   pinMode(PinMap::alarm_switch, INPUT_PULLUP);  // input with pullup
   
   switch_pin.pin = PinMap::alarm_switch;
@@ -191,8 +186,6 @@ void initialize(void)
   switch_pin.bitmask = PIN_TO_BITMASK(switch_pin.pin);
   
   g_alarm_switch = DIRECT_PIN_READ(switch_pin.reg,  switch_pin.bitmask);
-
-  //rot.begin();
 
   sei();
   Wire.begin();

@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe
- * (C) 2011-13 Akafugu Corporation
+ * Four Letter Word Generator
+ * (C) 2012-13 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software

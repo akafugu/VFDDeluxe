@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe
- * (C) 2011-12 Akafugu Corporation
+ * VFD Deluxe - Firmware for VFD Modular Clock mk2
+ * (C) 2011-13 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -1082,7 +1082,7 @@ void display_multiplex(void)
           break;
       case(SHIELD_IV17): {
 //          uint16_t seg = calculate_segments_16(d);
-          uint16_t seg = segments_16[d];
+          uint16_t seg = segments_16[(uint8_t)d];
           if (multiplex_counter == 0) {
             if (g_gps_updating)
             seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));

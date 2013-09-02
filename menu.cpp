@@ -1,5 +1,5 @@
 /*
- * VFD Deluxe
+ * VFD Deluxe - Firmware for VFD Modular Clock mk2
  * (C) 2011-13 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
