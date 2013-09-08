@@ -638,6 +638,7 @@ void loop()
 				}
 			}
 			else {
+                            if (g_alarmtype == ALARM_PROGRESSIVE) {
 				alarm_count++;
 				if (alarm_count > alarm_cycle) {  // once every alarm_cycle
 					beep_count = alarm_count = 0;  // restart cycle 
@@ -651,6 +652,10 @@ void loop()
 					if (beep_count%2)  // odd = beep
 						alarm();
 				}
+                            }
+                            else {
+                                alarm();
+                            }
 			}
 		}
 

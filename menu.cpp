@@ -286,6 +286,14 @@ void menu(bool update, bool show)
     break;
 #endif // HAVE_AUTO_DST 
 
+    case STATE_MENU_ALARMTYPE:
+    if (update) {
+        g_alarmtype = !g_alarmtype;
+        eeprom_update_byte(&b_alarmtype, g_alarmtype);
+    }
+    show_setting_string("ALRT", "ALARMT", g_alarmtype ? "prog" : "norm", show);
+    break;
+
 #ifdef HAVE_GPS
     case STATE_MENU_GPS:
         if (update) {

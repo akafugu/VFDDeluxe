@@ -34,6 +34,7 @@ typedef enum {
 #if defined(HAVE_AUTO_DST) || defined(HAVE_GPS)
     STATE_MENU_DST,
 #endif
+    STATE_MENU_ALARMTYPE,
 #ifdef HAVE_GPS
     STATE_MENU_GPS,
     STATE_MENU_ZONEH,

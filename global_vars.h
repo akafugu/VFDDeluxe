@@ -30,6 +30,12 @@ typedef enum {
   FORMAT_MDY,
 } date_format_t;
 
+// alarm type
+typedef enum {
+  ALARM_NORMAL = 0,
+  ALARM_PROGRESSIVE,
+} alarm_type_t;
+
 extern uint8_t b_24h_clock;
 extern uint8_t b_show_temp;
 extern uint8_t b_show_dots;
@@ -39,6 +45,7 @@ extern uint8_t b_volume;
 extern uint8_t b_dateyear;
 extern uint8_t b_datemonth;
 extern uint8_t b_dateday;
+extern uint8_t b_alarmtype;
 
 #ifdef HAVE_FLW
 extern uint8_t b_flw_enabled;
@@ -85,6 +92,7 @@ extern int8_t g_volume;
 extern int8_t g_dateyear;
 extern int8_t g_datemonth;
 extern int8_t g_dateday;
+extern uint8_t g_alarmtype;
 
 extern uint8_t g_has_flw; // set to true if there is a four letter word EEPROM attached
 extern int8_t g_flw_enabled;
