@@ -56,7 +56,9 @@ struct PinMap
     static const uint8_t sig0 = 3;
     static const uint8_t sig1 = 4;
     static const uint8_t sig2 = 5;
+    
     static const uint8_t piezo = 10;
+    static const uint8_t piezo2 = 9;
 };
 
 #elif BOARD == BOARD_VFD_DELUXE
@@ -91,7 +93,7 @@ struct PinMap
     
     // other
     static const uint8_t piezo  = 11;
-    static const uint8_t pizeo2 = 10;
+    static const uint8_t piezo2 = 10;
 };
 
 #endif

@@ -88,16 +88,6 @@ FourLetterWord flw;
 #endif
 
 WireRtcLib rtc;
-//GPS gps;
-
-// Piezo
-#ifdef HAVE_ATMEGA328
-#define PIEZO 10
-#define PIEZO_GND 9
-#elif defined(HAVE_LEONARDO)
-// Digital 11, PB7 (PCINT7/OC0A/OC1C/#RTS)
-#define PIEZO 11
-#endif
 
 uint8_t g_second_dots_on = true;
 uint8_t g_alarm_switch;
@@ -170,13 +160,10 @@ void pop_display_mode()
 
 void initialize(void)
 {
-  pinMode(PIEZO, OUTPUT);
-  digitalWrite(PIEZO, LOW);
-
-#ifdef HAVE_ATMEGA328
-  pinMode(PIEZO_GND, OUTPUT);
-  digitalWrite(PIEZO_GND, LOW);
-#endif
+  pinMode(PinMap::piezo, OUTPUT);
+  digitalWrite(PinMap::piezo, LOW);
+  pinMode(PinMap::piezo2, OUTPUT);
+  digitalWrite(PinMap::piezo2, LOW);
 
   // initialize alarm switch
   pinMode(PinMap::alarm_switch, INPUT_PULLUP);  // input with pullup
