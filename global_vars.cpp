@@ -40,6 +40,7 @@ uint8_t EEMEM b_dateyear = 13;
 uint8_t EEMEM b_datemonth = 1;
 uint8_t EEMEM b_dateday = 1;
 uint8_t EEMEM b_alarmtype = ALARM_NORMAL;
+uint8_t EEMEM b_snooze_enabled = false;
 
 #ifdef HAVE_FLW
 uint8_t EEMEM b_flw_enabled = 0;
@@ -100,6 +101,7 @@ int8_t g_datemonth;
 int8_t g_dateday;
 extern int8_t g_autodate;
 uint8_t g_alarmtype;
+uint8_t g_snooze_enabled;
 
 uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
 int8_t g_flw_enabled;
@@ -150,6 +152,7 @@ void clean_eeprom()
     eeprom_update_byte(&b_datemonth, 1);
     eeprom_update_byte(&b_dateday, 1);
     eeprom_update_byte(&b_alarmtype, ALARM_NORMAL);
+    eeprom_update_byte(&b_snooze_enabled, false);
 
 #ifdef HAVE_FLW
     eeprom_update_byte(&b_flw_enabled, 0);
@@ -219,6 +222,7 @@ void globals_init(void)
 	g_brightness = eeprom_read_byte(&b_brightness);
 	g_volume     = eeprom_read_byte(&b_volume);
 	g_alarmtype  = eeprom_read_byte(&b_alarmtype);
+        g_snooze_enabled = eeprom_read_byte(&b_snooze_enabled);
 
 #ifdef HAVE_FLW
 	g_flw_enabled = eeprom_read_byte(&b_flw_enabled);

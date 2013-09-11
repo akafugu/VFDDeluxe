@@ -213,6 +213,8 @@ void initialize(void)
 
 #ifdef HAVE_FLW
   flw.begin();
+  for (uint8_t i = 0; i < 5; i++) // randomize starting point
+      flw.get_word();
   g_has_flw = flw.has_eeprom();
   flw.setCensored(g_flw_enabled == FLW_ON);
 #else
@@ -568,29 +570,14 @@ void loop()
   uint16_t button_released_timer = 0;
   uint16_t button_speed = 25;
   
+  push_display_mode(MODE_NORMAL);
+  
   while (1) {
 		t1 = wMillis();
 		get_button_state(&buttons);
 
                 if (buttons.b1_keyup)  tone(11, 1000, 1);  
                 if (buttons.b2_keyup)  tone(11, 1000, 1);  
-
-		// When alarming:
-		// any button press cancels alarm
-//		if (g_alarming) {
-//			update_display(display_mode);  // read and display time (??)
-//
-//			// fixme: if keydown is detected here, wait for keyup and clear state
-//			// this prevents going into the menu when disabling the alarm
-//			if (buttons.b1_keydown || buttons.b1_keyup || buttons.b2_keydown || buttons.b2_keyup) {
-//				buttons.b1_keyup = 0; // clear state
-//				buttons.b2_keyup = 0; // clear state
-//				g_alarming = false;
-//			}
-//			else {
-//			    alarm();
-//			}
-//		}
 
 		if (snooze_count>0)
 			snooze_count--;
@@ -603,26 +590,37 @@ void loop()
 		}
 
 		// When alarming: any button press snoozes alarm
-		if (g_alarming && (snooze_count==0)) {
+		if (g_alarming /*&& (snooze_count==0)*/) {
 			update_display();
 
 			// fixed: if keydown is detected here, wait for keyup and clear state
 			// this prevents going into the menu when disabling the alarm 
 			if (buttons.b1_keydown || buttons.b1_keyup || buttons.b2_keydown || buttons.b2_keyup) {
-				buttons.b1_keyup = 0; // clear state
-				buttons.b2_keyup = 0; // clear state
-				start_alarm();  // restart alarm sequence
-				snooze_count = g_snooze_time*60*10;  // start snooze timer
-//				show_snooze();
-				if (get_digits() == 8)
-				  set_string(" Snooze ");
-				else
-				  set_string("snze");
-				wDelay(500);
-				while (buttons.b1_keydown || buttons.b2_keydown) {  // wait for button to be released
-					wDelay(100);
-					get_button_state(&buttons);
-				}
+			    buttons.b1_keyup = 0; // clear state
+		            buttons.b2_keyup = 0; // clear state
+
+                            if (g_snooze_enabled) {    
+                                start_alarm();  // restart alarm sequence
+		                snooze_count = g_snooze_time*60*10;  // start snooze timer
+			        if (get_digits() == 8)
+                                    set_string(" Snooze ");
+                                else if (get_digits() == 6)
+                                    set_string("Snooze");
+			        else
+		                    set_string("snze");
+			    
+                                wDelay(500);
+			    
+                                while (buttons.b1_keydown || buttons.b2_keydown) {  // wait for button to be released
+	                            wDelay(100);
+				    get_button_state(&buttons);
+                                }
+                            }
+                            else {
+                                stop_alarm();
+                                pop_display_mode();
+            			update_display();
+                            }
 			}
 			else {
                             if (g_alarmtype == ALARM_PROGRESSIVE) {
@@ -641,10 +639,11 @@ void loop()
 				}
                             }
                             else {
-                                alarm();
+ 				beep_count++;
+                                if (beep_count % 2) alarm();
                             }
 			}
-		}
+		} // g_alarming
 
 		// If both buttons are held:
 		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode

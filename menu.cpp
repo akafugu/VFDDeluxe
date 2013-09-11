@@ -290,6 +290,9 @@ void menu(bool update, bool show)
     if (update) {
         g_alarmtype = !g_alarmtype;
         eeprom_update_byte(&b_alarmtype, g_alarmtype);
+        
+        if (g_alarmtype == ALARM_NORM) g_snooze_enabled = false;
+        else g_snooze_enabled = true;
     }
     show_setting_string("ALRT", "ALARMT", g_alarmtype ? "prog" : "norm", show);
     break;
