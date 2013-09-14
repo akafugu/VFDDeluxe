@@ -490,10 +490,6 @@ void setup()
 //  for (int i=0; i<46; i++) {
 //    pinMode(i, OUTPUT);  // set pins to OUTPUT to save power
 //  }
-
-//  tone(PinMap::piezo, NOTE_A5, 100);  // test tone
-  tone(PinMap::piezo, 880, 100);  // test tone
-//  _delay_ms(500);
     
 #ifdef HAVE_SERIAL_DEBUG
   while (!Serial) ;
@@ -506,12 +502,17 @@ void setup()
   Serial.begin(9600);
   Serial.println("VFD Deluxe");
   
+  //  tone(PinMap::piezo, NOTE_A5, 100);  // test tone
+  tone(PinMap::piezo, 880, 100);  // test tone
+  //  _delay_ms(500);
+
+  initialize();
+
 #ifdef HAVE_MPL115A2
   MPL115A2.begin();
   MPL115A2.shutdown();
 #endif // HAVE_MPL115A2
 
-  initialize();
 //  set_string("0000");
 
 //  set_display(0);
