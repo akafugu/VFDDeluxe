@@ -357,7 +357,7 @@ void read_flw()
   static uint8_t flw_offset = 0;
   static int8_t flw_offset_direction = 1;
   
-  if (flw_counter++ == 2) {
+  if (flw_counter++ == 1) {
     set_string(flw.get_word(), flw_offset);
     flw_counter = 0;
     
