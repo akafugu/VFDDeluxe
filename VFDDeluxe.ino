@@ -225,8 +225,8 @@ void initialize(void)
 
   // initialize button
   // fixme: change depending on HAVE_ROTARY define
-//  initialize_button(PinMap::button1, PinMap::button2);
-  initialize_button(PinMap::button2, PinMap::button1);
+  initialize_button(PinMap::button1, PinMap::button2);
+//  initialize_button(PinMap::button2, PinMap::button1);
 
 }
 
