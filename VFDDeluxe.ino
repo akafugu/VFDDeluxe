@@ -21,6 +21,8 @@
  *  - GPS functionality
  *  - DTS and Date setting
  *  - Misc improvements and new features
+ *  - Table driven menu with submenus
+ *  - Date scrolling
  *
  */
 
@@ -31,20 +33,26 @@
  * Port Date scrolling function (from William's newest branch)
  * Implement show alarm time when flipping switch
  * Implement alarm
+ * Add menu items for GPS etc.
 */
 
 /*
  * TODO:
+ * fix button 1 to show date, flw, temp, press, etc
+ * fix EE memory bugs
  * reveille alarm?
  * scroll time with date
  * add GPS "sanity check"
  * fix default DST rules (where did they go?)
  * Test FLW
  * Refactor FLW
- * Add menu items for GPS etc.
- * Port William's new menu system
  * Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
  * serial slave feature
+ * Holiday messages?
+ */
+
+/* WARNING: Arduino/avr compile gives no warning when program + PROGMEM exceeds available memory.
+   Program will load but will not run, or worse run with odd behavior
  */
 
 #include "global.h"
@@ -226,7 +234,6 @@ void initialize(void)
   // initialize button
   // fixme: change depending on HAVE_ROTARY define
   initialize_button(PinMap::button1, PinMap::button2);
-//  initialize_button(PinMap::button2, PinMap::button1);
 
 }
 
@@ -271,7 +278,7 @@ void read_temp()
     f = (int)((temp-t)*100);
 
     show_temp(t, f);
-#else
+#elif defined(HAVE_RTC_TEMP)
     int8_t t;
     uint8_t f;
     rtc.getTemp(&t, &f);
@@ -365,17 +372,25 @@ void read_rtc(bool show_extra_info)
             set_string("OFF");          
         }
     }
-    else if (have_temp_sensor() && tt->sec >= 31 && tt->sec <= 33)
+#ifdef HAVE_TEMPERATURE
+    else if (have_temp_sensor() && g_show_temp && tt->sec >= 31 && tt->sec <= 33)
         read_temp();
-    else if (have_pressure_sensor() && tt->sec >= 34 && tt->sec <= 36)
-        read_pressure();
-    else if (have_humidity_sensor() && tt->sec >= 37 && tt->sec <= 39)
+#endif
+#ifdef HAVE_HUMIDITY
+    else if (have_humidity_sensor() && g_show_humid && tt->sec >= 37 && tt->sec <= 39)
         read_humidity();
+#endif
+#ifdef HAVE_PRESSURE
+    else if (have_pressure_sensor() && g_show_press && tt->sec >= 34 && tt->sec <= 36)
+        read_pressure();
+#endif
+#ifdef HAVE_FLW
     else if (g_has_flw  && g_flw_enabled != FLW_OFF && tt->sec >= 40 && tt->sec <= 50)
         read_flw();
+#endif
     else if (g_AutoDate && display_mode <= MODE_AMPM && tt->sec == 55) {
         scroll_speed(300);  // display date at 3 cps
-	scroll_date(tt, g_date_format);  // show date from last rtc_get_time() call
+				scroll_date(tt, g_date_format);  // show date from last rtc_get_time() call
         while (scrolling())
           wDelay(100); // wait a bit (temp)
     }
@@ -431,6 +446,7 @@ void setup()
 
 //  tone(PinMap::piezo, NOTE_A5, 100);  // test tone
   tone(PinMap::piezo, 880, 100);  // test tone
+  tone(10, 880, 200); // temp
 //  _delay_ms(500);
     
 #ifdef HAVE_SERIAL_DEBUG
@@ -442,7 +458,7 @@ void setup()
 #endif
 
   Serial.begin(9600);
-  Serial.println("VFD Deluxe");
+  _delay_ms(3000); // allow time to get serial port open
   
 #ifdef HAVE_MPL115A2
   MPL115A2.begin();
@@ -474,9 +490,24 @@ void setup()
       break;
    }
 
-  Serial.println("setup done");
+  wDelay(2000);
+//  Serial.println("setup done");
   wDelay(1000);
-  
+//#if BOARD == BOARD_VFD_MODULAR_CLOCK
+//  Serial.println("VFD MODULAR CLOCK");
+//#elif BOARD == BOARD_VFD_DELUXE
+//  Serial.println("VFD DELUXE");
+//#endif
+//#ifdef HAVE_ATMEGA328
+//  Serial.println("ATMEGA328");
+//#elif defined(HAVE_LEANARDO)
+//  Serial.println("LEONARDO");
+//#endif
+//#ifdef FEATURE_ATMEGA328
+//  Serial.println("FEATURE ATMEGA328");
+//#elif defined(FEATURE_LEANARDO)
+//  Serial.println("FEATURE LEONARDO");
+//#endif
   /*
   // test: write alphabet
   while (1) {
@@ -512,8 +543,10 @@ void loop()
 		t1 = wMillis();
 		get_button_state(&buttons);
 
-  if (buttons.b1_keyup)  tone(11, 1000, 1);  
-  if (buttons.b2_keyup)  tone(11, 1000, 1);  
+  if (buttons.b1_keyup)  tone(11, 1000, 10);  
+  if (buttons.b2_keyup)  tone(11, 1000, 10);  
+//  if (buttons.b1_keyup)  tone(PinMap::piezo, 1000, 10);
+//  if (buttons.b2_keyup)  tone(PinMap::piezo, 1000, 10);  
 
                 //long pos = myEnc.read();
            
@@ -676,8 +709,11 @@ void loop()
 		}
 		// Left button enters menu
 		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
-                        first_menu_item();
-			show_setting_int("BRIT", "BRITE", g_brightness, false);
+//                        first_menu_item();
+//			show_setting_int("BRIT", "BRITE", g_brightness, false);
+			g_menu_state = STATE_MENU;
+			menu(0); // show first menu item
+
 			buttons.b2_keyup = 0; // clear state
 		}
 		// Right button toggles display mode
@@ -688,7 +724,8 @@ void loop()
 			if (display_mode == MODE_LAST) display_mode = MODE_NORMAL;
 			buttons.b1_keyup = 0; // clear state
 		}
-		else if (g_menu_state >= STATE_MENU_BRIGHTNESS) {
+//		else if (g_menu_state >= STATE_MENU_BRIGHTNESS) {
+		else if (g_menu_state == STATE_MENU) {
 			if (buttons.none_held)
 				button_released_timer++;
 			else
@@ -697,19 +734,22 @@ void loop()
 			if (button_released_timer >= MENU_TIMEOUT) {
 				button_released_timer = 0;
 				g_menu_state = STATE_CLOCK;
+//  Serial.println("menu timeout");
 			}
 
                         if (buttons.b1_keyup) {  // right button
-                            menu(!menu_b1_first, true);
+//                            menu(!menu_b1_first, true);
+                            menu(1);  // right button
                             buttons.b1_keyup = false;
-                            menu_b1_first = false;  // b1 not first time now
+//                            menu_b1_first = false;  // b1 not first time now
                         }
                         if (buttons.b2_keyup) {  // left button
-                           menu_b1_first = true;  // reset first time flag
+//                           menu_b1_first = true;  // reset first time flag
                            
-                           next_menu_item();      
-                           menu(false, false);
-                           buttons.b2_keyup = 0; // clear state
+//                           next_menu_item();      
+//                           menu(false, false);
+                            menu(2);  // left button
+                            buttons.b2_keyup = 0; // clear state
                         }
                 }
 		else {
@@ -767,7 +807,7 @@ void loop()
                 parseGPSdata(gpsNMEA());  // get the GPS serial stream and possibly update the clock 
             }
         }
-#endif
+#endif        
         while ((wMillis()-t1)<100) ; // wait until 100 ms since start of loop
     }
 

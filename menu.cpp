@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe
- * (C) 2011-13 Akafugu Corporation
+ * Menu for VFD Modular Clock
+ * (C) 2012 William B Phelps
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -14,9 +14,8 @@
  */
 
 #include "global.h"
-#include "global_vars.h"
 
-//#include <util/delay.h>
+#include <util/delay.h>
 #include <avr/eeprom.h>
 #include <avr/pgmspace.h>
 #include <string.h>
@@ -25,58 +24,20 @@
 #include <Wire.h>
 #include <WireRtcLib.h>
 
-#include "menu.h"
+#include "global_vars.h"
 #include "display.h"
-#include "pitches.h"
-
 #include "gps.h"
-#include "adst.h"
-#include "flw.h"
+#include "menu.h"
 #include "time.h"
+#include "adst.h"
 
-menu_state_t g_menu_state = STATE_CLOCK;
-
-// workaround: Arduino avr-gcc toolchain is missing eeprom_update_byte
-#define eeprom_update_byte eeprom_write_byte
-
-void set_date(uint8_t yy, uint8_t mm, uint8_t dd);
-
+//void beep(uint16_t freq, uint8_t times);
 extern WireRtcLib rtc;
+
+menu_state_t g_menu_state;
 extern WireRtcLib::tm* tt; // current local date and time as TimeElements (pointer)
 
-#ifdef HAVE_FLW
-extern FourLetterWord flw;
-#endif
-
-void to_tmElements(WireRtcLib::tm* tm, tmElements_t* te)
-{
-  if (!te) return;
-  if (!tm) return;
-  
-  te->Second = tm->sec;
-  te->Minute = tm->min;
-  te->Hour   = tm->hour;
-  te->Day    = tm->mday;
-  te->Month  = tm->mon;
-  te->Year   = tm->year;
-  te->Wday   = tm->wday;
-}
-
-void to_tm(tmElements_t* te, WireRtcLib::tm* tm)
-{
-  if (!te) return;
-  if (!tm) return;
-  
-  tm->sec  = te->Second;
-  tm->min  = te->Minute;
-  tm->hour  = te->Hour;
-  tm->mday  = te->Day;
-  tm->mon  = te->Month;
-  tm->year  = te->Year;
-  tm->wday  = te->Wday;
-}
-
-#if defined(HAVE_AUTO_DST) || defined(HAVE_GPS)
+#if defined HAVE_GPS || defined HAVE_AUTO_DST
 void setDSToffset(uint8_t mode) {
 	int8_t adjOffset;
 	uint8_t newOffset;
@@ -88,35 +49,26 @@ void setDSToffset(uint8_t mode) {
 	}
 	else
 #endif // HAVE_AUTO_DST
-	  newOffset = mode;  // 0 or 1
-
+		newOffset = mode;  // 0 or 1
 	adjOffset = newOffset - g_DST_offset;  // offset delta
 	if (adjOffset == 0)  return;  // nothing to do
+	if (adjOffset > 0)
+//		beep(880, 1);  // spring ahead
+                tone(PinMap::piezo, 880, 10);  // spring ahead
+	else
+//		beep(440, 1);  // fall back
+                tone(PinMap::piezo, 440, 10);  // fall back
 
-//        Serial.println("adjusting DST");
+	time_t tNow = 0; // fixme rtc_get_time_t();  // fetch current time from RTC as time_t
 
-//        if (adjOffset > 0)
-//            tone(PinMap::piezo, NOTE_A5, 100);  // spring ahead
-//            tone(11, 880, 100);
-//        else
-//            tone(PinMap::piezo, NOTE_A4, 100);  // fall back
-//            tone(11, 440, 100);
+	tNow += adjOffset * SECS_PER_HOUR;  // add or subtract new DST offset
 
-        tt = rtc.getTime();
-        
-        tmElements_t tm;
-        to_tmElements(tt, &tm);   
-        
-        unsigned long tNow = makeTime(&tm);  // fetch current time from RTC as time_t     
-        tNow += adjOffset * SECS_PER_HOUR;  // add or subtract new DST offset
-        breakTime(tNow, &tm);
-        tm.Year = tmYearToY2k(tm.Year);  // remove 1970 offset
-        
-        to_tm(&tm, tt);        
-        rtc.setTime(tt);  // adjust RTC
-        g_DST_offset = newOffset;
-        eeprom_update_byte(&b_DST_offset, g_DST_offset);
-        g_DST_updated = true;
+	//rtc_set_time_t(tNow);  // adjust RTC
+
+	g_DST_offset = newOffset;
+	//eeprom_update_byte(&b_DST_offset, g_DST_offset);
+	g_DST_updated = true;
+	// save DST_updated in ee ???
 }
 #endif
 
@@ -135,264 +87,218 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
 }
 #endif
 
-#ifdef HAVE_GPS
-char gps_setting_[4];
-char* gps_setting(uint8_t gps)
+void menu_action(menu_item * menuPtr)
 {
-	switch (gps) {
-		case(0):
-			strcpy(gps_setting_,"off");
+//    Serial.println("menu_action");
+    
+	switch(menuPtr->menuNum) {
+		case MENU_BRIGHTNESS:
+//			set_brightness(*menuPtr->setting);
+      set_brightness(g_brightness);
 			break;
-		case(48):
-			strcpy(gps_setting_," 48");
+		case MENU_VOL:
+			//piezo_init();
+			//beep(1000, 1);
 			break;
-		case(96):
-			strcpy(gps_setting_," 96");
+		case MENU_DATEYEAR:
+		case MENU_DATEMONTH:
+		case MENU_DATEDAY:
+			//set_date(g_dateyear, g_datemonth, g_dateday);
 			break;
-		default:
-			strcpy(gps_setting_," ??");
+		case MENU_GPS_ENABLE:
+			gps_init(g_gps_enabled);  // change baud rate
+			break;
+		case MENU_RULE0:
+		case MENU_RULE1:
+		case MENU_RULE2:
+		case MENU_RULE3:
+		case MENU_RULE4:
+		case MENU_RULE5:
+		case MENU_RULE6:
+		case MENU_RULE7:
+		case MENU_RULE8:
+		case MENU_DST_ENABLE:
+			//g_DST_updated = false;  // allow automatic DST adjustment again
+			//DSTinit(tm_, g_DST_Rules);  // re-compute DST start, end for new data
+			//setDSToffset(g_DST_mode);
+			break;
+		case MENU_TZH:
+		case MENU_TZM:
+			tGPSupdate = 0;  // allow GPS to refresh
+			break;
 	}
-	return gps_setting_;
 }
-#endif
 
-void menu(bool update, bool show)
+uint8_t menuIdx = 0;
+uint8_t update = false;  // right button updates value?
+uint8_t show = false;  // show value?
+
+void menu_enable(menu_number num, uint8_t enable)
 {
-//    Serial.print("menu(");
-//    Serial.print(update);
-//    Serial.print(", ");
-//    Serial.print(show);
-//    Serial.println(")");
-    
-    switch (g_menu_state) {
-      
-    case STATE_MENU_BRIGHTNESS:
-        if (update) {
-            g_brightness++;
-
-            if (g_brightness > 10) g_brightness = 1;
-            set_brightness(g_brightness);
-
-            eeprom_update_byte(&b_brightness, g_brightness);
-        }
-
-        show_setting_int("BRIT", "BRITE", g_brightness, show);
-        break;
-        
-    case STATE_MENU_24H:
-        if (update) {
-            g_24h_clock = !g_24h_clock;
-            eeprom_update_byte(&b_24h_clock, g_24h_clock);
-        }
-
-        show_setting_string("24H", "24H", g_24h_clock ? " on" : " off", show);
-        break;
-
-    case STATE_MENU_YEAR:
-        if (update) {
-            g_dateyear++;
-            if (g_dateyear > 29) g_dateyear = 10;
-            eeprom_update_byte(&b_dateyear, g_dateyear);
-            set_date(g_dateyear, g_datemonth, g_dateday);
-         }
-         
-         show_setting_int("YEAR", "YEAR", g_dateyear, show);
-         break;
-
-    case STATE_MENU_MONTH:
-        if (update) {
-            g_datemonth++;
-            if (g_datemonth > 12) g_datemonth = 1;
-            eeprom_update_byte(&b_datemonth, g_datemonth);
-            set_date(g_dateyear, g_datemonth, g_dateday);
-        }
-        
-        show_setting_int("MNTH", "MONTH", g_datemonth, show);
-        break;
-        
-    case STATE_MENU_DAY:
-      if (update) {
-        g_dateday++;
-        if (g_dateday > 31) g_dateday = 1;
-        eeprom_update_byte(&b_dateday, g_dateday);
-        set_date(g_dateyear, g_datemonth, g_dateday);
-      }
-      
-      show_setting_int("DAY", "DAY", g_dateday, show);
-      break;
-      
-#ifdef HAVE_AUTO_DATE
-    case STATE_MENU_AUTODATE:
-      if (update) {
-        g_AutoDate = !g_AutoDate;
-        
-        eeprom_update_byte(&b_AutoDate, g_AutoDate);
-      }
-    
-      show_setting_string("ADTE", "ADATE", g_AutoDate ? " on" : " off", show);
-      break;
-      
-    case STATE_MENU_REGION:
-        if (update) {
-            if (g_date_format == FORMAT_YMD)
-                g_date_format = FORMAT_MDY;
-            else if (g_date_format == FORMAT_MDY)
-                g_date_format = FORMAT_DMY;
-            else if (g_date_format == FORMAT_DMY)
-                g_date_format = FORMAT_YMD;
-            else
-                g_date_format = FORMAT_YMD;
-        
-            eeprom_update_byte(&b_date_format, g_date_format);
-      }
-      
-      if (g_date_format == FORMAT_YMD)
-          show_setting_string("REGN", "REGION", "YMD", show);
-      else if (g_date_format == FORMAT_MDY)
-          show_setting_string("REGN", "REGION", "MDY", show);
-      else if (g_date_format == FORMAT_DMY)
-          show_setting_string("REGN", "REGION", "DMY", show);
-      else
-          show_setting_string("REGN", "REGION", "YMD", show);
-
-      break;
-      
-#endif // HAVE_AUTO_DATE
-
-#ifdef HAVE_AUTO_DST
-    case STATE_MENU_DST:
-      if (update) {	
-        g_DST_mode = (g_DST_mode+1)%3;  //  0: off, 1: on, 2: auto
-        
-        eeprom_update_byte(&b_DST_mode, g_DST_mode);
-        
-        g_DST_updated = false;  // allow automatic DST adjustment again
-        //setDSToffset(g_DST_mode);
-      }
-      
-      if (g_DST_mode == 0)
-        show_setting_string("DST", "DST", "off", show);
-      else
-        show_setting_string("DST", "DST", g_DST_mode == 1 ? "on" : "auto", show);
-      break;
-#elif defined HAVE_GPS
-    case STATE_MENU_DST:
-    if (update) {	
-        g_DST_mode = (g_DST_mode+1)%2;  //  0: off, 1: on
-        eeprom_update_byte(&b_DST_mode, g_DST_mode);
-        setDSToffset(g_DST_mode);
-    }
-    show_setting_string("DST", "DST", g_DST_mode ? " on" : " off", show);
-    break;
-#endif // HAVE_AUTO_DST 
-
-#ifdef HAVE_GPS
-    case STATE_MENU_GPS:
-        if (update) {
-            g_gps_enabled = (g_gps_enabled+48)%144;  // 0, 48, 96
-            eeprom_update_byte(&b_gps_enabled, g_gps_enabled);
-            gps_init(g_gps_enabled);  // change baud rate
-        }
-        
-        show_setting_string("GPS", "GPS", gps_setting(g_gps_enabled), show);
-        break;
-
-    case STATE_MENU_ZONEH:
-        if (update) {
-            g_TZ_hour++;
-            if (g_TZ_hour > 12) g_TZ_hour = -12;
-            
-            eeprom_update_byte(&b_TZ_hour, g_TZ_hour + 12);
-            tGPSupdate = 0;  // allow GPS to refresh
-        }
-                
-        show_setting_int("TZH", "TZH", g_TZ_hour, show);
-        break;
-
-    case STATE_MENU_ZONEM:
-        if (update) {
-            g_TZ_minute = (g_TZ_minute + 15) % 60;
-            
-            eeprom_update_byte(&b_TZ_minute, g_TZ_minute);
-            tGPSupdate = 0;  // allow GPS to refresh
-        }
-        
-//        Serial.print("TZM: ");
-//        Serial.println(g_TZ_minute);        
-        
-        show_setting_int("TZM", "TZM", g_TZ_minute, show);
-        break;
-#endif // HAVE_GPS
-
-	case STATE_MENU_TEMP:
-            if (update) {
-                g_show_temp = !g_show_temp;
-                eeprom_update_byte(&b_show_temp, g_show_temp);
-            }
-            
-            show_setting_string("TEMP", "TEMP", g_show_temp ? " on" : " off", show);
-            break;
-	case STATE_MENU_DOTS:
-            if (update) {
-                g_show_dots = !g_show_dots;
-                //eeprom_update_byte(&b_show_dots, g_show_dots);
-            }
-
-            show_setting_string("DOTS", "DOTS", g_show_dots ? " on" : " off", show);
-            break;
-            
-#ifdef HAVE_FLW
-        case STATE_MENU_FLW:
-            if (update) {
-                g_flw_enabled++;
-                if (g_flw_enabled > FLW_FULL) g_flw_enabled = FLW_OFF;
-                flw.setCensored(g_flw_enabled == FLW_ON);
-                eeprom_update_byte(&b_flw_enabled, g_flw_enabled);
-            }
-            
-            if (g_flw_enabled == FLW_OFF)
-                show_setting_string("FLW", "FLW", " off", show);
-            else if (g_flw_enabled == FLW_ON)
-                show_setting_string("FLW", "FLW", " on", show);
-            else
-                show_setting_string("FLW", "FLW", "full", show);
-        
-            break;
-#endif // HAVE_FLW
-        default:
-            break; // do nothing
-    }
+	uint8_t idx = 0;
+//	menu_item * mPtr = (menu_item*) pgm_read_word(&menuItems[0]);  // start with first menu item
+	menu_item * mPtr = getItem(0);  // current menu item
+	while(mPtr != NULL) {
+		if (mPtr->menuNum == num) {
+			menu_disabled[idx] = !enable;  // default is enabled
+			return;  // there should only be one item that matches
+		}
+		mPtr = getItem(++idx);  // fetch next menu item
+	}
 }
 
-void menu_enable(menu_state_t item, bool enabled)
+// workaround: Arduino avr-gcc toolchain is missing eeprom_update_byte
+#define eeprom_update_byte eeprom_write_byte
+
+void menu(uint8_t btn)
 {
-    
-}
-
-void first_menu_item()
-{
-    g_menu_state = STATE_MENU_BRIGHTNESS;
-}
-
-void next_menu_item()
-{
-    g_menu_state = (menu_state_t)(g_menu_state + 1);
-    
-    // fixme: check enabled and disabled menu items here
-    
-    if (g_menu_state == STATE_MENU_LAST)
-        g_menu_state = STATE_CLOCK;   
-}
+//    Serial.print("menu("); Serial.print(btn); Serial.println(")");
+	menu_item * menuPtr = getItem(menuIdx);  // next menu item
+	uint8_t digits = get_digits();
+//	tick();
+	switch (btn) {
+		case 0:  // start at top of menu
+//											  Serial.println("restart menu");
+			menuIdx = 0;  // restart menu
+//			menuPtr = (menu_item*)pgm_read_word(&menuItems[menuIdx]);
+			menuPtr = getItem(0);  // next menu item
+			update = false;
+			show = false;
+			break;
+		case 1:  // right button - show/update current item value
+//                        Serial.println("right button");
+			if (menuPtr->flags & menu_hasSub) {
+//                                Serial.println("has sub");
+				menuIdx = nextItem(menuIdx, false);  // show first submenu item
+				menuPtr = getItem(menuIdx);
+				update = false;
+			}
+			else {
+//                                Serial.println("show value");
+				show = true;  // show value
+				if (digits>6)
+					update = true;
+			}
+			break;
+		case 2:  // left button - show next menu item
+//                        Serial.println("left button");
+			menuIdx = nextItem(menuIdx, true);  // next menu items (skip subs)
+			menuPtr = getItem(menuIdx);
+			update = false;
+			show = false;
+			break;
+	}
+//        Serial.print("menuIdx "); Serial.println(menuIdx,DEC);
+	if (menuPtr == NULL) {  // check for end of menu
+//                Serial.println("end of menu reached");
+		menuIdx = 0;
+		update = false;
+		g_menu_state = STATE_CLOCK;
+		return;
+	}
+	char shortName[5];
+	char longName[8];
+	strncpy(shortName,menuPtr->shortName,4);
+	shortName[4] = '\0';  // null terminate string
+	strncpy(longName,menuPtr->longName,5);
+	longName[5] = '\0';  // null terminate string
+	int valNum = *(menuPtr->setting);
+	char valStr[5] = "";  // item value name for display ("off", "on", etc)
+	const menu_value * menuValues = *(menuPtr->menuList);  //get pointer to menu values
+	volatile uint8_t idx = 0;
+// numeric menu item
+	if (menuPtr->flags & menu_num) {
+			if (update) {
+				valNum++;
+				if (valNum > menuPtr->hiLimit)
+					valNum = menuPtr->loLimit;
+				*menuPtr->setting = valNum;
+				if (menuPtr->eeAddress != NULL) {
+					if (menuPtr->menuNum == MENU_TZH)
+						eeprom_update_byte(menuPtr->eeAddress, valNum+12);
+					else
+						eeprom_update_byte(menuPtr->eeAddress, valNum);
+				}
+				menu_action(menuPtr);
+			}
+			show_setting_int(shortName, longName, valNum, show);
+			if (show)
+				update = true;
+			else
+				show = true;
+		}
+// off/on menu item 
+	else if (menuPtr->flags & menu_offOn) {
+			if (update) {
+				valNum = !valNum;
+				*menuPtr->setting = valNum;
+				if (menuPtr->eeAddress != NULL) 
+					eeprom_update_byte(menuPtr->eeAddress, valNum);
+				menu_action(menuPtr);
+			}
+			if (valNum)
+				show_setting_string(shortName, longName, "  on", show);
+			else
+				show_setting_string(shortName, longName, " off", show);
+			if (show)
+				update = true;
+			else
+				show = true;
+		}
+// list menu item
+		else if (menuPtr->flags & menu_list) {
+			idx = 0;
+			for (uint8_t i=0;i<menuPtr->hiLimit;i++) {  // search for the current item's value in the list
+				if (pgm_read_byte(&menuValues[i].value) == valNum) {
+					idx = i;
+					}
+			}
+			strncpy_P(valStr,(char *)&menuValues[idx].valName,4);  // item name
+			valStr[4] = '\0';  // null terminate string
+			if (update) {
+				idx++;  // next item in list
+				if (idx >= menuPtr->hiLimit)  // for lists, hilimit is the # of elements! 
+					idx = 0;  // wrap
+				valNum = pgm_read_byte(&menuValues[idx].value);
+				strncpy_P(valStr,(char *)&menuValues[idx].valName,4);  // item name
+				valStr[4] = '\0';  // null terminate string
+				*menuPtr->setting = valNum;
+				if (menuPtr->eeAddress != NULL) 
+					eeprom_update_byte(menuPtr->eeAddress, valNum);
+				menu_action(menuPtr);
+			}
+			show_setting_string(shortName, longName, valStr, show);
+			if (show)
+				update = true;
+			else
+				show = true;
+		}
+// top of sub menu item
+		else if (menuPtr->flags & menu_hasSub) {
+			switch (digits) {
+				case 4:
+					strcat(shortName, "*");  // indicate top of sub
+					show_setting_string(shortName, longName, valStr, false);
+					break;
+				case 6:
+					strcat(longName, "-");  // indicate top of sub
+					show_setting_string(shortName, longName, valStr, false);
+					break;
+				case 8:  // use longName instead of shortName for top menu item
+					strcat(longName, " -");
+					show_setting_string(longName, longName, valStr, false);
+					break;
+			}
+		}
+}  // menu
 
 void menu_init(void)
 {
-  /*
-  	g_menu_state = STATE_CLOCK;
+	g_menu_state = STATE_CLOCK;
 	menu_enable(MENU_TEMP, rtc.isDS3231());  // show temperature setting only when running on a DS3231
 	menu_enable(MENU_DOTS, g_has_dots);  // don't show dots settings for shields that have no dots
 #ifdef HAVE_FLW
 	menu_enable(MENU_FLW, g_has_flw);  // don't show FLW settings when there is no EEPROM with database
 #endif
-  */
 }
 

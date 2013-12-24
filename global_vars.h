@@ -30,53 +30,66 @@ typedef enum {
   FORMAT_MDY,
 } date_format_t;
 
-extern uint8_t b_24h_clock;
-extern uint8_t b_show_temp;
-extern uint8_t b_show_dots;
-extern uint8_t b_brightness;
-extern uint8_t b_volume;
+// alarm type
+typedef enum {
+  ALARM_NORMAL = 0,
+  ALARM_PROGRESSIVE,
+} alarm_type_t;
 
-extern uint8_t b_dateyear;
-extern uint8_t b_datemonth;
-extern uint8_t b_dateday;
-
+// Settings saved to eeprom
+#define EE_CHECK 44 // change this value if you change EE addresses
+#define EE_check_byte 0 
+#define EE_24h_clock 1
+#define EE_show_humid 2
+#define EE_show_press 3
+#define EE_show_temp 4
+#define EE_show_dots 5
+#define EE_brightness 6
+#define EE_volume 7
+#define EE_dateyear 8
+#define EE_datemonth 9
+#define EE_dateday 10
+#define EE_alarmtype 11
+#define EE_snooze_enabled 12
 #ifdef HAVE_FLW
-extern uint8_t b_flw_enabled;
+#define EE_flw_enabled 13
 #endif
-#ifdef HAVE_GPS 
-extern uint8_t b_gps_enabled;
-extern uint8_t b_TZ_hour;
-extern uint8_t b_TZ_minute;
+#ifdef HAVE_GPS
+#define EE_gps_enabled 14  // 0, 48, or 96 - default no gps
+#define EE_TZ_hour 15
+#define EE_TZ_minute 16
 #endif
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
-extern uint8_t b_DST_mode;  // DST off, on, auto?
-extern uint8_t b_DST_offset;  // DST offset in Hours
-extern uint8_t b_DST_updated;  // DST update flag = allow update only once per day
+#define EE_DST_mode 17  // 0: off, 1: on, 2: Auto
+#define EE_DST_offset 18
 #endif
 #ifdef HAVE_AUTO_DATE
-extern uint8_t b_date_format;
-extern uint8_t b_AutoDate;
+#define EE_date_format 19
+#define EE_Region 20  // default European date format Y/M/D
+#define EE_AutoDate 21
 #endif
 #ifdef HAVE_AUTO_DIM
-extern uint8_t b_AutoDim;
-extern uint8_t b_AutoDimHour;
-extern uint8_t b_AutoDimLevel;
-extern uint8_t b_AutoBrtHour;
-extern uint8_t b_AutoBrtLevel;
+#define EE_AutoDim 22
+#define EE_AutoDimHour 23
+#define EE_AutoDimLevel 24
+#define EE_AutoBrtHour 25
+#define EE_AutoBrtLevel 26
 #endif
 #ifdef HAVE_AUTO_DST
-extern uint8_t b_DST_Rule0;
-extern uint8_t b_DST_Rule1;
-extern uint8_t b_DST_Rule2;
-extern uint8_t b_DST_Rule3;
-extern uint8_t b_DST_Rule4;
-extern uint8_t b_DST_Rule5;
-extern uint8_t b_DST_Rule6;
-extern uint8_t b_DST_Rule7;
-extern uint8_t b_DST_Rule8;
+#define EE_DST_Rule0 27  // DST start month
+#define EE_DST_Rule1 28  // DST start dotw
+#define EE_DST_Rule2 29  // DST start week
+#define EE_DST_Rule3 30  // DST start hour
+#define EE_DST_Rule4 31 // DST end month
+#define EE_DST_Rule5 30  // DST end dotw
+#define EE_DST_Rule6 32  // DST end week
+#define EE_DST_Rule7 33  // DST end hour
+#define EE_DST_Rule8 34  // DST offset
 #endif
 
 extern int8_t g_24h_clock;
+extern int8_t g_show_humid;
+extern int8_t g_show_press;
 extern int8_t g_show_temp;
 extern int8_t g_show_dots;
 extern int8_t g_brightness;

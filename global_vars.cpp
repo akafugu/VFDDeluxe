@@ -25,68 +25,10 @@
 
 #include "global_vars.h"
 
-// Settings saved to eeprom
-uint8_t EEMEM b_dummy = 0;  // dummy item to test for bug
-uint8_t EEMEM b_24h_clock = 1;
-uint8_t EEMEM b_show_temp = 0;
-uint8_t EEMEM b_show_dots = 1;
-uint8_t EEMEM b_brightness = 8;
-uint8_t EEMEM b_volume = 0;
-
-uint8_t EEMEM b_dateyear = 13;
-uint8_t EEMEM b_datemonth = 1;
-uint8_t EEMEM b_dateday = 1;
-
-#ifdef HAVE_FLW
-uint8_t EEMEM b_flw_enabled = 0;
-#endif
-#ifdef HAVE_GPS
-uint8_t EEMEM b_gps_enabled = 96;  // 0, 48, or 96 - default no gps
-uint8_t EEMEM b_TZ_hour = -8 + 12;
-uint8_t EEMEM b_TZ_minute = 0;
-#endif
-#if defined HAVE_GPS || defined HAVE_AUTO_DST
-uint8_t EEMEM b_DST_mode = 0;  // 0: off, 1: on, 2: Auto
-uint8_t EEMEM b_DST_offset = 0;
-#endif
-#ifdef HAVE_AUTO_DATE
-uint8_t EEMEM b_date_format = FORMAT_YMD;
-uint8_t EEMEM b_Region = 0;  // default European date format Y/M/D
-uint8_t EEMEM b_AutoDate = 0;
-#endif
-#ifdef HAVE_AUTO_DIM
-uint8_t EEMEM b_AutoDim = 0;
-uint8_t EEMEM b_AutoDimHour = 22;
-uint8_t EEMEM b_AutoDimLevel = 2;
-uint8_t EEMEM b_AutoBrtHour = 7;
-uint8_t EEMEM b_AutoBrtLevel = 8;
-#endif
-#ifdef HAVE_AUTO_DST
-#ifdef DST_NSW
-uint8_t EEMEM b_DST_Rule0 = 10;  // DST start month
-uint8_t EEMEM b_DST_Rule1 = 1;  // DST start dotw
-uint8_t EEMEM b_DST_Rule2 = 1;  // DST start week
-uint8_t EEMEM b_DST_Rule3 = 2;  // DST start hour
-uint8_t EEMEM b_DST_Rule4 = 4; // DST end month
-uint8_t EEMEM b_DST_Rule5 = 1;  // DST end dotw
-uint8_t EEMEM b_DST_Rule6 = 1;  // DST end week
-uint8_t EEMEM b_DST_Rule7 = 2;  // DST end hour
-uint8_t EEMEM b_DST_Rule8 = 1;  // DST offset
-#else
-uint8_t EEMEM b_DST_Rule0 = 3;  // DST start month
-uint8_t EEMEM b_DST_Rule1 = 1;  // DST start dotw
-uint8_t EEMEM b_DST_Rule2 = 2;  // DST start week
-uint8_t EEMEM b_DST_Rule3 = 2;  // DST start hour
-uint8_t EEMEM b_DST_Rule4 = 11; // DST end month
-uint8_t EEMEM b_DST_Rule5 = 1;  // DST end dotw
-uint8_t EEMEM b_DST_Rule6 = 1;  // DST end week
-uint8_t EEMEM b_DST_Rule7 = 2;  // DST end hour
-uint8_t EEMEM b_DST_Rule8 = 1;  // DST offset
-#endif
-#endif
-
 int8_t g_24h_clock = true;
 int8_t g_show_temp = true;
+int8_t g_show_humid = false;
+int8_t g_show_press = false;
 int8_t g_show_dots = true;
 int8_t g_brightness = 5;
 int8_t g_volume = 0;
@@ -130,83 +72,161 @@ int8_t g_AutoBrtLevel;
 #endif
 uint8_t g_has_dots; // can current shield show dot (decimal points)
 
+// workaround: Arduino avr-gcc toolchain is missing eeprom_update_byte
+#define eeprom_update_byte eeprom_write_byte
+
+void clean_eeprom()
+{
+    eeprom_update_byte((uint8_t *)EE_24h_clock, 1);    
+#ifdef HAVE_HUMIDITY
+    eeprom_update_byte((uint8_t *)EE_show_humid, 0);    
+#endif
+#ifdef HAVE_PRESSURE
+    eeprom_update_byte((uint8_t *)EE_show_press, 0);    
+#endif
+#ifdef HAVE_TEMPERATURE
+    eeprom_update_byte((uint8_t *)EE_show_temp, 0);
+#endif
+    eeprom_update_byte((uint8_t *)EE_show_dots, 1);    
+    eeprom_update_byte((uint8_t *)EE_brightness, 8);    
+    eeprom_update_byte((uint8_t *)EE_volume, 0);    
+
+    eeprom_update_byte((uint8_t *)EE_dateyear, 13);    
+    eeprom_update_byte((uint8_t *)EE_datemonth, 1);
+    eeprom_update_byte((uint8_t *)EE_dateday, 1);
+    eeprom_update_byte((uint8_t *)EE_alarmtype, ALARM_NORMAL);
+    eeprom_update_byte((uint8_t *)EE_snooze_enabled, false);
+
+#ifdef HAVE_FLW
+    eeprom_update_byte((uint8_t *)EE_flw_enabled, 0);
+#endif
+#ifdef HAVE_GPS
+    eeprom_update_byte((uint8_t *)EE_gps_enabled, 0);    
+    eeprom_update_byte((uint8_t *)EE_TZ_hour, 0);    
+    eeprom_update_byte((uint8_t *)EE_TZ_minute, 0);    
+#endif
+#if defined HAVE_GPS || defined HAVE_AUTO_DST
+    eeprom_update_byte((uint8_t *)EE_DST_mode, 0);    
+    eeprom_update_byte((uint8_t *)EE_DST_offset, 0);
+#endif
+#ifdef HAVE_AUTO_DATE
+    eeprom_update_byte((uint8_t *)EE_date_format, 0);    
+    eeprom_update_byte((uint8_t *)EE_Region, 0);    
+    eeprom_update_byte((uint8_t *)EE_AutoDate, 0);
+#endif
+#ifdef HAVE_AUTO_DIM
+    eeprom_update_byte((uint8_t *)EE_AutoDim, 0);    
+    eeprom_update_byte((uint8_t *)EE_AutoDimHour, 22);  // dim at 10 pm
+    eeprom_update_byte((uint8_t *)EE_AutoDimLevel, 2);  // dim to level 2
+    eeprom_update_byte((uint8_t *)EE_AutoBrtHour, 7);  // bright at 7 am
+    eeprom_update_byte((uint8_t *)EE_AutoBrtLevel, 8);  // bright to level 8
+#endif
+#ifdef HAVE_AUTO_DST
+#ifdef DST_NSW
+    eeprom_update_byte((uint8_t *)EE_DST_Rule0, 10);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule1, 1);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule2, 1);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule3, 2);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule4, 3);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule5, 1);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule6, 1);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule7, 2);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule8, 1);
+#else
+    eeprom_update_byte((uint8_t *)EE_DST_Rule0, 3);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule1, 1);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule2, 2);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule3, 2);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule4, 11);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule5, 1);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule6, 1);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule7, 2);
+    eeprom_update_byte((uint8_t *)EE_DST_Rule8, 1);
+#endif
+#endif
+    eeprom_update_byte((uint8_t *)EE_check_byte, EE_CHECK);    
+}
+
 void globals_init(void)
 {
+  uint8_t ee_check = eeprom_read_byte((uint8_t *)EE_check_byte);
+  if (ee_check!=EE_CHECK) {
+//    Serial.println("clean ee");
+    clean_eeprom();
+  }
+
 	// read eeprom
-	g_24h_clock  = eeprom_read_byte(&b_24h_clock);
-	g_show_temp  = eeprom_read_byte(&b_show_temp);
-	g_show_dots  = eeprom_read_byte(&b_show_dots);
-	g_brightness = eeprom_read_byte(&b_brightness);
-	g_volume     = eeprom_read_byte(&b_volume);
+	g_24h_clock  = eeprom_read_byte((uint8_t *)EE_24h_clock);
+#ifdef HAVE_HUMDITY
+	g_show_humid  = eeprom_read_byte((uint8_t *)EE_show_humid);
+#endif
+#ifdef HAVE_PRESSURE
+	g_show_press  = eeprom_read_byte((uint8_t *)EE_show_press);
+#endif
+#ifdef HAVE_TEMPERATURE
+	g_show_temp  = eeprom_read_byte((uint8_t *)EE_show_temp);
+#endif
+	g_show_dots  = eeprom_read_byte((uint8_t *)EE_show_dots);
+	g_brightness = eeprom_read_byte((uint8_t *)EE_brightness);
+	g_volume     = eeprom_read_byte((uint8_t *)EE_volume);
 #ifdef HAVE_FLW
-	g_flw_enabled = eeprom_read_byte(&b_flw_enabled);
-    Serial.print("g_flw_enabled = ");
-    Serial.println(g_flw_enabled);
+	g_flw_enabled = eeprom_read_byte((uint8_t *)EE_flw_enabled);
+//    Serial.print("g_flw_enabled = ");
+//    Serial.println(g_flw_enabled);
 #else
         g_flw_enabled = 0;
 #endif
 #ifdef HAVE_GPS
-	g_gps_enabled = eeprom_read_byte(&b_gps_enabled);
-    Serial.print("g_gps_enabled = ");
-    Serial.println(g_gps_enabled);
+	g_gps_enabled = eeprom_read_byte((uint8_t *)EE_gps_enabled);
+//    Serial.print("g_gps_enabled = ");
+//    Serial.println(g_gps_enabled);
 	if (g_gps_enabled != 0 && g_gps_enabled != 48 && g_gps_enabled != 96) g_gps_enabled = 0;
-	g_TZ_hour = eeprom_read_byte(&b_TZ_hour) - 12;
+	g_TZ_hour = eeprom_read_byte((uint8_t *)EE_TZ_hour) - 12;
 	if ((g_TZ_hour<-12) || (g_TZ_hour>12))  g_TZ_hour = 0;  // add range check
-	g_TZ_minute = eeprom_read_byte(&b_TZ_minute);
+	g_TZ_minute = eeprom_read_byte((uint8_t *)EE_TZ_minute);
 	if (g_TZ_minute % 15 != 0) g_TZ_minute = 0;
 #endif
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
-	g_DST_mode = eeprom_read_byte(&b_DST_mode);
+	g_DST_mode = eeprom_read_byte((uint8_t *)EE_DST_mode);
 #ifdef HAVE_AUTO_DST
 	if (g_DST_mode < 0 || g_DST_mode > 2) g_DST_mode = 0;
 #else
 	if (g_DST_mode < 0 || g_DST_mode > 1) g_DST_mode = 0;
 #endif
 
-	g_DST_offset = eeprom_read_byte(&b_DST_offset);
+	g_DST_offset = eeprom_read_byte((uint8_t *)EE_DST_offset);
 	g_DST_offset = 1; // use fixed offset for now
 	g_DST_updated = false;  // allow automatic DST update
 
-        Serial.print("g_DST_mode = ");
-        Serial.println(g_DST_mode);
-        Serial.print("g_DST_offset = ");
-        Serial.println(g_DST_offset);
+//        Serial.print("g_DST_mode = ");
+//        Serial.println(g_DST_mode);
+//        Serial.print("g_DST_offset = ");
+//        Serial.println(g_DST_offset);
 
 #endif
 #ifdef HAVE_AUTO_DATE
-	g_date_format = (date_format_t)eeprom_read_byte(&b_date_format);
-	g_AutoDate = eeprom_read_byte(&b_AutoDate);
+	g_date_format = (date_format_t)eeprom_read_byte((uint8_t *)EE_date_format);
+	g_AutoDate = eeprom_read_byte((uint8_t *)EE_AutoDate);
 #endif
 #ifdef HAVE_AUTO_DIM
-	g_AutoDim = eeprom_read_byte(&b_AutoDim);
-	g_AutoDimHour = eeprom_read_byte(&b_AutoDimHour);
-	g_AutoDimLevel = eeprom_read_byte(&b_AutoDimLevel);
-	g_AutoBrtHour = eeprom_read_byte(&b_AutoBrtHour);
-	g_AutoBrtLevel = eeprom_read_byte(&b_AutoBrtLevel);
+	g_AutoDim = eeprom_read_byte((uint8_t *)EE_AutoDim);
+	g_AutoDimHour = eeprom_read_byte((uint8_t *)EE_AutoDimHour);
+	g_AutoDimLevel = eeprom_read_byte((uint8_t *)EE_AutoDimLevel);
+	g_AutoBrtHour = eeprom_read_byte((uint8_t *)EE_AutoBrtHour);
+	g_AutoBrtLevel = eeprom_read_byte((uint8_t *)EE_AutoBrtLevel);
 #endif
-	g_dateyear = 12;
-	g_datemonth = 1;
-	g_dateday = 1;
+	g_dateyear = eeprom_read_byte((uint8_t *)EE_dateyear);
+	g_datemonth = eeprom_read_byte((uint8_t *)EE_datemonth);
+	g_dateday = eeprom_read_byte((uint8_t *)EE_dateday);
 #ifdef HAVE_AUTO_DST
-//	g_DST_Rules[0] = eeprom_read_byte(&b_DST_Rule0);  // DST start month
-//	g_DST_Rules[1] = eeprom_read_byte(&b_DST_Rule1);  // DST start dotw
-//	g_DST_Rules[2] = eeprom_read_byte(&b_DST_Rule2);  // DST start week
-//	g_DST_Rules[3] = eeprom_read_byte(&b_DST_Rule3);  // DST start hour
-//	g_DST_Rules[4] = eeprom_read_byte(&b_DST_Rule4); // DST end month
-//	g_DST_Rules[5] = eeprom_read_byte(&b_DST_Rule5);  // DST end dotw
-//	g_DST_Rules[6] = eeprom_read_byte(&b_DST_Rule6);  // DST end week
-//	g_DST_Rules[7] = eeprom_read_byte(&b_DST_Rule7);  // DST end hour
-//	g_DST_Rules[8] = eeprom_read_byte(&b_DST_Rule8);  // DST offset
-//        g_DST_Rules[] = {3,1,2,2,11,1,1,2,1};  // TEMP 26mar13/wbp
-// temp - set rules for USA until menu is sorted out and rules are in EE again
-        g_DST_Rules[0] = 3;  // TEMP 26mar13/wbp
-        g_DST_Rules[1] = 1;  // TEMP 26mar13/wbp
-        g_DST_Rules[2] = 2;  // TEMP 26mar13/wbp
-        g_DST_Rules[3] = 2;  // TEMP 26mar13/wbp
-        g_DST_Rules[4] = 11;  // TEMP 26mar13/wbp
-        g_DST_Rules[5] = 1;  // TEMP 26mar13/wbp
-        g_DST_Rules[6] = 1;  // TEMP 26mar13/wbp
-        g_DST_Rules[7] = 2;  // TEMP 26mar13/wbp
-        g_DST_Rules[8] = 1;  // TEMP 26mar13/wbp
+	g_DST_Rules[0] = eeprom_read_byte((uint8_t *)EE_DST_Rule0);  // DST start month
+	g_DST_Rules[1] = eeprom_read_byte((uint8_t *)EE_DST_Rule1);  // DST start dotw
+	g_DST_Rules[2] = eeprom_read_byte((uint8_t *)EE_DST_Rule2);  // DST start week
+	g_DST_Rules[3] = eeprom_read_byte((uint8_t *)EE_DST_Rule3);  // DST start hour
+	g_DST_Rules[4] = eeprom_read_byte((uint8_t *)EE_DST_Rule4); // DST end month
+	g_DST_Rules[5] = eeprom_read_byte((uint8_t *)EE_DST_Rule5);  // DST end dotw
+	g_DST_Rules[6] = eeprom_read_byte((uint8_t *)EE_DST_Rule6);  // DST end week
+	g_DST_Rules[7] = eeprom_read_byte((uint8_t *)EE_DST_Rule7);  // DST end hour
+	g_DST_Rules[8] = eeprom_read_byte((uint8_t *)EE_DST_Rule8);  // DST offset
 #endif
  }

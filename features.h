@@ -79,6 +79,7 @@ enum shield_t {
 
 #define FEATURE_NIXIE_SUPPORT NO
 #define FEATURE_SHIELD_AUTODETECT YES
+#define FEATURE_RTC_TEMP YES // Get temperature from RTC
 #define FEATURE_MPL115A2 NO // Temperature and Atmospheric pressure sensor
 #define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY NO
@@ -96,6 +97,7 @@ enum shield_t {
 //#define FEATURE_RTC_SQW NO
 #define FEATURE_AUTO_DATE YES
 #define FEATURE_AUTO_DST YES
+#define FEATURE_AUTO_DIM YES
 
 // Support for generic displays (excludes the standard shields)
 #define FEATURE_7SEG_SUPPORT NO
@@ -149,6 +151,8 @@ enum shield_t {
 
 #if FEATURE_MPL115A2 == YES
 #  define HAVE_MPL115A2
+#  define HAVE_TEMPERATURE
+#  define HAVE_PRESSURE
 #endif
 
 ///////////////////////////////////////////
@@ -159,6 +163,8 @@ enum shield_t {
 
 #if FEATURE_HIH6121 == YES
 #  define HAVE_HIH6121
+#  define HAVE_TEMPERATURE
+#  define HAVE_HUMIDITY
 #endif
 
 ///////////////////////////////////////////
@@ -267,6 +273,17 @@ enum shield_t {
 
 ///////////////////////////////////////////
 
+#if !(defined FEATURE_RTC_TEMP) || FEATURE_RTC_TEMP < NO || FEATURE_RTC_TEMP > YES
+#  error Must define FEATURE_RTC_TEMP to be YES or NO
+#endif
+
+#if FEATURE_RTC_TEMP == YES
+#  define HAVE_RTC_TEMP
+#  define HAVE_TEMPERATURE
+#endif
+
+///////////////////////////////////////////
+
 #if !(defined FEATURE_AUTO_DATE) || FEATURE_AUTO_DATE < NO || FEATURE_AUTO_DATE > YES
 #  error Must define FEATURE_AUTO_DATE to be YES or NO
 #endif
@@ -283,6 +300,16 @@ enum shield_t {
 
 #if FEATURE_AUTO_DST == YES
 #  define HAVE_AUTO_DST
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_AUTO_DIM) || FEATURE_AUTO_DIM < NO || FEATURE_AUTO_DIM > YES
+#  error Must define FEATURE_AUTO_DIM to be YES or NO
+#endif
+
+#if FEATURE_AUTO_DIM == YES
+#  define HAVE_AUTO_DIM
 #endif
 
 ///////////////////////////////////////////
