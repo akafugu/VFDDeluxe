@@ -1,7 +1,7 @@
 /*
  * Globals for VFD Modular Clock
- * (C) 2011-2012 Akafugu Corporation
- * (C) 2012 William B Phelps
+ * (C) 2011-2013 Akafugu Corporation
+ * (C) 2011-2013 William B Phelps
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -37,6 +37,8 @@ int8_t g_dateyear;
 int8_t g_datemonth;
 int8_t g_dateday;
 extern int8_t g_autodate;
+uint8_t g_alarmtype;
+uint8_t g_snooze_enabled;
 
 uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
 int8_t g_flw_enabled;

@@ -56,7 +56,9 @@ struct PinMap
     static const uint8_t sig0 = 3;
     static const uint8_t sig1 = 4;
     static const uint8_t sig2 = 5;
+
     static const uint8_t piezo = 10;
+    static const uint8_t piezo2 = 9;
 };
 
 #elif BOARD == BOARD_VFD_DELUXE
@@ -77,8 +79,8 @@ struct PinMap
     static const uint8_t nixie_a4 = 16;
     
     // Input buttons / alarm sitch
-    static const uint8_t button1 = 7;
-    static const uint8_t button2 = 9;
+    static const uint8_t button1 = 9;
+    static const uint8_t button2 = 7;
     static const uint8_t alarm_switch = 12;
     
     // Shield signature pins
@@ -89,8 +91,9 @@ struct PinMap
     // RTC SQW interrupt
     static const uint8_t sqw = 8; // PB4 / PCINT4
     
-    // ofhter
+    // other
     static const uint8_t piezo = 11;
+    static const uint8_t piezo2 = 10;
 };
 
 #endif
