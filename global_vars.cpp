@@ -25,17 +25,17 @@
 
 #include "global_vars.h"
 
-int8_t g_24h_clock = true;
-int8_t g_show_temp = true;
-int8_t g_show_humid = false;
-int8_t g_show_press = false;
-int8_t g_show_dots = true;
-int8_t g_brightness = 5;
-int8_t g_volume = 0;
+uint8_t g_24h_clock = true;
+uint8_t g_show_temp = true;
+uint8_t g_show_humid = false;
+uint8_t g_show_press = false;
+uint8_t g_show_dots = true;
+uint8_t g_brightness = 5;
+uint8_t g_volume = 0;
 
-int8_t g_dateyear;
-int8_t g_datemonth;
-int8_t g_dateday;
+uint8_t g_dateyear;
+uint8_t g_datemonth;
+uint8_t g_dateday;
 extern int8_t g_autodate;
 uint8_t g_alarmtype;
 uint8_t g_snooze_enabled;

@@ -141,9 +141,9 @@ bool menu_b1_first = false;
 typedef enum {
     MODE_NORMAL = 0,  // Time mode 1 (HH:MM/HH:MM:SS)
     MODE_AMPM,        // Time mode 2 (SS/HH-MM)
-#ifdef HAVE_FLW
+//#ifdef HAVE_FLW
     MODE_FLW,         // Time mode 3: Shows FLW with time and date scrolling
-#endif
+//#endif
     MODE_LAST,
     MODE_ALARM_TEXT,  // Shows "ALRM" or "ALARM"
     MODE_ALARM_TIME,  // Shows Alarm time
@@ -524,15 +524,12 @@ void setup()
     
 #ifdef HAVE_SERIAL_DEBUG
   while (!Serial) ;
-#endif
   _delay_ms(500); // temp
-#ifdef HAVE_SERIAL_DEBUG
   while (!Serial) ;  // second time's the charm...
-#endif
-
   Serial.begin(9600);
   _delay_ms(3000); // allow time to get serial port open
   Serial.println("VFD Deluxe");
+#endif
 
   initialize();
  

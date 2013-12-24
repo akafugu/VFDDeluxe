@@ -87,17 +87,17 @@ typedef enum {
 #define EE_DST_Rule8 34  // DST offset
 #endif
 
-extern int8_t g_24h_clock;
-extern int8_t g_show_humid;
-extern int8_t g_show_press;
-extern int8_t g_show_temp;
-extern int8_t g_show_dots;
-extern int8_t g_brightness;
-extern int8_t g_volume;
+extern uint8_t g_24h_clock;
+extern uint8_t g_show_humid;
+extern uint8_t g_show_press;
+extern uint8_t g_show_temp;
+extern uint8_t g_show_dots;
+extern uint8_t g_brightness;
+extern uint8_t g_volume;
 
-extern int8_t g_dateyear;
-extern int8_t g_datemonth;
-extern int8_t g_dateday;
+extern uint8_t g_dateyear;
+extern uint8_t g_datemonth;
+extern uint8_t g_dateday;
 extern uint8_t g_alarmtype;
 extern uint8_t g_snooze_enabled;
 
