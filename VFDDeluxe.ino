@@ -535,9 +535,9 @@ void setup()
  
   //  tone(PinMap::piezo, NOTE_A5, 100);  // test tone
   tone(PinMap::piezo, 880, 100);  // test tone
-  _delay_ms(200);
+  _delay_ms(100);
   tone(PinMap::piezo, 1760, 100);  // test tone
-  _delay_ms(200);
+  _delay_ms(100);
   tone(PinMap::piezo, 880, 100);  // test tone
   
 #ifdef HAVE_MPL115A2
