@@ -461,7 +461,7 @@ uint8_t print_strn(const char* str, uint8_t offset, uint8_t n)
 // set dots based on mode and seconds
 void print_dots(uint8_t mode, uint8_t seconds)
 {
-	if (g_show_dots) {
+	if (globals.show_dots) {
   		if (digits == 10 && mode == 0) {
 			sbi(dots, 3);
 			sbi(dots, 5);

@@ -41,7 +41,7 @@ volatile char *gpsNextBuffer;
 volatile char *gpsLastBuffer;
 volatile uint8_t gpsDataReady_;
 
-extern int8_t g_gps_enabled;
+//extern int8_t g_gps_enabled;
 
 // globals from main.c
 extern enum shield_t shield;
@@ -76,10 +76,10 @@ void GPSread(void)
   char c = 0;
   
 #ifdef HAVE_LEONARDO
-  if ((g_gps_enabled) && (UCSR1A & _BV(RXC1))) {
+  if ((globals.gps_enabled) && (UCSR1A & _BV(RXC1))) {
 		c=UDR1;  // get a byte from the port
 #else
-  if ((g_gps_enabled) && (UCSR0A & _BV(RXC0))) {
+  if ((globals.gps_enabled) && (UCSR0A & _BV(RXC0))) {
 		c=UDR0;  // get a byte from the port
 #endif
 		if (c == '$') {
@@ -241,11 +241,11 @@ void parseGPSdata(char *gpsBuffer) {
 						//beep(1000, 1);  // debugging
 						g_gps_updating = true;
 						tGPSupdate = tNow;  // remember time of this update
-						tNow = tNow + (long)(g_TZ_hour + g_DST_offset) * SECS_PER_HOUR;  // add time zone hour offset & DST offset
-						if (g_TZ_hour < 0)  // add or subtract time zone minute offset
-							tNow = tNow - (long)g_TZ_minute * SECS_PER_HOUR;
+						tNow = tNow + (long)(globals.TZ_hour + globals.DST_offset) * SECS_PER_HOUR;  // add time zone hour offset & DST offset
+						if (globals.TZ_hour < 0)  // add or subtract time zone minute offset
+							tNow = tNow - (long)globals.TZ_minute * SECS_PER_HOUR;
 						else
-							tNow = tNow + (long)g_TZ_minute * SECS_PER_HOUR;
+							tNow = tNow + (long)globals.TZ_minute * SECS_PER_HOUR;
 						setRTCTime(tNow);  // set RTC from adjusted GPS time & date
 						if ((shield != SHIELD_IV18) && (shield != SHIELD_IV17))
 							flash_display(100);  // flash display to show GPS update 28oct12/wbp - shorter blink
@@ -256,14 +256,14 @@ void parseGPSdata(char *gpsBuffer) {
 			} // if fix status is A
 		} // if checksums match
 		else  // checksums do not match
-			g_gps_cks_errors++;  // increment error count
+			globals.gps_cks_errors++;  // increment error count
 		return;
 GPSerror1:
-		g_gps_parse_errors++;  // increment error count
+		globals.gps_parse_errors++;  // increment error count
 //	  tone(PinMap::piezo, 2093, 100);  // test tone
 		goto GPSerror2a;
 GPSerror2:
-		g_gps_time_errors++;  // increment error count
+		globals.gps_time_errors++;  // increment error count
 GPSerror2a:
 		//beep(2093,1);  // error signal - I'm leaving this in for now /wm
 		flash_display(200);  // flash display to show GPS error

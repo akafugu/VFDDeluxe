@@ -23,6 +23,7 @@
  *  - Misc improvements and new features
  *  - Table driven menu with submenus
  *  - Date scrolling
+ *  - Globals structure
  *
  */
 
@@ -36,6 +37,7 @@
  * Test FLW
  * Refactor FLW
  * Add menu items for GPS etc.
+ * create structure for globals, save/update to EE
 */
 
 /*
@@ -47,7 +49,6 @@
  
  * - dot blinks when showing temperature 
  * fix button 1 to show date, flw, temp, press, etc
- * fix EE memory bugs
  * reveille alarm?
  * scroll time with date
  * add GPS "sanity check"
@@ -98,6 +99,7 @@ FourLetterWord flw;
 
 WireRtcLib rtc;
 
+uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
 uint8_t g_second_dots_on = true;
 uint8_t g_alarm_switch;
 #define MENU_TIMEOUT 20 // 20*100 ms = 2 seconds
@@ -213,7 +215,7 @@ void initialize(void)
 #endif
 
   globals_init();
-  display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, g_brightness);
+  display_init(PinMap::data, PinMap::clock, PinMap::latch, PinMap::blank, globals.brightness);
 
 #ifdef HAVE_NIXIE_SUPPORT
   if (shield == SHIELD_IN14 || shield == SHIELD_IN8_2)
@@ -225,10 +227,10 @@ void initialize(void)
   for (uint8_t i = 0; i < 5; i++) // randomize starting point
     flw.get_word();
   g_has_flw = flw.has_eeprom();
-  flw.setCensored(g_flw_enabled == FLW_ON);
+  flw.setCensored(globals.flw_enabled == FLW_ON);
 #else
   g_has_flw = false;
-  g_flw_enabled = FLW_OFF;
+  globals.flw_enabled = FLW_OFF;
 #endif
 
   //g_alarm_switch = get_alarm_switch();
@@ -250,7 +252,7 @@ void initialize(void)
   
 #ifdef HAVE_GPS
     // setup UART for GPS
-    gps_init(g_gps_enabled);
+    gps_init(globals.gps_enabled);
 #endif // HAVE_GPS
 
   // initialize button
@@ -393,13 +395,13 @@ void update_display()
 
 #ifdef HAVE_AUTO_DST
     if (tt->sec % 10 == 0)  // check DST Offset every 10 seconds (60?)
-        setDSToffset(g_DST_mode); 
+        setDSToffset(globals.DST_mode); 
         
         if ((tt->hour == 0) && (tt->min == 0) && (tt->sec == 0)) {  // MIDNIGHT!
 //          Serial.println("Midnight");  // wbp debug
             g_DST_updated = false;
-            if (g_DST_mode)
-                DSTinit(tt, g_DST_Rules);  // re-compute DST start, end
+            if (globals.DST_mode)
+                DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end
         }
 #endif // HAVE_AUTO_DST
 
@@ -413,7 +415,7 @@ void update_display()
         if (g_alarm_switch) {
             tt = rtc.getAlarm();
 //  Serial.print("alarm "); Serial.print(tt->hour); Serial.print(":"); Serial.println(tt->min);
-            show_time(tt, g_24h_clock, false);
+            show_time(tt, globals.clock_24h, false);
         }
         else {
             set_string("OFF");          
@@ -424,39 +426,39 @@ void update_display()
         read_temp(); // fixme, encapsulate temp/pressure/humidity here
         if (tt->sec >= 33) pop_display_mode();
     }
-    else if (have_temp_sensor() && g_show_temp && tt->sec == 30) {
+    else if (have_temp_sensor() && globals.show_temp && tt->sec == 30) {
         push_display_mode(MODE_AUTO_TEMP);
         read_temp();
         // fixme: implement temp sub mode 0-temp,1-pressure,2-humidity
     }
 #endif
 #ifdef HAVE_PRESSURE
-    else if (have_pressure_sensor() && g_show_press && tt->sec >= 34 && tt->sec <= 36)
+    else if (have_pressure_sensor() && globals.show_press && tt->sec >= 34 && tt->sec <= 36)
         read_pressure();
 #endif
 #ifdef HAVE_HUMIDITY
-    else if (have_humidity_sensor() && g_show_humid && tt->sec >= 37 && tt->sec <= 39)
+    else if (have_humidity_sensor() && globals.show_humid && tt->sec >= 37 && tt->sec <= 39)
         read_humidity();
 #endif
     else if (display_mode == MODE_AUTO_FLW) {
        read_flw();    
        if (tt->sec >= 50) pop_display_mode();
     }
-    else if (g_has_flw && g_flw_enabled != FLW_OFF && tt->sec == 40) {
+    else if (g_has_flw && globals.flw_enabled != FLW_OFF && tt->sec == 40) {
         read_flw();
         push_display_mode(MODE_AUTO_FLW);
     }
     else if (g_has_flw && display_mode == MODE_FLW && tt->sec == 58) {
         push_display_mode(MODE_AUTO_TIME);
-        show_time(tt, g_24h_clock, MODE_NORMAL);   
+        show_time(tt, globals.clock_24h, MODE_NORMAL);   
     }
     else if (display_mode == MODE_AUTO_TIME) {
-        show_time(tt, g_24h_clock, MODE_NORMAL);
+        show_time(tt, globals.clock_24h, MODE_NORMAL);
        if (tt->sec >= 4 && tt->sec < 5) pop_display_mode();
     }
-    else if (g_AutoDate && display_mode < MODE_LAST && tt->sec == 55) {
+    else if (globals.AutoDate && display_mode < MODE_LAST && tt->sec == 55) {
         scroll_speed(300);  // display date at 3 cps
-				scroll_date(tt, g_date_format);  // show date from last rtc_get_time() call
+				scroll_date(tt, globals.date_format);  // show date from last rtc_get_time() call
 //        while (scrolling())
 //          wDelay(100); // wait a bit (temp)
         push_display_mode(MODE_AUTO_DATE);
@@ -467,7 +469,7 @@ void update_display()
     }
 #endif
     else {
-        show_time(tt, g_24h_clock, display_mode);
+        show_time(tt, globals.clock_24h, display_mode);
     }
 }
 
@@ -479,9 +481,9 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
   rtc.setTime(tt);
   
 #ifdef HAVE_AUTO_DST
-  DSTinit(tt, g_DST_Rules);  // re-compute DST start, end for new date
+  DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end for new date
   g_DST_updated = false;  // allow automatic DST adjustment again
-  setDSToffset(g_DST_mode);  // set DSToffset based on new date
+  setDSToffset(globals.DST_mode);  // set DSToffset based on new date
 #endif // HAVE_AUTO_DST 
 }
 
@@ -518,8 +520,7 @@ void setup()
 //  }
 
 //  tone(PinMap::piezo, NOTE_A5, 100);  // test tone
-  tone(PinMap::piezo, 880, 100);  // test tone
-  tone(10, 880, 200); // temp
+//  tone(PinMap::piezo, 880, 100);  // test tone
 //  _delay_ms(500);
     
 #ifdef HAVE_SERIAL_DEBUG
@@ -529,6 +530,8 @@ void setup()
   Serial.begin(9600);
   _delay_ms(3000); // allow time to get serial port open
   Serial.println("VFD Deluxe");
+  Serial.print("EEcheck1="); Serial.println(globals.EEcheck1,DEC);
+  Serial.print("EEcheck2="); Serial.println(globals.EEcheck2,DEC);
 #endif
 
   initialize();
@@ -682,7 +685,7 @@ void loop()
 				buttons.b1_keyup = 0; // clear state
 				buttons.b2_keyup = 0; // clear state
 
-        if (g_snooze_enabled) {
+        if (globals.snooze_enabled) {
           start_alarm();  // restart alarm sequence
   				snooze_count = g_snooze_time*60*10;  // start snooze timer
 	  			set_blink(false);  // stop blinking
@@ -706,7 +709,7 @@ void loop()
 				}
 			}
 			else {
-        if (g_alarmtype == ALARM_PROGRESSIVE) {
+        if (globals.alarmtype == ALARM_PROGRESSIVE) {
 					alarm_count++;
 					if (alarm_count > alarm_cycle) {  // once every alarm_cycle
 						beep_count = alarm_count = 0;  // restart cycle 
@@ -825,7 +828,7 @@ void loop()
 		// Left button enters menu
 		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
 //                        first_menu_item();
-//			show_setting_int("BRIT", "BRITE", g_brightness, false);
+//			show_setting_int("BRIT", "BRITE", globals.brightness, false);
 			g_menu_state = STATE_MENU;
 			menu(0); // show first menu item
 
@@ -914,18 +917,18 @@ void loop()
 			start_alarm();
 
 #ifdef HAVE_AUTO_DIM			
-		if ((g_AutoDim) && (tt->min == 0) && (tt->sec == 0))  {  // Auto Dim enabled?
-			if (tt->hour == g_AutoDimHour1) {
-				set_brightness(g_AutoDimLevel1);
+		if ((globals.AutoDim) && (tt->min == 0) && (tt->sec == 0))  {  // Auto Dim enabled?
+			if (tt->hour == globals.AutoDimHour1) {
+				set_brightness(globals.AutoDimLevel1);
 			}
-			else if (tt->hour == g_AutoDimHour2) {
-				set_brightness(g_AutoDimLevel2);
+			else if (tt->hour == globals.AutoDimHour2) {
+				set_brightness(globals.AutoDimLevel2);
 			}
 		}
 #endif
 
 #ifdef HAVE_GPS
-        if (g_gps_enabled && g_menu_state == STATE_CLOCK) {
+        if (globals.gps_enabled && g_menu_state == STATE_CLOCK) {
             if (gpsDataReady()) {
                 parseGPSdata(gpsNMEA());  // get the GPS serial stream and possibly update the clock 
             }

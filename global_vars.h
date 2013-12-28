@@ -36,108 +36,62 @@ typedef enum {
   ALARM_PROGRESSIVE,
 } alarm_type_t;
 
-// Settings saved to eeprom
-#define EE_CHECK 44 // change this value if you change EE addresses
-#define EE_check_byte 0 
-#define EE_24h_clock 1
-#define EE_show_humid 2
-#define EE_show_press 3
-#define EE_show_temp 4
-#define EE_show_dots 5
-#define EE_brightness 6
-#define EE_volume 7
-#define EE_dateyear 8
-#define EE_datemonth 9
-#define EE_dateday 10
-#define EE_alarmtype 11
-#define EE_snooze_enabled 12
-#ifdef HAVE_FLW
-#define EE_flw_enabled 13
-#endif
-#ifdef HAVE_GPS
-#define EE_gps_enabled 14  // 0, 48, or 96 - default no gps
-#define EE_TZ_hour 15
-#define EE_TZ_minute 16
-#endif
-#if defined HAVE_GPS || defined HAVE_AUTO_DST
-#define EE_DST_mode 17  // 0: off, 1: on, 2: Auto
-#define EE_DST_offset 18
-#endif
-#ifdef HAVE_AUTO_DATE
-#define EE_date_format 19
-#define EE_Region 20  // default European date format Y/M/D
-#define EE_AutoDate 21
-#endif
-#ifdef HAVE_AUTO_DIM
-#define EE_AutoDim 22
-#define EE_AutoDimHour1 23
-#define EE_AutoDimLevel1 24
-#define EE_AutoDimHour2 25
-#define EE_AutoDimLevel2 26
-#endif
-#ifdef HAVE_AUTO_DST
-#define EE_DST_Rule0 27  // DST start month
-#define EE_DST_Rule1 28  // DST start dotw
-#define EE_DST_Rule2 29  // DST start week
-#define EE_DST_Rule3 30  // DST start hour
-#define EE_DST_Rule4 31 // DST end month
-#define EE_DST_Rule5 30  // DST end dotw
-#define EE_DST_Rule6 32  // DST end week
-#define EE_DST_Rule7 33  // DST end hour
-#define EE_DST_Rule8 34  // DST offset
-#endif
-
-extern uint8_t g_24h_clock;
-extern uint8_t g_show_humid;
-extern uint8_t g_show_press;
-extern uint8_t g_show_temp;
-extern uint8_t g_show_dots;
-extern uint8_t g_brightness;
-extern uint8_t g_volume;
-
-extern uint8_t g_dateyear;
-extern uint8_t g_datemonth;
-extern uint8_t g_dateday;
-extern uint8_t g_alarmtype;
-extern uint8_t g_snooze_enabled;
-
-extern uint8_t g_has_flw; // set to true if there is a four letter word EEPROM attached
-extern int8_t g_flw_enabled;
-
+struct __globals
+{
+	uint8_t EEcheck1;
+	uint8_t clock_24h;
+	uint8_t show_temp;
+	uint8_t show_humid;
+	uint8_t show_press;
+	uint8_t show_dots;
+	uint8_t brightness;
+	uint8_t volume;
+	uint8_t dateyear;
+	uint8_t datemonth;
+	uint8_t dateday;
+	uint8_t alarmtype;
+	uint8_t snooze_enabled;
+	int8_t flw_enabled;
 #ifdef HAVE_GPS 
-extern int8_t g_gps_enabled;
-extern int8_t g_TZ_hour;
-extern int8_t g_TZ_minute;
+	int8_t gps_enabled;
+	int8_t TZ_hour;
+	int8_t TZ_minute;
 // debugging counters 
-extern int8_t g_gps_cks_errors;  // gps checksum error counter
-extern int8_t g_gps_parse_errors;  // gps parse error counter
-extern int8_t g_gps_time_errors;  // gps time error counter
+	int8_t gps_cks_errors;  // gps checksum error counter
+	int8_t gps_parse_errors;  // gps parse error counter
+	int8_t gps_time_errors;  // gps time error counter
 #endif
-extern int8_t g_gps_updating;  // for signalling GPS update on some displays
-
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
-extern int8_t g_DST_mode;  // DST off, on, auto?
-extern int8_t g_DST_offset;  // DST offset in Hours
-extern int8_t g_DST_updated;  // DST update flag = allow update only once per day
+	int8_t DST_mode;  // DST off, on, auto?
+	int8_t DST_offset;  // DST offset in Hours
 #endif
 #ifdef HAVE_AUTO_DST  // DST rules
-//DST_Rules dst_rules = {{3,1,2,2},{11,1,1,2},1};   // initial values from US DST rules as of 2011
-extern int8_t g_DST_Rules[9];
+	int8_t DST_Rules[9];
 #endif
 #ifdef HAVE_AUTO_DATE
-extern date_format_t g_date_format;
-extern int8_t g_AutoDate;
+	date_format_t date_format;
+	int8_t AutoDate;
 #endif
 #ifdef HAVE_AUTO_DIM
-extern int8_t g_AutoDim;
-extern int8_t g_AutoDimHour1;
-extern int8_t g_AutoDimLevel1;
-extern int8_t g_AutoDimHour2;
-extern int8_t g_AutoDimLevel2;
+	int8_t AutoDim;
+	int8_t AutoDimHour1;
+	int8_t AutoDimLevel1;
+	int8_t AutoDimHour2;
+	int8_t AutoDimLevel2;
+	int8_t AutoDimHour3;
+	int8_t AutoDimLevel3;
 #endif
+	uint8_t EEcheck2;
+};
+
+extern uint8_t g_has_flw; // set to true if there is a four letter word EEPROM attached
+extern uint8_t g_gps_updating;  // for signalling GPS update on some displays
+extern uint8_t g_DST_updated;  // DST update flag = allow update only once per day
 extern uint8_t g_has_dots; // can current shield show dot (decimal points)
 
 void globals_init(void);
+void save_globals(void);
+extern struct __globals globals; // can't put this here...
 
 #endif
 

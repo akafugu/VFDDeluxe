@@ -46,12 +46,12 @@ void setDSToffset(uint8_t mode) {
 	if (mode == 2) {  // Auto DST
 		if (g_DST_updated) return;  // already done it once today
 		if (tt == NULL) return;  // safety check
-		newOffset = getDSToffset(tt, g_DST_Rules);  // get current DST offset based on DST Rules
+		newOffset = getDSToffset(tt, globals.DST_Rules);  // get current DST offset based on DST Rules
 	}
 	else
 #endif // HAVE_AUTO_DST
 		newOffset = mode;  // 0 or 1
-	adjOffset = newOffset - g_DST_offset;  // offset delta
+	adjOffset = newOffset - globals.DST_offset;  // offset delta
 	if (adjOffset == 0)  return;  // nothing to do
 	if (adjOffset > 0)
 //		beep(880, 1);  // spring ahead
@@ -66,8 +66,9 @@ void setDSToffset(uint8_t mode) {
 
 	//rtc_set_time_t(tNow);  // adjust RTC
 
-	g_DST_offset = newOffset;
-	//eeprom_update_byte(&b_DST_offset, g_DST_offset);
+	globals.DST_offset = newOffset;
+	//eeprom_update_byte(&b_DST_offset, globals.DST_offset);
+	save_globals();
 	g_DST_updated = true;
 	// save DST_updated in ee ???
 }
@@ -81,9 +82,9 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
         tt->mday = dd;
 	//rtc_set_time(tm_);
 #ifdef HAVE_AUTO_DST
-	DSTinit(tm_, g_DST_Rules);  // re-compute DST start, end for new date
+	DSTinit(tm_, globals.DST_Rules);  // re-compute DST start, end for new date
 	g_DST_updated = false;  // allow automatic DST adjustment again
-	setDSToffset(g_DST_mode);  // set DSToffset based on new date
+	setDSToffset(globals.DST_mode);  // set DSToffset based on new date
 #endif
 }
 #endif
@@ -95,7 +96,7 @@ void menu_action(menu_item * menuPtr)
 	switch(menuPtr->menuNum) {
 		case MENU_BRIGHTNESS:
 //			set_brightness(*menuPtr->setting);
-      set_brightness(g_brightness);
+      set_brightness(globals.brightness);
 			break;
 		case MENU_VOL:
 			//piezo_init();
@@ -104,10 +105,10 @@ void menu_action(menu_item * menuPtr)
 		case MENU_DATEYEAR:
 		case MENU_DATEMONTH:
 		case MENU_DATEDAY:
-			//set_date(g_dateyear, g_datemonth, g_dateday);
+			//set_date(globals.dateyear, globals.datemonth, globals.dateday);
 			break;
 		case MENU_GPS_ENABLE:
-			gps_init(g_gps_enabled);  // change baud rate
+			gps_init(globals.gps_enabled);  // change baud rate
 			break;
 		case MENU_RULE0:
 		case MENU_RULE1:
@@ -120,8 +121,8 @@ void menu_action(menu_item * menuPtr)
 		case MENU_RULE8:
 		case MENU_DST_ENABLE:
 			//g_DST_updated = false;  // allow automatic DST adjustment again
-			//DSTinit(tm_, g_DST_Rules);  // re-compute DST start, end for new data
-			//setDSToffset(g_DST_mode);
+			//DSTinit(tm_, globals.DST_Rules);  // re-compute DST start, end for new data
+			//setDSToffset(globals.DST_mode);
 			break;
 		case MENU_TZH:
 		case MENU_TZM:
@@ -149,7 +150,7 @@ void menu_enable(menu_number num, uint8_t enable)
 }
 
 // workaround: Arduino avr-gcc toolchain is missing eeprom_update_byte
-#define eeprom_update_byte eeprom_write_byte
+//#define eeprom_update_byte eeprom_write_byte
 
 void menu(uint8_t btn)
 {
@@ -214,12 +215,13 @@ void menu(uint8_t btn)
 				if (valNum > menuPtr->hiLimit)
 					valNum = menuPtr->loLimit;
 				*menuPtr->setting = valNum;
-				if (menuPtr->eeAddress != NULL) {
-					if (menuPtr->menuNum == MENU_TZH)
-						eeprom_update_byte(menuPtr->eeAddress, valNum+12);
-					else
-						eeprom_update_byte(menuPtr->eeAddress, valNum);
-				}
+				// if (menuPtr->eeAddress != NULL) {
+					// if (menuPtr->menuNum == MENU_TZH)
+						// eeprom_update_byte(menuPtr->eeAddress, valNum+12);
+					// else
+						// eeprom_update_byte(menuPtr->eeAddress, valNum);
+				// }
+				save_globals();
 				menu_action(menuPtr);
 			}
 			show_setting_int(shortName, longName, valNum, show);
@@ -233,8 +235,9 @@ void menu(uint8_t btn)
 			if (update) {
 				valNum = !valNum;
 				*menuPtr->setting = valNum;
-				if (menuPtr->eeAddress != NULL) 
-					eeprom_update_byte(menuPtr->eeAddress, valNum);
+//				if (menuPtr->eeAddress != NULL) 
+//					eeprom_update_byte(menuPtr->eeAddress, valNum);
+				save_globals();
 				menu_action(menuPtr);
 			}
 			if (valNum)
@@ -264,8 +267,9 @@ void menu(uint8_t btn)
 				strncpy_P(valStr,(char *)&menuValues[idx].valName,4);  // item name
 				valStr[4] = '\0';  // null terminate string
 				*menuPtr->setting = valNum;
-				if (menuPtr->eeAddress != NULL) 
-					eeprom_update_byte(menuPtr->eeAddress, valNum);
+//				if (menuPtr->eeAddress != NULL) 
+//					eeprom_update_byte(menuPtr->eeAddress, valNum);
+				save_globals();
 				menu_action(menuPtr);
 			}
 			show_setting_string(shortName, longName, valStr, show);

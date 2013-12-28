@@ -33,7 +33,6 @@ typedef struct {
 	const char shortName[4];
 	const char longName[5];
 	int8_t* setting;
-	uint8_t* eeAddress;
 	const int8_t loLimit;  // low limit for num
 	const int8_t hiLimit;  // high limit for num, # of values for list
 	const menu_value* menuList[];  // list of menu choices
@@ -45,7 +44,6 @@ typedef struct {
 	char shortName[4];
 	char longName[5];
 	int8_t* setting;
-	uint8_t* eeAddress;
 	int8_t loLimit;  // low limit for num
 	int8_t hiLimit;  // high limit for num, # of values for list
 	menu_value* menuList[];  // list of menu choices
@@ -72,6 +70,8 @@ typedef enum {  // no ifdefs, no harm in defining unused items
 	MENU_AUTODIM_LEVEL1,
 	MENU_AUTODIM_HOUR2,
 	MENU_AUTODIM_LEVEL2,
+	MENU_AUTODIM_HOUR3,
+	MENU_AUTODIM_LEVEL3,
 	MENU_BRIGHTNESS,
 	MENU_DATE,
 	MENU_DATEYEAR,
