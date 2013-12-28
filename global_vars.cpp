@@ -67,10 +67,10 @@ int8_t g_AutoDate;
 #endif
 #ifdef HAVE_AUTO_DIM
 int8_t g_AutoDim;
-int8_t g_AutoDimHour;
-int8_t g_AutoDimLevel;
-int8_t g_AutoBrtHour;
-int8_t g_AutoBrtLevel;
+int8_t g_AutoDimHour1;
+int8_t g_AutoDimLevel1;
+int8_t g_AutoDimHour2;
+int8_t g_AutoDimLevel2;
 #endif
 uint8_t g_has_dots; // can current shield show dot (decimal points)
 
@@ -118,10 +118,10 @@ void clean_eeprom()
 #endif
 #ifdef HAVE_AUTO_DIM
     eeprom_update_byte((uint8_t *)EE_AutoDim, 0);    
-    eeprom_update_byte((uint8_t *)EE_AutoDimHour, 22);  // dim at 10 pm
-    eeprom_update_byte((uint8_t *)EE_AutoDimLevel, 2);  // dim to level 2
-    eeprom_update_byte((uint8_t *)EE_AutoBrtHour, 7);  // bright at 7 am
-    eeprom_update_byte((uint8_t *)EE_AutoBrtLevel, 8);  // bright to level 8
+    eeprom_update_byte((uint8_t *)EE_AutoDimHour1, 22);  // dim at 10 pm
+    eeprom_update_byte((uint8_t *)EE_AutoDimLevel1, 2);  // dim to level 2
+    eeprom_update_byte((uint8_t *)EE_AutoDimHour2, 7);  // bright at 7 am
+    eeprom_update_byte((uint8_t *)EE_AutoDimLevel2, 8);  // bright to level 8
 #endif
 #ifdef HAVE_AUTO_DST
 #ifdef DST_NSW
@@ -212,10 +212,10 @@ void globals_init(void)
 #endif
 #ifdef HAVE_AUTO_DIM
 	g_AutoDim = eeprom_read_byte((uint8_t *)EE_AutoDim);
-	g_AutoDimHour = eeprom_read_byte((uint8_t *)EE_AutoDimHour);
-	g_AutoDimLevel = eeprom_read_byte((uint8_t *)EE_AutoDimLevel);
-	g_AutoBrtHour = eeprom_read_byte((uint8_t *)EE_AutoBrtHour);
-	g_AutoBrtLevel = eeprom_read_byte((uint8_t *)EE_AutoBrtLevel);
+	g_AutoDimHour1 = eeprom_read_byte((uint8_t *)EE_AutoDimHour1);
+	g_AutoDimLevel1 = eeprom_read_byte((uint8_t *)EE_AutoDimLevel1);
+	g_AutoDimHour2 = eeprom_read_byte((uint8_t *)EE_AutoDimHour2);
+	g_AutoDimLevel2 = eeprom_read_byte((uint8_t *)EE_AutoDimLevel2);
 #endif
 	g_dateyear = eeprom_read_byte((uint8_t *)EE_dateyear);
 	g_datemonth = eeprom_read_byte((uint8_t *)EE_datemonth);

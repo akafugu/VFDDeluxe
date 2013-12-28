@@ -913,6 +913,17 @@ void loop()
 		if (g_alarm_switch && rtc.checkAlarm())
 			start_alarm();
 
+#ifdef HAVE_AUTO_DIM			
+		if ((g_AutoDim) && (tt->min == 0) && (tt->sec == 0))  {  // Auto Dim enabled?
+			if (tt->hour == g_AutoDimHour1) {
+				set_brightness(g_AutoDimLevel1);
+			}
+			else if (tt->hour == g_AutoDimHour2) {
+				set_brightness(g_AutoDimLevel2);
+			}
+		}
+#endif
+
 #ifdef HAVE_GPS
         if (g_gps_enabled && g_menu_state == STATE_CLOCK) {
             if (gpsDataReady()) {

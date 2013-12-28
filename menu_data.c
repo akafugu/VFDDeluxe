@@ -35,10 +35,10 @@ const PROGMEM menu_item menuRegion = {MENU_REGION,menu_list+menu_isSub,"REGN","R
 #ifdef HAVE_AUTO_DIM
 const PROGMEM menu_item menuAdim_ = {MENU_AUTODIM,menu_hasSub,"ADM","ADIM ",NULL,NULL,0,0,{NULL}};
 const PROGMEM menu_item menuAdim = {MENU_AUTODIM_ENABLE,menu_offOn+menu_isSub,"ADIM","ADIM",&g_AutoDim,EE_AutoDim,0,2,{NULL}};
-const PROGMEM menu_item menuAdimHr = {MENU_AUTODIM_HOUR,menu_num+menu_isSub,"ADMH","ADMH",&g_AutoDimHour,EE_AutoDimHour,0,23,{NULL}};
-const PROGMEM menu_item menuAdimLvl = {MENU_AUTODIM_LEVEL,menu_num+menu_isSub,"ADML","ADML",&g_AutoDimLevel,EE_AutoDimLevel,0,10,{NULL}};
-const PROGMEM menu_item menuAbrtHr = {MENU_AUTOBRT_HOUR,menu_num+menu_isSub,"ABTH","ABTH",&g_AutoBrtHour,EE_AutoBrtHour,0,23,{NULL}};
-const PROGMEM menu_item menuAbrtLvl = {MENU_AUTOBRT_LEVEL,menu_num+menu_isSub,"ABTL","ABTL",&g_AutoBrtLevel,EE_AutoBrtLevel,1,10,{NULL}};
+const PROGMEM menu_item menuAdimHr1 = {MENU_AUTODIM_HOUR1,menu_num+menu_isSub,"ADH1","ADH1",&g_AutoDimHour1,EE_AutoDimHour1,0,23,{NULL}};
+const PROGMEM menu_item menuAdimLvl1 = {MENU_AUTODIM_LEVEL1,menu_num+menu_isSub,"ADL1","ADL1",&g_AutoDimLevel1,EE_AutoDimLevel1,0,10,{NULL}};
+const PROGMEM menu_item menuAdimHr2 = {MENU_AUTODIM_HOUR2,menu_num+menu_isSub,"ADH2","ADH2",&g_AutoDimHour2,EE_AutoDimHour2,0,23,{NULL}};
+const PROGMEM menu_item menuAdimLvl2 = {MENU_AUTODIM_LEVEL2,menu_num+menu_isSub,"ADL2","ADL2",&g_AutoDimLevel2,EE_AutoDimLevel2,1,10,{NULL}};
 #endif
 #ifdef HAVE_SET_DATE						
 const PROGMEM menu_item menuDate_ = {MENU_DATE,menu_hasSub,"DAT","DATE ",NULL,NULL,0,0,{NULL}};
@@ -98,7 +98,7 @@ const PROGMEM menu_item* PROGMEM const menuItems[] = {
 	&menuAdate_, &menuAdate, &menuRegion,
 #endif
 #ifdef HAVE_AUTO_DIM
-	&menuAdim_,	&menuAdim, &menuAdimHr, &menuAdimLvl, &menuAbrtHr, &menuAbrtLvl,
+	&menuAdim_,	&menuAdim, &menuAdimHr1, &menuAdimLvl1, &menuAdimHr2, &menuAdimLvl2,
 #endif
 	&menuBrt, 
 #ifdef HAVE_SET_DATE

@@ -70,10 +70,10 @@ typedef enum {
 #endif
 #ifdef HAVE_AUTO_DIM
 #define EE_AutoDim 22
-#define EE_AutoDimHour 23
-#define EE_AutoDimLevel 24
-#define EE_AutoBrtHour 25
-#define EE_AutoBrtLevel 26
+#define EE_AutoDimHour1 23
+#define EE_AutoDimLevel1 24
+#define EE_AutoDimHour2 25
+#define EE_AutoDimLevel2 26
 #endif
 #ifdef HAVE_AUTO_DST
 #define EE_DST_Rule0 27  // DST start month
@@ -130,10 +130,10 @@ extern int8_t g_AutoDate;
 #endif
 #ifdef HAVE_AUTO_DIM
 extern int8_t g_AutoDim;
-extern int8_t g_AutoDimHour;
-extern int8_t g_AutoDimLevel;
-extern int8_t g_AutoBrtHour;
-extern int8_t g_AutoBrtLevel;
+extern int8_t g_AutoDimHour1;
+extern int8_t g_AutoDimLevel1;
+extern int8_t g_AutoDimHour2;
+extern int8_t g_AutoDimLevel2;
 #endif
 extern uint8_t g_has_dots; // can current shield show dot (decimal points)
 
