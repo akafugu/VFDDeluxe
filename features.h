@@ -84,19 +84,19 @@ enum shield_t {
 #define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY NO
 #define FEATURE_GPS YES
-//#define FEATURE_GPS NO
+#define FEATURE_GPS_DEBUG YES
 #define FEATURE_RGB_BACKLIGHT NO
 #define FEATURE_LOWERCASE YES
 #define FEATURE_ALTERNATE_FONT YES
 #define FEATURE_SERIAL_DEBUG YES // Wait for serial console to open before booting
 #define FEATURE_SERIAL_DEBUG NO
 #define FEATURE_FLW YES
-//#define FEATURE_FLW NO // wbp
 #define FEATURE_RTC_SQW YES
-#define FEATURE_RTC_SQW NO
+#define FEATURE_RTC_SQW NO // wbp
 #define FEATURE_AUTO_DATE YES
 #define FEATURE_AUTO_DST YES
 #define FEATURE_AUTO_DIM YES
+#define FEATURE_SET_DATE YES // set date in menu?
 
 // Support for generic displays (excludes the standard shields)
 #define FEATURE_7SEG_SUPPORT NO
@@ -188,6 +188,16 @@ enum shield_t {
 
 #if FEATURE_GPS == YES
 #  define HAVE_GPS
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_GPS_DEBUG) || FEATURE_GPS_DEBUG < NO || FEATURE_GPS_DEBUG > YES
+#  error Must define FEATURE_GPS_DEBUG to be YES or NO
+#endif
+
+#if FEATURE_GPS_DEBUG == YES
+#  define HAVE_GPS_DEBUG
 #endif
 
 ///////////////////////////////////////////
@@ -309,6 +319,16 @@ enum shield_t {
 
 #if FEATURE_AUTO_DIM == YES
 #  define HAVE_AUTO_DIM
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_SET_DATE) || FEATURE_SET_DATE < NO || FEATURE_SET_DATE > YES
+#  error Must define FEATURE_SET_DATE to be YES or NO
+#endif
+
+#if FEATURE_SET_DATE == YES
+#  define HAVE_SET_DATE
 #endif
 
 ///////////////////////////////////////////

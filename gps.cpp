@@ -55,20 +55,21 @@ extern WireRtcLib rtc;
 
 void setRTCTime(time_t t)
 {
-    tmElements_t tm;
-    breakTime(t, &tm);
-    
-    WireRtcLib::tm temp;
-
-    temp.hour = tm.Hour;
-    temp.min  = tm.Minute;
-    temp.sec  = tm.Second;
-    temp.mday = tm.Day;
-    temp.mon  = tm.Month;
-    temp.year = (1970+tm.Year)-2000;
-    temp.wday = tm.Wday;
-    
-    rtc.setTime(&temp);
+	tmElements_t tm;
+	breakTime(t, &tm); // break time_t into elements
+  WireRtcLib::tm temp;
+	temp.hour = tm.Hour;
+	temp.min  = tm.Minute;
+	temp.sec  = tm.Second;
+	temp.mday = tm.Day;
+	temp.mon  = tm.Month;
+	temp.year = (1970+tm.Year)-2000;
+	temp.wday = tm.Wday;
+	rtc.setTime(&temp);
+	globals.dateyear = temp.year;
+	globals.datemonth = temp.mon;
+	globals.dateday = temp.mday;
+	save_globals();
 }
 
 void GPSread(void) 
@@ -256,14 +257,14 @@ void parseGPSdata(char *gpsBuffer) {
 			} // if fix status is A
 		} // if checksums match
 		else  // checksums do not match
-			globals.gps_cks_errors++;  // increment error count
+			g_gps_cks_errors++;  // increment error count
 		return;
 GPSerror1:
-		globals.gps_parse_errors++;  // increment error count
+		g_gps_parse_errors++;  // increment error count
 //	  tone(PinMap::piezo, 2093, 100);  // test tone
 		goto GPSerror2a;
 GPSerror2:
-		globals.gps_time_errors++;  // increment error count
+		g_gps_time_errors++;  // increment error count
 GPSerror2a:
 		//beep(2093,1);  // error signal - I'm leaving this in for now /wm
 		flash_display(200);  // flash display to show GPS error

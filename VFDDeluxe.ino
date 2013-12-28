@@ -38,21 +38,23 @@
  * Refactor FLW
  * Add menu items for GPS etc.
  * create structure for globals, save/update to EE
+ * fix default DST rules
+ * update menu date vars from GPS
 */
 
 /*
  * TODO:
+ * fix Auto DST
+ * Holiday messages
  * FLW mode when FLW is on/full
  * IV-18/8+ digit improvements:
  * - FLW movement
  * - Show "Alarm off" on one screen
- 
  * - dot blinks when showing temperature 
  * fix button 1 to show date, flw, temp, press, etc
  * reveille alarm?
  * scroll time with date
  * add GPS "sanity check"
- * fix default DST rules (where did they go?)
  * Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
  * serial slave feature
  * Holiday messages?
@@ -471,20 +473,6 @@ void update_display()
     else {
         show_time(tt, globals.clock_24h, display_mode);
     }
-}
-
-void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
-  tt = rtc.getTime();
-  tt->year = yy;
-  tt->mon = mm;
-  tt->mday = dd;
-  rtc.setTime(tt);
-  
-#ifdef HAVE_AUTO_DST
-  DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end for new date
-  g_DST_updated = false;  // allow automatic DST adjustment again
-  setDSToffset(globals.DST_mode);  // set DSToffset based on new date
-#endif // HAVE_AUTO_DST 
 }
 
 void start_alarm(void)

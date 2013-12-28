@@ -56,10 +56,6 @@ struct __globals
 	uint8_t gps_enabled;
 	int8_t TZ_hour; // could be negative
 	int8_t TZ_minute;
-// debugging counters 
-	uint8_t gps_cks_errors;  // gps checksum error counter
-	uint8_t gps_parse_errors;  // gps parse error counter
-	uint8_t gps_time_errors;  // gps time error counter
 #endif
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 	uint8_t DST_mode;  // DST off, on, auto?
@@ -88,6 +84,12 @@ extern uint8_t g_has_flw; // set to true if there is a four letter word EEPROM a
 extern uint8_t g_gps_updating;  // for signalling GPS update on some displays
 extern uint8_t g_DST_updated;  // DST update flag = allow update only once per day
 extern uint8_t g_has_dots; // can current shield show dot (decimal points)
+#ifdef HAVE_GPS 
+// debugging counters 
+extern uint8_t g_gps_cks_errors;  // gps checksum error counter
+extern uint8_t g_gps_parse_errors;  // gps parse error counter
+extern uint8_t g_gps_time_errors;  // gps time error counter
+#endif
 
 void globals_init(void);
 void save_globals(void);

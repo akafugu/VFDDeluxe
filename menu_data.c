@@ -65,7 +65,7 @@ const PROGMEM menu_item menuRule5 = {MENU_RULE4,menu_num+menu_isSub,"RUL5","RULE
 const PROGMEM menu_item menuRule6 = {MENU_RULE5,menu_num+menu_isSub,"RUL6","RULE6",&globals.DST_Rules[6],1,5,{NULL}};
 const PROGMEM menu_item menuRule7 = {MENU_RULE6,menu_num+menu_isSub,"RUL7","RULE7",&globals.DST_Rules[7],1,23,{NULL}};
 const PROGMEM menu_item menuRule8 = {MENU_RULE7,menu_num+menu_isSub,"RUL8","RULE8",&globals.DST_Rules[8],1,1,{NULL}};
-// offset can't be changed
+// offset can't be changed by the menu???
 #endif
 #if defined HAVE_FLW
 const PROGMEM menu_item menuFLW = {MENU_FLW,menu_offOn,"FLW","FLW",&globals.flw_enabled,0,2,{NULL}};
@@ -77,9 +77,9 @@ const PROGMEM menu_item menuTZh = {MENU_TZH,menu_num+menu_isSub,"TZH","TZ-H",&gl
 const PROGMEM menu_item menuTZm = {MENU_TZM,menu_num+menu_isSub,"TZM","TZ-M",&globals.TZ_minute,0,59,{NULL}};
 #endif
 #if defined HAVE_GPS_DEBUG
-const PROGMEM menu_item menuGPSc = {MENU_GPSC,menu_num+menu_isSub,"GPSC","GPSC",&globals.gps_cks_errors,0,0,{NULL}};
-const PROGMEM menu_item menuGPSp = {MENU_GPSP,menu_num+menu_isSub,"GPSP","GPSP",&globals.gps_parse_errors,0,0,{NULL}};
-const PROGMEM menu_item menuGPSt = {MENU_GPST,menu_num+menu_isSub,"GPST","GPST",&globals.gps_time_errors,0,0,{NULL}};
+const PROGMEM menu_item menuGPSc = {MENU_GPSC,menu_num+menu_isSub,"GPSC","GPSC",&g_gps_cks_errors,0,0,{NULL}};
+const PROGMEM menu_item menuGPSp = {MENU_GPSP,menu_num+menu_isSub,"GPSP","GPSP",&g_gps_parse_errors,0,0,{NULL}};
+const PROGMEM menu_item menuGPSt = {MENU_GPST,menu_num+menu_isSub,"GPST","GPST",&g_gps_time_errors,0,0,{NULL}};
 #endif
 #if defined HAVE_HUMIDITY
 const PROGMEM menu_item menuHumid = {MENU_HUMID,menu_offOn,"HUMI","HUMID",&globals.show_humid,0,2,{NULL}};

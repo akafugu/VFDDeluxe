@@ -25,7 +25,7 @@
 
 #include "global_vars.h"
 
-#define EE_CHECK 31 // change this value if you change EE addresses
+#define EE_CHECK 42 // change this value if you change EE addresses
 #define EE_globals 0 // eeprom address
 
 __globals globals = {
@@ -44,7 +44,6 @@ __globals globals = {
 #ifdef HAVE_GPS
 	false, // gps enabled
 	0, 0, // TZ hour, minute
-	0, 0, 0, // gps debug counters
 #endif
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 	0, 0, // DST mode, offset
@@ -69,16 +68,21 @@ __globals globals = {
 	EE_CHECK,
 };
 
-uint8_t g_gps_updating;  // for signalling GPS update on some displays
-uint8_t g_DST_updated;  // DST update flag = allow update only once per day
-uint8_t g_has_dots; // can current shield show dot (decimal points)
+uint8_t g_gps_updating = false;  // for signalling GPS update on some displays
+uint8_t g_DST_updated = false;  // DST update flag = allow update only once per day
+uint8_t g_has_dots = false; // can current shield show dot (decimal points)
+#ifdef HAVE_GPS
+uint8_t g_gps_cks_errors = 0;  // gps checksum error counter
+uint8_t g_gps_parse_errors = 0;  // gps parse error counter
+uint8_t g_gps_time_errors = 0;  // gps time error counter
+#endif
 
 void save_globals()
 {
-	for (unsigned int t=0; t<sizeof(globals); t++) {
-		uint8_t b1 = eeprom_read_byte((uint8_t *)EE_globals + t);
-		if (b1 != *((char *) &globals + t))
-			eeprom_write_byte((uint8_t *)EE_globals + t, *((char*)&globals + t));
+	for (unsigned int p=0; p<sizeof(globals); p++) {
+		uint8_t b1 = eeprom_read_byte((uint8_t *)EE_globals + p);
+		if (b1 != *((char *) &globals + p))
+			eeprom_write_byte((uint8_t *)EE_globals + p, *((char*)&globals + p));
 	}
 }
 
@@ -86,11 +90,13 @@ void globals_init(void)
 {
 	uint8_t ee_check1 = eeprom_read_byte((uint8_t *)EE_globals + (&globals.EEcheck1-&globals.EEcheck1));
 	uint8_t ee_check2 = eeprom_read_byte((uint8_t *)EE_globals + (&globals.EEcheck2-&globals.EEcheck1));
-	if ((ee_check1!=EE_CHECK) || (ee_check2!=EE_CHECK)) {
-		for (unsigned int t=0; t<sizeof(globals); t++) { // copy globals structure to EE memory
-			eeprom_write_byte((uint8_t *)EE_globals + t, *((char*)&globals + t));
+	if ((ee_check1!=EE_CHECK) || (ee_check2!=EE_CHECK)) { // has EE been initialized?
+		for (unsigned int p=0; p<sizeof(globals); p++) { // copy globals structure to EE memory
+			eeprom_write_byte((uint8_t *)EE_globals + p, *((char*)&globals + p));
 		}
 	}
-	for (unsigned int t=0; t<sizeof(globals); t++) // read gloabls from EE
-		*((char*)&globals + t) = eeprom_read_byte((uint8_t *)EE_globals + t);
+	else { // read globals from EE
+		for (unsigned int p=0; p<sizeof(globals); p++) // read gloabls from EE
+			*((char*)&globals + p) = eeprom_read_byte((uint8_t *)EE_globals + p);
+	}
 }

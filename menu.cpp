@@ -75,12 +75,12 @@ void setDSToffset(uint8_t mode) {
 #ifdef HAVE_SET_DATE
 void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
 	tt = rtc.getTime();  // refresh current time 
-        tt->year = yy;
-        tt->mon = mm;
-        tt->mday = dd;
-	//rtc_set_time(tm_);
+	tt->year = yy;
+	tt->mon = mm;
+	tt->mday = dd;
+	rtc.setTime(tt);
 #ifdef HAVE_AUTO_DST
-	DSTinit(tm_, globals.DST_Rules);  // re-compute DST start, end for new date
+	DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end for new date
 	g_DST_updated = false;  // allow automatic DST adjustment again
 	setDSToffset(globals.DST_mode);  // set DSToffset based on new date
 #endif
@@ -100,14 +100,14 @@ void menu_action(menu_item * menuPtr)
 			//piezo_init();
 			//beep(1000, 1);
 			break;
+#ifdef HAVE_SET_DATE						
 		case MENU_DATEYEAR:
 		case MENU_DATEMONTH:
 		case MENU_DATEDAY:
-			//set_date(globals.dateyear, globals.datemonth, globals.dateday);
+			set_date(globals.dateyear, globals.datemonth, globals.dateday);
 			break;
-		case MENU_GPS_ENABLE:
-			gps_init(globals.gps_enabled);  // change baud rate
-			break;
+#endif
+#ifdef HAVE_AUTO_DST
 		case MENU_RULE0:
 		case MENU_RULE1:
 		case MENU_RULE2:
@@ -117,15 +117,23 @@ void menu_action(menu_item * menuPtr)
 		case MENU_RULE6:
 		case MENU_RULE7:
 		case MENU_RULE8:
+#endif
+#if defined HAVE_GPS || defined HAVE_AUTO_DST
 		case MENU_DST_ENABLE:
-			//g_DST_updated = false;  // allow automatic DST adjustment again
-			//DSTinit(tm_, globals.DST_Rules);  // re-compute DST start, end for new data
-			//setDSToffset(globals.DST_mode);
+			g_DST_updated = false;  // allow automatic DST adjustment again
+			DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end for new data
+			setDSToffset(globals.DST_mode);
+			break;
+#endif		
+#if defined HAVE_GPS
+		case MENU_GPS_ENABLE:
+			gps_init(globals.gps_enabled);  // change baud rate
 			break;
 		case MENU_TZH:
 		case MENU_TZM:
 			tGPSupdate = 0;  // allow GPS to refresh
 			break;
+#endif
 	}
 }
 
