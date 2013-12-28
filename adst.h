@@ -32,9 +32,6 @@
 #define SECS_PER_HOUR (3600UL)
 #define SECS_PER_DAY  (SECS_PER_HOUR * 24UL)
 
-void breakTime(unsigned long time, WireRtcLib::tm* tm);
-unsigned long makeTime(WireRtcLib::tm* tm);
-
 char* dst_setting(uint8_t dst);
 uint8_t dotw(uint16_t year, uint8_t month, uint8_t day);
 void DSTinit(WireRtcLib::tm* te, int8_t rules[9]);

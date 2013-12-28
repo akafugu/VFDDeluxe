@@ -25,7 +25,7 @@
 //#include <util/delay.h>
 #include "gps.h"
 #include "display.h"
-#include "Time.h"
+#include "time.h"  // use ours, not Arduino's
 
 #include <WireRtcLib.h>
 
@@ -159,7 +159,7 @@ char * ntok ( char *ptr ) {
 // 0         1         2         3         4         5         6         7
 // 0123456789012345678901234567890123456789012345678901234567890123456789012
 //    0     1       2    3    4     5    6   7     8      9     10  11 12
-void parseGPSdata(char *gpsBuffer) {  
+void parseGPSdata(char *gpsBuffer) {
 	time_t tNow, tDelta;
 	tmElements_t tm;
 	uint8_t gpsCheck1, gpsCheck2;  // checksums

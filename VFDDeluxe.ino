@@ -198,10 +198,10 @@ void initialize(void)
   rtc.begin();
   rtc.runClock(true);
 
-  if (rtc.isDS3231())
-    Serial.println("Clock detected as DS3231");
-  else
-    Serial.println("Clock detected as DS1307");
+//  if (rtc.isDS3231())
+//    Serial.println("Clock detected as DS3231");
+//  else
+//    Serial.println("Clock detected as DS1307");
 
   //rtc.setTime_s(16, 10, 0);
   //rtc_set_alarm_s(17,0,0);

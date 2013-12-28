@@ -1,6 +1,6 @@
 /*
  * Menu for VFD Modular Clock
- * (C) 2012 William B Phelps
+ * (C) 2012-2013 William B Phelps
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,8 @@
 #include "display.h"
 #include "gps.h"
 #include "menu.h"
-#include "time.h"
+//#include "time.h"
+#define time_t unsigned long
 #include "adst.h"
 
 //void beep(uint16_t freq, uint8_t times);
