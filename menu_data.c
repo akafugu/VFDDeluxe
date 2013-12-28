@@ -3,7 +3,6 @@
 
 #include <arduino.h>
 #include <util/delay.h>
-#include <avr/eeprom.h>
 #include <avr/pgmspace.h>
 #include <string.h>
 #include <stdlib.h>

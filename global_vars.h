@@ -51,35 +51,35 @@ struct __globals
 	uint8_t dateday;
 	uint8_t alarmtype;
 	uint8_t snooze_enabled;
-	int8_t flw_enabled;
+	uint8_t flw_enabled;
 #ifdef HAVE_GPS 
-	int8_t gps_enabled;
-	int8_t TZ_hour;
+	uint8_t gps_enabled;
+	int8_t TZ_hour; // could be negative
 	int8_t TZ_minute;
 // debugging counters 
-	int8_t gps_cks_errors;  // gps checksum error counter
-	int8_t gps_parse_errors;  // gps parse error counter
-	int8_t gps_time_errors;  // gps time error counter
+	uint8_t gps_cks_errors;  // gps checksum error counter
+	uint8_t gps_parse_errors;  // gps parse error counter
+	uint8_t gps_time_errors;  // gps time error counter
 #endif
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
-	int8_t DST_mode;  // DST off, on, auto?
+	uint8_t DST_mode;  // DST off, on, auto?
 	int8_t DST_offset;  // DST offset in Hours
 #endif
 #ifdef HAVE_AUTO_DST  // DST rules
-	int8_t DST_Rules[9];
+	uint8_t DST_Rules[9];
 #endif
 #ifdef HAVE_AUTO_DATE
 	date_format_t date_format;
-	int8_t AutoDate;
+	uint8_t AutoDate;
 #endif
 #ifdef HAVE_AUTO_DIM
-	int8_t AutoDim;
-	int8_t AutoDimHour1;
-	int8_t AutoDimLevel1;
-	int8_t AutoDimHour2;
-	int8_t AutoDimLevel2;
-	int8_t AutoDimHour3;
-	int8_t AutoDimLevel3;
+	uint8_t AutoDim;
+	uint8_t AutoDimHour1;
+	uint8_t AutoDimLevel1;
+	uint8_t AutoDimHour2;
+	uint8_t AutoDimLevel2;
+	uint8_t AutoDimHour3;
+	uint8_t AutoDimLevel3;
 #endif
 	uint8_t EEcheck2;
 };

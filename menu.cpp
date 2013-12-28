@@ -16,7 +16,6 @@
 #include "global.h"
 
 #include <util/delay.h>
-#include <avr/eeprom.h>
 #include <avr/pgmspace.h>
 #include <string.h>
 #include <stdlib.h>
@@ -67,7 +66,6 @@ void setDSToffset(uint8_t mode) {
 	//rtc_set_time_t(tNow);  // adjust RTC
 
 	globals.DST_offset = newOffset;
-	//eeprom_update_byte(&b_DST_offset, globals.DST_offset);
 	save_globals();
 	g_DST_updated = true;
 	// save DST_updated in ee ???
@@ -149,9 +147,6 @@ void menu_enable(menu_number num, uint8_t enable)
 	}
 }
 
-// workaround: Arduino avr-gcc toolchain is missing eeprom_update_byte
-//#define eeprom_update_byte eeprom_write_byte
-
 void menu(uint8_t btn)
 {
 //    Serial.print("menu("); Serial.print(btn); Serial.println(")");
@@ -215,12 +210,6 @@ void menu(uint8_t btn)
 				if (valNum > menuPtr->hiLimit)
 					valNum = menuPtr->loLimit;
 				*menuPtr->setting = valNum;
-				// if (menuPtr->eeAddress != NULL) {
-					// if (menuPtr->menuNum == MENU_TZH)
-						// eeprom_update_byte(menuPtr->eeAddress, valNum+12);
-					// else
-						// eeprom_update_byte(menuPtr->eeAddress, valNum);
-				// }
 				save_globals();
 				menu_action(menuPtr);
 			}
@@ -235,8 +224,6 @@ void menu(uint8_t btn)
 			if (update) {
 				valNum = !valNum;
 				*menuPtr->setting = valNum;
-//				if (menuPtr->eeAddress != NULL) 
-//					eeprom_update_byte(menuPtr->eeAddress, valNum);
 				save_globals();
 				menu_action(menuPtr);
 			}
@@ -267,8 +254,6 @@ void menu(uint8_t btn)
 				strncpy_P(valStr,(char *)&menuValues[idx].valName,4);  // item name
 				valStr[4] = '\0';  // null terminate string
 				*menuPtr->setting = valNum;
-//				if (menuPtr->eeAddress != NULL) 
-//					eeprom_update_byte(menuPtr->eeAddress, valNum);
 				save_globals();
 				menu_action(menuPtr);
 			}

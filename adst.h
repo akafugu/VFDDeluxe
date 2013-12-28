@@ -34,8 +34,8 @@
 
 char* dst_setting(uint8_t dst);
 uint8_t dotw(uint16_t year, uint8_t month, uint8_t day);
-void DSTinit(WireRtcLib::tm* te, int8_t rules[9]);
-uint8_t getDSToffset(WireRtcLib::tm* te, int8_t rules[9]);
+void DSTinit(WireRtcLib::tm* te, uint8_t rules[9]);
+uint8_t getDSToffset(WireRtcLib::tm* te, uint8_t rules[9]);
 
 #endif // HAVE_AUTO_DST
 #endif // ADST_H

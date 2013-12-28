@@ -73,16 +73,6 @@ uint8_t g_gps_updating;  // for signalling GPS update on some displays
 uint8_t g_DST_updated;  // DST update flag = allow update only once per day
 uint8_t g_has_dots; // can current shield show dot (decimal points)
 
-// workaround: Arduino avr-gcc toolchain is missing eeprom_update_byte
-#define eeprom_update_byte eeprom_write_byte
-
-void init_globals()
-{
-	for (unsigned int t=0; t<sizeof(globals); t++) {
-		eeprom_write_byte((uint8_t *)EE_globals + t, *((char*)&globals + t));
-	}
-}
-
 void save_globals()
 {
 	for (unsigned int t=0; t<sizeof(globals); t++) {
@@ -97,8 +87,10 @@ void globals_init(void)
 	uint8_t ee_check1 = eeprom_read_byte((uint8_t *)EE_globals + (&globals.EEcheck1-&globals.EEcheck1));
 	uint8_t ee_check2 = eeprom_read_byte((uint8_t *)EE_globals + (&globals.EEcheck2-&globals.EEcheck1));
 	if ((ee_check1!=EE_CHECK) || (ee_check2!=EE_CHECK)) {
-		init_globals();
+		for (unsigned int t=0; t<sizeof(globals); t++) { // copy globals structure to EE memory
+			eeprom_write_byte((uint8_t *)EE_globals + t, *((char*)&globals + t));
+		}
 	}
-	for (unsigned int t=0; t<sizeof(globals); t++)
+	for (unsigned int t=0; t<sizeof(globals); t++) // read gloabls from EE
 		*((char*)&globals + t) = eeprom_read_byte((uint8_t *)EE_globals + t);
 }

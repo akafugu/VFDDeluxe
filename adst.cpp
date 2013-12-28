@@ -75,7 +75,7 @@ long DSTseconds(uint16_t year, uint8_t month, uint8_t doftw, uint8_t week, uint8
   return yearSeconds(year,month,day,hour,0,0);  // seconds til DST event this year
 }
 
-void DSTinit(WireRtcLib::tm* te, int8_t rules[9])
+void DSTinit(WireRtcLib::tm* te, uint8_t rules[9])
 {
 //  Serial.println("DSTinit");  // wbp debug
   uint16_t yr = 2000 + te->year;  // Year as 20yy; te.Year is not 1970 based
@@ -90,7 +90,7 @@ void DSTinit(WireRtcLib::tm* te, int8_t rules[9])
 // N is which occurrence of DOTW
 // Current US Rules: March, Sunday, 2nd, 2am, November, Sunday, 1st, 2 am, 1 hour
 // 		3,1,2,2,  11,1,1,2,  1
-uint8_t getDSToffset(WireRtcLib::tm* te, int8_t rules[9])
+uint8_t getDSToffset(WireRtcLib::tm* te, uint8_t rules[9])
 {
   uint16_t yr = 2000 + te->year;  // Year as 20yy; te.Year is not 1970 based
   // if current time & date is at or past the first DST rule and before the second, return 1
