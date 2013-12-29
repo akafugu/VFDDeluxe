@@ -16,6 +16,7 @@
 #ifndef ADST_H_
 #define ADST_H_
 
+#include "features.h"
 #ifdef HAVE_AUTO_DST
 
 #include <Wire.h>

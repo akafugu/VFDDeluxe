@@ -210,6 +210,7 @@ byte brt[] = {3, 15, 27, 42, 59, 79, 103, 135, 179, 255};
 // fixme: BLANK must always be set to GND when driving Nixies
 void set_brightness(uint8_t brightness) {
 
+	globals.brightness = brightness;  // update global so it stays consistent 16nov12/wbp
   if (brightness > 10) brightness = 10;
   _brightness = brt[brightness-1];
   OCR4D = _brightness;  // set PWM comparand for given brightness 
@@ -1211,6 +1212,7 @@ ISR(TIMER1_COMPA_vect)
     }
 
 #ifdef HAVE_GPS
+	if (globals.gps_enabled)
   GPSread();  // check for data on the serial port every 1 ms
 #endif // HAVE_GPS
 

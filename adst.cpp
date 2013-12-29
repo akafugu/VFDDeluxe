@@ -26,9 +26,9 @@
 #include <WireRtcLib.h>
 #include "adst.h"
 
-uint8_t mDays[]={
+const uint8_t mDays[]={
   31,28,31,30,31,30,31,31,30,31,30,31};
-uint16_t tmDays[]={
+const uint16_t tmDays[]={
   0,31,59,90,120,151,181,212,243,273,304,334}; // Number days at beginning of month if not leap year
 
 long DSTstart, DSTend;  // start and end of DST for this year, in Year Seconds
@@ -77,7 +77,6 @@ long DSTseconds(uint16_t year, uint8_t month, uint8_t doftw, uint8_t week, uint8
 
 void DSTinit(WireRtcLib::tm* te, uint8_t rules[9])
 {
-//  Serial.println("DSTinit");  // wbp debug
   uint16_t yr = 2000 + te->year;  // Year as 20yy; te.Year is not 1970 based
   // seconds til start of DST this year
   DSTstart = DSTseconds(yr, rules[0], rules[1], rules[2], rules[3]);  
@@ -103,7 +102,7 @@ uint8_t getDSToffset(WireRtcLib::tm* te, uint8_t rules[9])
       return(0);  // return 0
   }
   else {  // southern hemisphere
-    if ((seconds_now >= DSTend) || (seconds_now < DSTstart))  // spring ahead 14nov12/wbp
+		if ((seconds_now >= DSTstart) || (seconds_now < DSTend))  // fall ahead
       return(rules[8]);  // return Offset
     else  // fall back
       return(0);  // return 0
@@ -111,4 +110,3 @@ uint8_t getDSToffset(WireRtcLib::tm* te, uint8_t rules[9])
 }
 
 #endif // HAVE_AUTO_DST
-

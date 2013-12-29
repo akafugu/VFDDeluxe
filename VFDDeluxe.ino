@@ -45,7 +45,10 @@
 /*
  * TODO:
  * fix Auto DST
+ * verify GPS vs TZ vs DST
+ * if GPS changes date/time, recompute DST offset???
  * Holiday messages
+ * Menu item length - IV-22 or other 6 tube displays
  * FLW mode when FLW is on/full
  * IV-18/8+ digit improvements:
  * - FLW movement
@@ -256,6 +259,10 @@ void initialize(void)
     // setup UART for GPS
     gps_init(globals.gps_enabled);
 #endif // HAVE_GPS
+#ifdef HAVE_AUTO_DST
+	if (globals.DST_mode)
+		DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end	
+#endif
 
   // initialize button
   // fixme: change depending on HAVE_ROTARY define
@@ -396,15 +403,19 @@ void update_display()
     }
 
 #ifdef HAVE_AUTO_DST
-    if (tt->sec % 10 == 0)  // check DST Offset every 10 seconds (60?)
-        setDSToffset(globals.DST_mode); 
         
-        if ((tt->hour == 0) && (tt->min == 0) && (tt->sec == 0)) {  // MIDNIGHT!
+		if ((tt->hour == 0) && (tt->min == 0) && (tt->sec == 0)) {  // MIDNIGHT!
 //          Serial.println("Midnight");  // wbp debug
-            g_DST_updated = false;
-            if (globals.DST_mode)
-                DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end
-        }
+				g_DST_updated = false;
+				if (globals.DST_mode)
+						DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end
+		}
+
+		if (globals.DST_mode) {
+			  if (tt->sec % 10 == 0)  // check DST Offset every 10 seconds (60?)
+						setDSToffset(globals.DST_mode);
+		}
+				
 #endif // HAVE_AUTO_DST
 
     g_second_dots_on = (g_menu_state == STATE_CLOCK && display_mode == MODE_NORMAL && tt->sec % 2 == 0) ? true : false;
@@ -617,8 +628,8 @@ void loop()
 
 //  if (buttons.b1_keyup)  tone(11, 1000, 10);  
 //  if (buttons.b2_keyup)  tone(11, 1000, 10);  
-  if (buttons.b1_keyup)  tone(PinMap::piezo, 1000, 10);
-  if (buttons.b2_keyup)  tone(PinMap::piezo, 1000, 10);  
+  if (buttons.b1_keyup)  tone(PinMap::piezo, 1000, 5);
+  if (buttons.b2_keyup)  tone(PinMap::piezo, 1000, 5);  
 
 //                if (buttons.b1_keyup)
 //                    Serial.println("Got buttons.b1_keyup");
@@ -777,6 +788,10 @@ void loop()
 				else
 					rtc.setAlarm_s(time_to_set / 60, time_to_set % 60, 0);
 
+#if defined HAVE_AUTO_DST
+				g_DST_updated = false;  // allow automatic DST adjustment again
+#endif
+
 				g_menu_state = STATE_CLOCK;
 			}
 
@@ -881,7 +896,7 @@ void loop()
                             update_display();  // read RTC and display time
                         }    
 #else
-			// read RTC approx ever other time thru loop (every 200ms)
+			// read RTC approx every other time thru loop (every 200ms)
 			static uint8_t cnt = 0;
 			if (++cnt%2) {
 				update_display();  // read RTC and display time
@@ -911,6 +926,9 @@ void loop()
 			}
 			else if (tt->hour == globals.AutoDimHour2) {
 				set_brightness(globals.AutoDimLevel2);
+			}
+			else if (tt->hour == globals.AutoDimHour3) {
+				set_brightness(globals.AutoDimLevel3);
 			}
 		}
 #endif

@@ -27,7 +27,7 @@
 #include "display.h"
 #include "gps.h"
 #include "menu.h"
-//#include "time.h"
+#include "time.h"
 #define time_t unsigned long
 #include "adst.h"
 
@@ -53,18 +53,17 @@ void setDSToffset(uint8_t mode) {
 	adjOffset = newOffset - globals.DST_offset;  // offset delta
 	if (adjOffset == 0)  return;  // nothing to do
 	if (adjOffset > 0)
-//		beep(880, 1);  // spring ahead
-                tone(PinMap::piezo, 880, 10);  // spring ahead
+		tone(PinMap::piezo, 1760, 100);  // spring ahead
 	else
-//		beep(440, 1);  // fall back
-                tone(PinMap::piezo, 440, 10);  // fall back
-
-	time_t tNow = 0; // fixme rtc_get_time_t();  // fetch current time from RTC as time_t
-
-	tNow += adjOffset * SECS_PER_HOUR;  // add or subtract new DST offset
-
-	//rtc_set_time_t(tNow);  // adjust RTC
-
+		tone(PinMap::piezo, 880, 100);  // fall back
+	tt = rtc.getTime();  // fetch current time from RTC as time_t
+	
+//	tNow += adjOffset * SECS_PER_HOUR;  // add or subtract new DST offset
+// we rely on the fact that the time change always occurs at a "safe" time, when the date won't change...
+// there may be some locations on the planet where this is not true...
+	tt->hour += adjOffset;
+	rtc.setTime(tt);  // adjust RTC
+	
 	globals.DST_offset = newOffset;
 	save_globals();
 	g_DST_updated = true;
@@ -99,6 +98,7 @@ void menu_action(menu_item * menuPtr)
 		case MENU_VOL:
 			//piezo_init();
 			//beep(1000, 1);
+		  tone(PinMap::piezo, 1000, 200);
 			break;
 #ifdef HAVE_SET_DATE						
 		case MENU_DATEYEAR:
