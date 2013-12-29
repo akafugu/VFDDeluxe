@@ -41,14 +41,14 @@
  * fix default DST rules
  * update menu date vars from GPS
  * add Alarm & Time to Menu
+ * fix Auto DST
 */
 
 /*
  * TODO:
- * fix Auto DST
  * verify GPS vs TZ vs DST
  * if GPS changes date/time, recompute DST offset???
- * Holiday messages
+ * Holiday messages?
  * Menu item length - IV-22 or other 6 tube displays
  * FLW mode when FLW is on/full
  * IV-18/8+ digit improvements:
@@ -61,7 +61,6 @@
  * add GPS "sanity check"
  * Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
  * serial slave feature
- * Holiday messages?
  */
 
 /* WARNING: Arduino/avr compile gives no warning when program + PROGMEM exceeds available memory.
