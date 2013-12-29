@@ -91,6 +91,10 @@ void menu_action(menu_item * menuPtr)
 //    Serial.println("menu_action");
     
 	switch(menuPtr->menuNum) {
+		case MENU_ALARMHOUR:
+		case MENU_ALARMMINUTE:
+			rtc.setAlarm_s(alarm_hour, alarm_minute, 0);
+			break;
 		case MENU_BRIGHTNESS:
 //			set_brightness(*menuPtr->setting);
       set_brightness(globals.brightness);
@@ -134,6 +138,10 @@ void menu_action(menu_item * menuPtr)
 			tGPSupdate = 0;  // allow GPS to refresh
 			break;
 #endif
+		case MENU_TIMEHOUR:
+		case MENU_TIMEMINUTE:
+			rtc.setTime_s(time_hour, time_minute, 0);
+			break;
 	}
 }
 
@@ -157,6 +165,7 @@ void menu_enable(menu_number num, uint8_t enable)
 
 void menu(uint8_t btn)
 {
+uint8_t hour, min, sec;
 //    Serial.print("menu("); Serial.print(btn); Serial.println(")");
 	menu_item * menuPtr = getItem(menuIdx);  // next menu item
 	uint8_t digits = get_digits();
@@ -191,6 +200,12 @@ void menu(uint8_t btn)
 			menuPtr = getItem(menuIdx);
 			update = false;
 			show = false;
+			if (menuPtr->flags & menu_time) { // time item?
+				if (menuPtr->menuNum == MENU_ALARM)
+					rtc.getAlarm_s(&alarm_hour, &alarm_minute, &alarm_second);
+				if (menuPtr->menuNum == MENU_TIME)
+					rtc.getTime_s(&time_hour, &time_minute, &time_second);
+			}
 			break;
 	}
 //        Serial.print("menuIdx "); Serial.println(menuIdx,DEC);
@@ -271,6 +286,30 @@ void menu(uint8_t btn)
 			else
 				show = true;
 		}
+//#ifdef HAVE_MENU_TIME
+// time menu item
+		// else if (menuPtr->flags & menu_time) {
+			// if (show) {
+				// if (menuPtr->menuNum == MENU_ALARM) {
+					// rtc.getAlarm_s(&hour, &min, &sec);
+					// g_time_to_set = hour*60 + min;
+					// if (update)
+						// menu_action(menuPtr);
+				// }
+				// if (menuPtr->menuNum == MENU_TIME) {
+					// rtc.getTime_s(&hour, &min, &sec);
+					// g_time_to_set = hour*60 + min;
+					// if (update)
+						// menu_action(menuPtr);
+				// }
+				// show_time_setting(g_time_to_set / 60, g_time_to_set % 60, 0);
+				// update = true;
+			// }
+			// else {
+				// show_setting_string(shortName, longName, valStr, false);
+			// }	
+		// }
+//#endif
 // top of sub menu item
 		else if (menuPtr->flags & menu_hasSub) {
 			switch (digits) {

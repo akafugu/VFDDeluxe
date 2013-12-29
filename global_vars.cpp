@@ -68,6 +68,10 @@ __globals globals = {
 	EE_CHECK,
 };
 
+//uint8_t alarm_hour, alarm_min, alarm_sec;
+//uint8_t hour, min, sec;
+int16_t g_time_to_set;
+
 uint8_t g_gps_updating = false;  // for signalling GPS update on some displays
 uint8_t g_DST_updated = false;  // DST update flag = allow update only once per day
 uint8_t g_has_dots = false; // can current shield show dot (decimal points)

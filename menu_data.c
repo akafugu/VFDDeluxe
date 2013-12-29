@@ -12,6 +12,8 @@
 #include "menu_data.h"
 
 menu_state_t menu_state;
+uint8_t alarm_hour, alarm_minute, alarm_second;
+uint8_t time_hour, time_minute, time_second;
 
 // MENU VALUES
 //const menu_value menuOffOn[] = { {0, " off"}, {1, "  on"} };
@@ -25,6 +27,11 @@ const PROGMEM menu_value menu_region[] = { {0, " ymd"}, {1, " dmy"}, {2, " mdy"}
 // MENU ITEMS
 //const PROGMEM menu_item menu24h = {MENU_24H,menu_offOn,"24H","24H",&g_menu_dummy,&b_menu_dummy,0,2,{NULL}};
 const PROGMEM menu_item menu24h = {MENU_24H,menu_offOn,"24H","24H",&globals.clock_24h,0,2,{NULL}};
+#ifdef HAVE_MENU_TIME
+const PROGMEM menu_item menuAlarm = {MENU_ALARM,menu_hasSub+menu_time,"ALRM","ALARM",NULL,0,0,{NULL}};
+const PROGMEM menu_item menuAlarmHr = {MENU_ALARMHOUR,menu_num+menu_isSub,"HOUR","HOUR",&alarm_hour,0,23,{NULL}};
+const PROGMEM menu_item menuAlarmMin = {MENU_ALARMMINUTE,menu_num+menu_isSub,"MIN","MIN ",&alarm_minute,0,59,{NULL}};
+#endif
 const PROGMEM menu_item menuBrt = {MENU_BRIGHTNESS,menu_num,"BRIT","BRITE",&globals.brightness,0,10,{NULL}};
 #ifdef HAVE_AUTO_DATE
 const PROGMEM menu_item menuAdate_ = {MENU_AUTODATE,menu_hasSub,"ADT","ADATE",NULL,0,0,{NULL}};
@@ -84,11 +91,16 @@ const PROGMEM menu_item menuGPSt = {MENU_GPST,menu_num+menu_isSub,"GPST","GPST",
 #if defined HAVE_HUMIDITY
 const PROGMEM menu_item menuHumid = {MENU_HUMID,menu_offOn,"HUMI","HUMID",&globals.show_humid,0,2,{NULL}};
 #endif
+#if defined HAVE_PRESSURE
+const PROGMEM menu_item menuPress = {MENU_PRESS,menu_offOn,"PRES","PRESS",&globals.show_press,0,2,{NULL}};
+#endif
 #if defined HAVE_TEMPERATURE
 const PROGMEM menu_item menuTemp = {MENU_TEMP,menu_offOn,"TEMP","TEMP",&globals.show_temp,0,2,{NULL}};
 #endif
-#if defined HAVE_PRESSURE
-const PROGMEM menu_item menuPress = {MENU_PRESS,menu_offOn,"PRES","PRESS",&globals.show_press,0,2,{NULL}};
+#ifdef HAVE_MENU_TIME
+const PROGMEM menu_item menuTime = {MENU_TIME,menu_hasSub+menu_time,"TIME","TIME ",NULL,0,0,{NULL}};
+const PROGMEM menu_item menuTimeHr = {MENU_TIMEHOUR,menu_num+menu_isSub,"HOUR","HOUR",&time_hour,0,23,{NULL}};
+const PROGMEM menu_item menuTimeMin = {MENU_TIMEMINUTE,menu_num+menu_isSub,"MIN","MIN ",&time_minute,0,59,{NULL}};
 #endif
 const PROGMEM menu_item menuVol = {MENU_VOL,menu_list,"VOL","VOL",&globals.volume,0,2,{menu_volume}};
 
@@ -100,6 +112,9 @@ const PROGMEM menu_item* PROGMEM const menuItems[] = {
 #endif
 #ifdef HAVE_AUTO_DIM
 	&menuAdim_,	&menuAdim, &menuAdimHr1, &menuAdimLvl1, &menuAdimHr2, &menuAdimLvl2, &menuAdimHr3, &menuAdimLvl3,
+#endif
+#ifdef HAVE_MENU_TIME
+	&menuAlarm, &menuAlarmHr, &menuAlarmMin,
 #endif
 	&menuBrt, 
 #ifdef HAVE_SET_DATE
@@ -132,6 +147,9 @@ const PROGMEM menu_item* PROGMEM const menuItems[] = {
 #endif
 #if defined HAVE_TEMPERATURE
 	&menuTemp,
+#endif
+#ifdef HAVE_MENU_TIME
+	&menuTime, &menuTimeHr, &menuTimeMin,
 #endif
 	&menuVol,
 	NULL};  // end of list marker must be here

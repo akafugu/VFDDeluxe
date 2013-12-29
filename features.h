@@ -97,6 +97,7 @@ enum shield_t {
 #define FEATURE_AUTO_DST YES
 #define FEATURE_AUTO_DIM YES
 #define FEATURE_SET_DATE YES // set date in menu?
+#define FEATURE_SET_TIME YES // add "TIME" to menu?
 
 // Support for generic displays (excludes the standard shields)
 #define FEATURE_7SEG_SUPPORT NO
@@ -329,6 +330,16 @@ enum shield_t {
 
 #if FEATURE_SET_DATE == YES
 #  define HAVE_SET_DATE
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_SET_TIME) || FEATURE_SET_TIME < NO || FEATURE_SET_TIME > YES
+#  error Must define FEATURE_SET_TIME to be YES or NO
+#endif
+
+#if FEATURE_SET_TIME == YES
+#  define HAVE_MENU_TIME
 #endif
 
 ///////////////////////////////////////////

@@ -80,6 +80,7 @@ struct __globals
 	uint8_t EEcheck2;
 };
 
+extern int16_t g_time_to_set;
 extern uint8_t g_has_flw; // set to true if there is a four letter word EEPROM attached
 extern uint8_t g_gps_updating;  // for signalling GPS update on some displays
 extern uint8_t g_DST_updated;  // DST update flag = allow update only once per day

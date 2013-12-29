@@ -40,6 +40,7 @@
  * create structure for globals, save/update to EE
  * fix default DST rules
  * update menu date vars from GPS
+ * add Alarm & Time to Menu
 */
 
 /*
@@ -616,7 +617,7 @@ void loop()
   unsigned long t1;
   uint8_t hour = 0, min = 0, sec = 0;
   // Counters used when setting time
-  int16_t time_to_set = 0;
+//  int16_t time_to_set = 0;
   uint16_t button_released_timer = 0;
   uint16_t button_speed = 25;
   
@@ -734,22 +735,22 @@ void loop()
 		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
 		//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
 		else if (g_menu_state == STATE_CLOCK && buttons.both_held) {
-                        //Serial.println("Both held");
-                        stop_alarm();  // setting time or alarm, cancel alarm
+			//Serial.println("Both held");
+			stop_alarm();  // setting time or alarm, cancel alarm
     
 			if (g_alarm_switch) {
 				g_menu_state = STATE_SET_ALARM;
 				show_set_alarm();
-                                g_second_dots_on = false;
+				g_second_dots_on = false;
 				rtc.getAlarm_s(&hour, &min, &sec);
-				time_to_set = hour*60 + min;
+				g_time_to_set = hour*60 + min;
 			}
 			else {
 				g_menu_state = STATE_SET_CLOCK;
 				show_set_time();		
-                                g_second_dots_on = false;
+				g_second_dots_on = false;
 				rtc.getTime_s(&hour, &min, &sec);
-				time_to_set = hour*60 + min;
+				g_time_to_set = hour*60 + min;
 			}
 
 			set_blink(true);
@@ -784,9 +785,9 @@ void loop()
 				
 				// fixme: should be different in 12h mode
 				if (g_menu_state == STATE_SET_CLOCK)
-					rtc.setTime_s(time_to_set / 60, time_to_set % 60, 0);
+					rtc.setTime_s(g_time_to_set / 60, g_time_to_set % 60, 0);
 				else
-					rtc.setAlarm_s(time_to_set / 60, time_to_set % 60, 0);
+					rtc.setAlarm_s(g_time_to_set / 60, g_time_to_set % 60, 0);
 
 #if defined HAVE_AUTO_DST
 				g_DST_updated = false;  // allow automatic DST adjustment again
@@ -796,15 +797,15 @@ void loop()
 			}
 
 			// Increase / Decrease time counter
-			if (buttons.b1_repeat) time_to_set+=(button_speed/10);
-			if (buttons.b1_keyup)  time_to_set++;
-			if (buttons.b2_repeat) time_to_set-=(button_speed/10);
-			if (buttons.b2_keyup)  time_to_set--;
+			if (buttons.b1_repeat) g_time_to_set+=(button_speed/10);
+			if (buttons.b1_keyup)  g_time_to_set++;
+			if (buttons.b2_repeat) g_time_to_set-=(button_speed/10);
+			if (buttons.b2_keyup)  g_time_to_set--;
 
-			if (time_to_set  >= 1440) time_to_set = 0;
-			if (time_to_set  < 0) time_to_set = 1439;
+			if (g_time_to_set  >= 1440) g_time_to_set = 0;
+			if (g_time_to_set  < 0) g_time_to_set = 1439;
 
-			show_time_setting(time_to_set / 60, time_to_set % 60, 0);
+			show_time_setting(g_time_to_set / 60, g_time_to_set % 60, 0);
 		}
                 else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
                     pop_display_mode();

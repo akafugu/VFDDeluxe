@@ -17,6 +17,7 @@ typedef enum {
 	menu_num = 0x01,
 	menu_offOn = 0x02,  
 	menu_list = 0x04,
+	menu_time = 0x08,
 	menu_hasSub = 0x10,
 	menu_isSub = 0x20,
 //	menu_disabled = 0x80,
@@ -62,6 +63,9 @@ typedef enum {
 
 typedef enum {  // no ifdefs, no harm in defining unused items
 	MENU_24H = 0,
+	MENU_ALARM,
+	MENU_ALARMHOUR,
+	MENU_ALARMMINUTE,
 	MENU_AUTODATE,
 	MENU_AUTODATE_ENABLE,
 	MENU_AUTODIM,
@@ -100,11 +104,18 @@ typedef enum {  // no ifdefs, no harm in defining unused items
 	MENU_RULE7,
 	MENU_RULE8,
 	MENU_HUMID,
-	MENU_TEMP,
 	MENU_PRESS,
+	MENU_TEMP,
+	MENU_TIME,
+	MENU_TIMEHOUR,
+	MENU_TIMEMINUTE,
+	MENU_TIMESECOND,
 	MENU_VOL,
 	MENU_END  // must be last
 } menu_number;
+
+extern uint8_t alarm_hour, alarm_minute, alarm_second;
+extern uint8_t time_hour, time_minute, time_second;
 
 extern menu_state_t menu_state;
 extern uint8_t menu_disabled[MENU_END];
