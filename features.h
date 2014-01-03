@@ -88,8 +88,8 @@ enum shield_t {
 #define FEATURE_RGB_BACKLIGHT NO
 #define FEATURE_LOWERCASE YES
 #define FEATURE_ALTERNATE_FONT YES
-#define FEATURE_SERIAL_DEBUG YES // Wait for serial console to open before booting
-#define FEATURE_SERIAL_DEBUG NO
+#define FEATURE_SERIAL_DEBUG NO // Wait for serial console to open before booting
+//#define FEATURE_SERIAL_DEBUG YES
 #define FEATURE_FLW YES
 #define FEATURE_RTC_SQW YES
 #define FEATURE_RTC_SQW NO // wbp
@@ -98,6 +98,7 @@ enum shield_t {
 #define FEATURE_AUTO_DIM YES
 #define FEATURE_SET_DATE YES // set date in menu?
 #define FEATURE_SET_TIME YES // add "TIME" to menu?
+#define FEATURE_MESSAGES YES // birthday, etc
 
 // Support for generic displays (excludes the standard shields)
 #define FEATURE_7SEG_SUPPORT NO
@@ -340,6 +341,16 @@ enum shield_t {
 
 #if FEATURE_SET_TIME == YES
 #  define HAVE_MENU_TIME
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_MESSAGES) || FEATURE_MESSAGES < NO || FEATURE_MESSAGES > YES
+#  error Must define FEATURE_MESSAGES to be YES or NO
+#endif
+
+#if FEATURE_MESSAGES == YES
+#  define HAVE_MESSAGES
 #endif
 
 ///////////////////////////////////////////

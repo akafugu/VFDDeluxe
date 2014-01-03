@@ -44,9 +44,9 @@ const PROGMEM menu_item menuAdim = {MENU_AUTODIM_ENABLE,menu_offOn+menu_isSub,"A
 const PROGMEM menu_item menuAdimHr1 = {MENU_AUTODIM_HOUR1,menu_num+menu_isSub,"ADH1","ADH1",&globals.AutoDimHour1,0,23,{NULL}};
 const PROGMEM menu_item menuAdimLvl1 = {MENU_AUTODIM_LEVEL1,menu_num+menu_isSub,"ADL1","ADL1",&globals.AutoDimLevel1,0,10,{NULL}};
 const PROGMEM menu_item menuAdimHr2 = {MENU_AUTODIM_HOUR2,menu_num+menu_isSub,"ADH2","ADH2",&globals.AutoDimHour2,0,23,{NULL}};
-const PROGMEM menu_item menuAdimLvl2 = {MENU_AUTODIM_LEVEL2,menu_num+menu_isSub,"ADL2","ADL2",&globals.AutoDimLevel2,1,10,{NULL}};
+const PROGMEM menu_item menuAdimLvl2 = {MENU_AUTODIM_LEVEL2,menu_num+menu_isSub,"ADL2","ADL2",&globals.AutoDimLevel2,0,10,{NULL}};
 const PROGMEM menu_item menuAdimHr3 = {MENU_AUTODIM_HOUR3,menu_num+menu_isSub,"ADH3","ADH3",&globals.AutoDimHour3,0,23,{NULL}};
-const PROGMEM menu_item menuAdimLvl3 = {MENU_AUTODIM_LEVEL3,menu_num+menu_isSub,"ADL3","ADL3",&globals.AutoDimLevel3,1,10,{NULL}};
+const PROGMEM menu_item menuAdimLvl3 = {MENU_AUTODIM_LEVEL3,menu_num+menu_isSub,"ADL3","ADL3",&globals.AutoDimLevel3,0,10,{NULL}};
 #endif
 #ifdef HAVE_SET_DATE						
 const PROGMEM menu_item menuDate_ = {MENU_DATE,menu_hasSub,"DAT","DATE ",NULL,0,0,{NULL}};

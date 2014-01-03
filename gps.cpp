@@ -188,7 +188,7 @@ void parseGPSdata(char *gpsBuffer) {
 		{
 			gpsCheck1 ^= *ptr;
 			ptr++;
-			if (ptr>(gpsBuffer+GPSBUFFERSIZE)) goto GPSerror1;  // extra sanity check, can't hurt...
+			if (ptr>(gpsBuffer+GPSBUFFERSIZE)) goto GPSerrorP;  // extra sanity check, can't hurt...
 		}
 		// now get the checksum from the string itself, which is in hex
     gpsCheck2 = atoh(*(ptr+1)) * 16 + atoh(*(ptr+2));
@@ -196,49 +196,47 @@ void parseGPSdata(char *gpsBuffer) {
 			//beep(1000, 1);
 			ptr = &gpsBuffer[1];  // start at beginning of buffer
 			ptr = ntok(ptr);  // Find the time string
-			if (ptr == NULL) goto GPSerror1;
+			if (ptr == NULL) goto GPSerrorP;
 			char *p2 = strchr(ptr, ',');  // find comma after Time
-			if (p2 == NULL) goto GPSerror1;
-			if (p2 < (ptr+6)) goto GPSerror1;  // Time must be at least 6 chars
+			if (p2 == NULL) goto GPSerrorP;
+			if (p2 < (ptr+6)) goto GPSerrorP;  // Time must be at least 6 chars
 //			strncpy(gpsTime, ptr, 10);  // copy time string hhmmss
 			tmp = parsedecimal(ptr, 6);   // parse integer portion
 			tm.Hour = tmp / 10000;
 			tm.Minute = (tmp / 100) % 100;
 			tm.Second = tmp % 100;
 			ptr = ntok(ptr);  // Find the next token - Status
-			if (ptr == NULL) goto GPSerror1;
+			if (ptr == NULL) goto GPSerrorP;
 			gpsFixStat = ptr[0];
 			if (gpsFixStat == 'A') {  // if data valid, parse time & date
 				gpsTimeout = 0;  // reset gps timeout counter
 				for (uint8_t n=0; n<7; n++) { // skip 6 tokend, find date
 					ptr = ntok(ptr);  // Find the next token
-					if (ptr == NULL) goto GPSerror1; // error if not found
+					if (ptr == NULL) goto GPSerrorP; // error if not found
 				}
 				p2 = strchr(ptr, ',');  // find comma after Date
-				if (p2 == NULL) goto GPSerror1;
-				if (p2 != (ptr+6)) goto GPSerror1;  // check date length
+				if (p2 == NULL) goto GPSerrorP;
+				if (p2 != (ptr+6)) goto GPSerrorP;  // check date length
 				tmp = parsedecimal(ptr, 6); 
 				tm.Day = tmp / 10000;
 				tm.Month = (tmp / 100) % 100;
 				tm.Year = tmp % 100;
 				ptr = strchr(ptr, '*');  // Find Checksum
-				if (ptr == NULL) goto GPSerror1;
-//				strncpy(gpsCKS, ptr, 2);  // save checksum chars
+				if (ptr == NULL) goto GPSerrorP;
 				
 				tm.Year = y2kYearToTm(tm.Year);  // convert yy year to (yyyy-1970) (add 30)
 				tNow = makeTime(&tm);  // convert to time_t
 				
-//				if ((tGPSupdate>0) && (abs(tNow-tGPSupdate)>SECS_PER_DAY))  goto GPSerror2;  // GPS time jumped more than 1 day
-				if ( (tLast>0) && (abs(tNow - tLast)>30) )  // if time jumps by more than a few seconds, 
+// How long since we've heard from the GPS? If it's been more than 5 minutes, complain about it...
+				if ( (tLast>0) && (abs(tNow - tLast)>60) )  // Beep if over 60 seconds since last GPRMC?
 				{
-					tLast = tNow;  // save new time
-					goto GPSerror2;  // it's probably an error
+					goto GPSerrorT;  // it's probably an error
 				}
 				else {
 					tLast = tNow;
 					tDelta = tNow - tGPSupdate;
 //					if ((tm.Second == 0) || ((tNow - tGPSupdate)>=60)) {  // update RTC once/minute or if it's been 60 seconds
-					if (((tm.Second<5) && (tDelta>10)) || (tDelta>=60)) {  // update RTC once/minute or if it's been 30 seconds
+					if (((tm.Second<5) && (tDelta>10)) || (tDelta>=60)) {  // update RTC once/minute or if it's been 60 seconds
 						//beep(1000, 1);  // debugging
 						g_gps_updating = true;
 						tGPSupdate = tNow;  // remember time of this update
@@ -257,14 +255,24 @@ void parseGPSdata(char *gpsBuffer) {
 			} // if fix status is A
 		} // if checksums match
 		else  // checksums do not match
-			g_gps_cks_errors++;  // increment error count
+			goto GPSerrorC;
 		return;
-GPSerror1:
-		g_gps_parse_errors++;  // increment error count
-//	  tone(PinMap::piezo, 2093, 100);  // test tone
+GPSerrorC:
+		g_gps_cks_errors++;  // increment error count
 		goto GPSerror2a;
-GPSerror2:
+GPSerrorP:
+//	  tone(PinMap::piezo, 2093, 100);  // test tone
+		g_gps_parse_errors++;  // increment error count
+		goto GPSerror2a;
+GPSerrorT:
+#ifdef HAVE_SERIAL_DEBUG
+		tDelta = tNow - tGPSupdate;
+		Serial.print("tNow="); Serial.print(tNow); Serial.print(", tLast="); Serial.print(tLast); Serial.print(", diff="); Serial.print(tNow-tLast);
+		Serial.print(", tDelta="); Serial.print(tDelta);
+		Serial.println(" ");
+#endif
 		g_gps_time_errors++;  // increment error count
+		tLast = tNow;  // save new time
 GPSerror2a:
 		//beep(2093,1);  // error signal - I'm leaving this in for now /wm
 		flash_display(200);  // flash display to show GPS error

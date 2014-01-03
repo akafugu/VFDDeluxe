@@ -205,14 +205,16 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 // Brightness is set by setting the PWM duty cycle for the blank
 // pin of the VFD driver.
 //byte brt[] = {2, 14, 27, 41, 58, 78, 103, 134, 179, 255};
-byte brt[] = {3, 15, 27, 42, 59, 79, 103, 135, 179, 255};
+byte brt[] = {1, 3, 15, 27, 42, 59, 79, 103, 135, 179, 255}; // 11 values (0-10)
 // brightness value: 1 (low) - 10 (high)
 // fixme: BLANK must always be set to GND when driving Nixies
 void set_brightness(uint8_t brightness) {
 
 	globals.brightness = brightness;  // update global so it stays consistent 16nov12/wbp
+	save_globals();
   if (brightness > 10) brightness = 10;
-  _brightness = brt[brightness-1];
+//  _brightness = brt[brightness-1];
+  _brightness = brt[brightness];
   OCR4D = _brightness;  // set PWM comparand for given brightness 
   TCNT4 = 0; // restart timer counter
 //  digitalWrite(blank_pin.pin, LOW);  // blanking off
@@ -973,7 +975,7 @@ void write_vfd_iv17(uint8_t digit, uint16_t segments)
 
 uint32_t t;
 
-// Writes to the HV5812 driver for IV-6
+// Writes to the HV5812 driver for IV-18
 // HV1~10:  Digit grids, 10 bits
 // HV11~18: VFD segments, 8 bits
 // HV19~20: NC
@@ -998,18 +1000,18 @@ void write_vfd_iv18(uint8_t digit, uint8_t segments)
 // HV5~6:   NC
 // HV7~14:  VFD segments, 8 bits
 // HV15~20: NC
-void write_vfd_iv22(uint8_t digit, uint8_t segments)
-{
-	uint32_t val = (1 << digit) | ((uint32_t)segments << 6);
-	
-	write_vfd_8bit(0); // unused upper byte: for HV518P only
-	write_vfd_8bit(val >> 16);
-	write_vfd_8bit(val >> 8);
-	write_vfd_8bit(val);
-	
-	LATCH_DISABLE;
-	LATCH_ENABLE;	
-}
+//void write_vfd_iv22(uint8_t digit, uint8_t segments)
+//{
+//	uint32_t val = (1 << digit) | ((uint32_t)segments << 6);
+//	
+//	write_vfd_8bit(0); // unused upper byte: for HV518P only
+//	write_vfd_8bit(val >> 16);
+//	write_vfd_8bit(val >> 8);
+//	write_vfd_8bit(val);
+//	
+//	LATCH_DISABLE;
+//	LATCH_ENABLE;	
+//}
 
 void write_nixie(uint8_t value1, uint8_t value2, uint8_t value3)
 {
@@ -1097,9 +1099,20 @@ void display_multiplex(void)
         d = data[multiplex_counter];
     }
     switch (shield) {
-      case(SHIELD_IV6):
-          write_vfd_iv6(multiplex_counter, calculate_segments_7(d));
+      case(SHIELD_IV6): {
+//          write_vfd_iv6(multiplex_counter, calculate_segments_7(d));
+					uint8_t seg = calculate_segments_7(d);
+					if (multiplex_counter == 0) { // digit 0
+            if (g_gps_updating)
+	            seg |= (1<<7); // DP is at bit 7
+					}
+					if (multiplex_counter == 5) { // digit 5
+						if (g_alarm_switch)
+	            seg |= (1<<7); // DP is at bit 7
+					}
+					write_vfd_iv6(multiplex_counter, seg);
           break;
+			}
       case(SHIELD_IV17): {
 //          uint16_t seg = calculate_segments_16(d);
           uint16_t seg = segments_16[d];

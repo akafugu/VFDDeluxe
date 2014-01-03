@@ -46,6 +46,9 @@
 
 /*
  * TODO:
+ * brightness 0-10 or 1-10 ???
+ * fix button 1 to show date, flw, temp, press, etc
+ * check AutoDim times/levels on boot?
  * verify GPS vs TZ vs DST
  * if GPS changes date/time, recompute DST offset???
  * Holiday messages?
@@ -55,7 +58,6 @@
  * - FLW movement
  * - Show "Alarm off" on one screen
  * - dot blinks when showing temperature 
- * fix button 1 to show date, flw, temp, press, etc
  * reveille alarm?
  * scroll time with date
  * add GPS "sanity check"
@@ -97,6 +99,10 @@ HIH61XX hih(0x27);
 #include "gps.h"
 #include "flw.h"
 #include "rgbled.h"
+
+#ifdef HAVE_MESSAGES
+#include "msgs.h"
+#endif
 
 #ifdef HAVE_FLW
 FourLetterWord flw;
@@ -467,10 +473,22 @@ void update_display()
     }
     else if (display_mode == MODE_AUTO_TIME) {
         show_time(tt, globals.clock_24h, MODE_NORMAL);
-       if (tt->sec >= 4 && tt->sec < 5) pop_display_mode();
+        if (tt->sec >= 4 && tt->sec < 5) pop_display_mode();
     }
     else if (globals.AutoDate && display_mode < MODE_LAST && tt->sec == 55) {
         scroll_speed(300);  // display date at 3 cps
+
+#ifdef HAVE_MESSAGES
+				uint8_t sd = true; // show date if no message
+				for (uint8_t i=0; i<msg_Count; i++) {
+					if ((tt->mon == msg_Dates[i][0]) && (tt->mday == msg_Dates[i][1])) {
+						set_scroll(msg_Texts[i]);  // show message
+						scroll_speed(250);  // slower for messages
+						sd = false;
+					}
+				}
+				if (sd)
+#endif
 				scroll_date(tt, globals.date_format);  // show date from last rtc_get_time() call
 //        while (scrolling())
 //          wDelay(100); // wait a bit (temp)
@@ -523,9 +541,12 @@ void setup()
 //  _delay_ms(500);
     
 #ifdef HAVE_SERIAL_DEBUG
-  while (!Serial) ;
-  _delay_ms(500); // temp
-  while (!Serial) ;  // second time's the charm...
+uint8_t wt = 0;
+	while (!Serial && wt<20) {
+		_delay_ms(500);
+		wt++;
+	}
+//  while (!Serial) ;  // second time's the charm...
   Serial.begin(9600);
   _delay_ms(3000); // allow time to get serial port open
   Serial.println("VFD Deluxe");
