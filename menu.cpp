@@ -15,8 +15,8 @@
 
 #include "global.h"
 
-#include <util/delay.h>
-#include <avr/pgmspace.h>
+//#include <util/delay.h>
+//#include <avr/pgmspace.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -65,7 +65,7 @@ void setDSToffset(uint8_t mode) {
 	rtc.setTime(tt);  // adjust RTC
 	
 	globals.DST_offset = newOffset;
-	save_globals();
+//	save_globals();
 	g_DST_updated = true;
 	// save DST_updated in ee ???
 }
@@ -233,7 +233,7 @@ uint8_t hour, min, sec;
 				if (valNum > menuPtr->hiLimit)
 					valNum = menuPtr->loLimit;
 				*menuPtr->setting = valNum;
-				save_globals();
+//				save_globals();
 				menu_action(menuPtr);
 			}
 			show_setting_int(shortName, longName, valNum, show);
@@ -247,7 +247,7 @@ uint8_t hour, min, sec;
 			if (update) {
 				valNum = !valNum;
 				*menuPtr->setting = valNum;
-				save_globals();
+//				save_globals();
 				menu_action(menuPtr);
 			}
 			if (valNum)
@@ -277,7 +277,7 @@ uint8_t hour, min, sec;
 				strncpy_P(valStr,(char *)&menuValues[idx].valName,4);  // item name
 				valStr[4] = '\0';  // null terminate string
 				*menuPtr->setting = valNum;
-				save_globals();
+//				save_globals();
 				menu_action(menuPtr);
 			}
 			show_setting_string(shortName, longName, valStr, show);

@@ -69,7 +69,7 @@ void setRTCTime(time_t t)
 	globals.dateyear = temp.year;
 	globals.datemonth = temp.mon;
 	globals.dateday = temp.mday;
-	save_globals();
+//	save_globals();
 }
 
 void GPSread(void) 
@@ -276,7 +276,7 @@ GPSerrorT:
 GPSerror2a:
 		//beep(2093,1);  // error signal - I'm leaving this in for now /wm
 		flash_display(200);  // flash display to show GPS error
-	  tone(PinMap::piezo, 2093, 100);  // test tone
+	  tone(PinMap::piezo, 2093, 100);  // beep to indicate error
 		strcpy(gpsBuffer, "");  // wipe GPS buffer
 	}  // if "$GPRMC"
 }

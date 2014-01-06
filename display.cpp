@@ -211,7 +211,7 @@ byte brt[] = {1, 3, 15, 27, 42, 59, 79, 103, 135, 179, 255}; // 11 values (0-10)
 void set_brightness(uint8_t brightness) {
 
 	globals.brightness = brightness;  // update global so it stays consistent 16nov12/wbp
-	save_globals();
+//	save_globals();
   if (brightness > 10) brightness = 10;
 //  _brightness = brt[brightness-1];
   _brightness = brt[brightness];

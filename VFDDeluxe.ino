@@ -40,18 +40,21 @@
  * create structure for globals, save/update to EE
  * fix default DST rules
  * update menu date vars from GPS
+ * add GPS "sanity check"
  * add Alarm & Time to Menu
  * fix Auto DST
+ * Holiday messages
+ * Save globals at 1 min interval (after last button push)
 */
 
 /*
  * TODO:
  * brightness 0-10 or 1-10 ???
+ * alarm beeps when enabled?
  * fix button 1 to show date, flw, temp, press, etc
  * check AutoDim times/levels on boot?
  * verify GPS vs TZ vs DST
  * if GPS changes date/time, recompute DST offset???
- * Holiday messages?
  * Menu item length - IV-22 or other 6 tube displays
  * FLW mode when FLW is on/full
  * IV-18/8+ digit improvements:
@@ -60,7 +63,6 @@
  * - dot blinks when showing temperature 
  * reveille alarm?
  * scroll time with date
- * add GPS "sanity check"
  * Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
  * serial slave feature
  */
@@ -114,6 +116,7 @@ uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
 uint8_t g_second_dots_on = true;
 uint8_t g_alarm_switch;
 #define MENU_TIMEOUT 20 // 20*100 ms = 2 seconds
+#define SAVE_TIMEOUT 600 // 5*60*10*100 ms = 60 seconds
 
 uint8_t g_alarming = false;
 uint16_t snooze_count = 0; // alarm snooze counter
@@ -260,7 +263,7 @@ void initialize(void)
     rtc.SQWSetFreq(WireRtcLib::FREQ_1);
     rtc.SQWEnable(true);
 #endif
-  
+
 #ifdef HAVE_GPS
     // setup UART for GPS
     gps_init(globals.gps_enabled);
@@ -549,9 +552,25 @@ uint8_t wt = 0;
 //  while (!Serial) ;  // second time's the charm...
   Serial.begin(9600);
   _delay_ms(3000); // allow time to get serial port open
-  Serial.println("VFD Deluxe");
+
+//  Serial.println("VFD Deluxe");
   Serial.print("EEcheck1="); Serial.println(globals.EEcheck1,DEC);
   Serial.print("EEcheck2="); Serial.println(globals.EEcheck2,DEC);
+
+#if BOARD == BOARD_VFD_MODULAR_CLOCK
+  Serial.println("VFD MODULAR CLOCK");
+#elif BOARD == BOARD_VFD_DELUXE
+  Serial.println("VFD DELUXE");
+#endif
+#ifdef HAVE_ATMEGA328
+  Serial.println("ATMEGA328");
+#endif
+#ifdef HAVE_LEONARDO
+  Serial.println("LEONARDO");
+#endif
+
+Serial.print("F_CPU="); Serial.println(F_CPU);
+
 #endif
 
   initialize();
@@ -592,24 +611,8 @@ uint8_t wt = 0;
       break;
    }
 
-  wDelay(2000);
-//  Serial.println("setup done");
   wDelay(1000);
-//#if BOARD == BOARD_VFD_MODULAR_CLOCK
-//  Serial.println("VFD MODULAR CLOCK");
-//#elif BOARD == BOARD_VFD_DELUXE
-//  Serial.println("VFD DELUXE");
-//#endif
-//#ifdef HAVE_ATMEGA328
-//  Serial.println("ATMEGA328");
-//#elif defined(HAVE_LEANARDO)
-//  Serial.println("LEONARDO");
-//#endif
-//#ifdef FEATURE_ATMEGA328
-//  Serial.println("FEATURE ATMEGA328");
-//#elif defined(FEATURE_LEANARDO)
-//  Serial.println("FEATURE LEONARDO");
-//#endif
+//  Serial.println("setup done");
   /*
   // test: write alphabet
   while (1) {
@@ -636,10 +639,11 @@ void loop()
 {
   unsigned long t1;
   uint8_t hour = 0, min = 0, sec = 0;
-  // Counters used when setting time
-//  int16_t time_to_set = 0;
+// Counters used when setting time
+	int16_t time_to_set;
   uint16_t button_released_timer = 0;
   uint16_t button_speed = 25;
+  uint16_t save_timer = 0;
   
   push_display_mode(MODE_NORMAL);
     
@@ -647,15 +651,15 @@ void loop()
 		t1 = wMillis();
 		get_button_state(&buttons);
 
-//  if (buttons.b1_keyup)  tone(11, 1000, 10);  
-//  if (buttons.b2_keyup)  tone(11, 1000, 10);  
-  if (buttons.b1_keyup)  tone(PinMap::piezo, 1000, 5);
-  if (buttons.b2_keyup)  tone(PinMap::piezo, 1000, 5);  
+		if ((buttons.b1_keyup) || (buttons.b2_keyup)) {
+			save_timer = 0; // reset global save timer
+			tone(PinMap::piezo, 1000, 5); // make a tick sound
+		}
 
-//                if (buttons.b1_keyup)
-//                    Serial.println("Got buttons.b1_keyup");
-//                if (buttons.b2_keyup)
-//                    Serial.println("Got buttons.b2_keyup");
+//  if (buttons.b1_keyup)
+//    Serial.println("Got buttons.b1_keyup");
+//  if (buttons.b2_keyup)
+//    Serial.println("Got buttons.b2_keyup");
 		
 		// When alarming:
 		// any button press cancels alarm
@@ -763,14 +767,14 @@ void loop()
 				show_set_alarm();
 				g_second_dots_on = false;
 				rtc.getAlarm_s(&hour, &min, &sec);
-				g_time_to_set = hour*60 + min;
+				time_to_set = hour*60 + min;
 			}
 			else {
 				g_menu_state = STATE_SET_CLOCK;
 				show_set_time();		
 				g_second_dots_on = false;
 				rtc.getTime_s(&hour, &min, &sec);
-				g_time_to_set = hour*60 + min;
+				time_to_set = hour*60 + min;
 			}
 
 			set_blink(true);
@@ -805,9 +809,9 @@ void loop()
 				
 				// fixme: should be different in 12h mode
 				if (g_menu_state == STATE_SET_CLOCK)
-					rtc.setTime_s(g_time_to_set / 60, g_time_to_set % 60, 0);
+					rtc.setTime_s(time_to_set / 60, time_to_set % 60, 0);
 				else
-					rtc.setAlarm_s(g_time_to_set / 60, g_time_to_set % 60, 0);
+					rtc.setAlarm_s(time_to_set / 60, time_to_set % 60, 0);
 
 #if defined HAVE_AUTO_DST
 				g_DST_updated = false;  // allow automatic DST adjustment again
@@ -817,15 +821,15 @@ void loop()
 			}
 
 			// Increase / Decrease time counter
-			if (buttons.b1_repeat) g_time_to_set+=(button_speed/10);
-			if (buttons.b1_keyup)  g_time_to_set++;
-			if (buttons.b2_repeat) g_time_to_set-=(button_speed/10);
-			if (buttons.b2_keyup)  g_time_to_set--;
+			if (buttons.b1_repeat) time_to_set+=(button_speed/10);
+			if (buttons.b1_keyup)  time_to_set++;
+			if (buttons.b2_repeat) time_to_set-=(button_speed/10);
+			if (buttons.b2_keyup)  time_to_set--;
 
-			if (g_time_to_set  >= 1440) g_time_to_set = 0;
-			if (g_time_to_set  < 0) g_time_to_set = 1439;
+			if (time_to_set  >= 1440) time_to_set = 0;
+			if (time_to_set  < 0) time_to_set = 1439;
 
-			show_time_setting(g_time_to_set / 60, g_time_to_set % 60, 0);
+			show_time_setting(time_to_set / 60, time_to_set % 60, 0);
 		}
                 else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
                     pop_display_mode();
@@ -851,8 +855,6 @@ void loop()
                 }
 		// Left button enters menu
 		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
-//                        first_menu_item();
-//			show_setting_int("BRIT", "BRITE", globals.brightness, false);
 			g_menu_state = STATE_MENU;
 			menu(0); // show first menu item
 
@@ -876,25 +878,18 @@ void loop()
 			if (button_released_timer >= MENU_TIMEOUT) {
 				button_released_timer = 0;
 				g_menu_state = STATE_CLOCK;
-//  Serial.println("menu timeout");
 			}
 
-                        if (buttons.b1_keyup) {  // right button
-//                            menu(!menu_b1_first, true);
-                            menu(1);  // right button
-                            buttons.b1_keyup = false;
-//                            menu_b1_first = false;  // b1 not first time now
-                        }
-                        if (buttons.b2_keyup) {  // left button
-//                           menu_b1_first = true;  // reset first time flag
-                           
-//                           next_menu_item();      
-//                           menu(false, false);
-                            menu(2);  // left button
-                            buttons.b2_keyup = 0; // clear state
-                        }
-                }
-		else {
+			if (buttons.b1_keyup) {  // right button
+				menu(1);  // right button
+				buttons.b1_keyup = false;
+			}
+			if (buttons.b2_keyup) {  // left button
+				menu(2);  // left button
+				buttons.b2_keyup = 0; // clear state
+			}
+		}
+		else { // no buttons, not in menu...
 			if (g_show_special_cnt>0) {
 				g_show_special_cnt--;
 				if (g_show_special_cnt == 0)
@@ -912,10 +907,10 @@ void loop()
 			}
 
 #ifdef HAVE_RTC_SQW
-                        if (g_update_rtc) {
-                            g_update_rtc = false;
-                            update_display();  // read RTC and display time
-                        }    
+			if (g_update_rtc) {
+				g_update_rtc = false;
+				update_display();  // read RTC and display time
+			}    
 #else
 			// read RTC approx every other time thru loop (every 200ms)
 			static uint8_t cnt = 0;
@@ -955,14 +950,21 @@ void loop()
 #endif
 
 #ifdef HAVE_GPS
-        if (globals.gps_enabled && g_menu_state == STATE_CLOCK) {
-            if (gpsDataReady()) {
-                parseGPSdata(gpsNMEA());  // get the GPS serial stream and possibly update the clock 
-            }
-        }
-#endif        
-        while ((wMillis()-t1)<100) ; // wait until 100 ms since start of loop
-    }
+		if (globals.gps_enabled && g_menu_state == STATE_CLOCK) {
+			if (gpsDataReady()) {
+				parseGPSdata(gpsNMEA());  // get the GPS serial stream and possibly update the clock 
+			}
+		}
+#endif
 
-}
+		save_timer++;
+		if (save_timer > SAVE_TIMEOUT) {
+			save_timer = 0;
+			save_globals();
+		}
+
+		while ((wMillis()-t1)<100) ; // wait until 100 ms since start of loop
+	} // while(1)
+
+} // loop()
 

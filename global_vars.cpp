@@ -17,13 +17,14 @@
 
 #include "global.h"
 
-#include <util/delay.h>
+//#include <util/delay.h>
 #include <avr/eeprom.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
 #include "global_vars.h"
+#include "display.h"
 
 #define EE_CHECK 42 // change this value if you change EE addresses
 #define EE_globals 0 // eeprom address
@@ -70,7 +71,6 @@ __globals globals = {
 
 //uint8_t alarm_hour, alarm_min, alarm_sec;
 //uint8_t hour, min, sec;
-int16_t g_time_to_set;
 
 uint8_t g_gps_updating = false;  // for signalling GPS update on some displays
 uint8_t g_DST_updated = false;  // DST update flag = allow update only once per day
@@ -83,10 +83,18 @@ uint8_t g_gps_time_errors = 0;  // gps time error counter
 
 void save_globals()
 {
+uint8_t c1 = 0; // # of bytes written
+//  tone(PinMap::piezo, 3000, 20);  // tick
 	for (unsigned int p=0; p<sizeof(globals); p++) {
 		uint8_t b1 = eeprom_read_byte((uint8_t *)EE_globals + p);
-		if (b1 != *((char *) &globals + p))
-			eeprom_write_byte((uint8_t *)EE_globals + p, *((char*)&globals + p));
+		uint8_t b2 = *((uint8_t *) &globals + p);
+		if (b1 != b2) {
+			eeprom_write_byte((uint8_t *)EE_globals + p, *((uint8_t*)&globals + p));
+			c1++;
+		}
+	}
+	if (c1) {
+		tone(PinMap::piezo, 1760, 50);  // short beep
 	}
 }
 
@@ -96,11 +104,11 @@ void globals_init(void)
 	uint8_t ee_check2 = eeprom_read_byte((uint8_t *)EE_globals + (&globals.EEcheck2-&globals.EEcheck1));
 	if ((ee_check1!=EE_CHECK) || (ee_check2!=EE_CHECK)) { // has EE been initialized?
 		for (unsigned int p=0; p<sizeof(globals); p++) { // copy globals structure to EE memory
-			eeprom_write_byte((uint8_t *)EE_globals + p, *((char*)&globals + p));
+			eeprom_write_byte((uint8_t *)EE_globals + p, *((uint8_t*)&globals + p));
 		}
 	}
 	else { // read globals from EE
 		for (unsigned int p=0; p<sizeof(globals); p++) // read gloabls from EE
-			*((char*)&globals + p) = eeprom_read_byte((uint8_t *)EE_globals + p);
+			*((uint8_t*)&globals + p) = eeprom_read_byte((uint8_t *)EE_globals + p);
 	}
 }
