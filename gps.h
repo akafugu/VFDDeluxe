@@ -20,6 +20,9 @@
 
 #ifdef HAVE_GPS
 
+//convenience macro to convert to and from tm years 
+#define  y2kYearToTm(Y)      ((Y) + 30)
+
 // String buffer size:
 #define GPSBUFFERSIZE 96 
 //The year the clock was programmed, used for error checking
