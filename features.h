@@ -92,7 +92,7 @@ enum shield_t {
 //#define FEATURE_SERIAL_DEBUG YES
 #define FEATURE_FLW YES
 #define FEATURE_RTC_SQW YES
-#define FEATURE_RTC_SQW NO // wbp
+//#define FEATURE_RTC_SQW NO // wbp
 #define FEATURE_AUTO_DATE YES
 #define FEATURE_AUTO_DST YES
 #define FEATURE_AUTO_DIM YES
