@@ -15,8 +15,6 @@
 
 #include "global.h"
 
-//#include <util/delay.h>
-//#include <avr/pgmspace.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -27,11 +25,8 @@
 #include "display.h"
 #include "gps.h"
 #include "menu.h"
-#include "time.h"
-#define time_t unsigned long
 #include "adst.h"
 
-//void beep(uint16_t freq, uint8_t times);
 extern WireRtcLib rtc;
 
 menu_state_t g_menu_state;

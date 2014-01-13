@@ -22,10 +22,8 @@
 
 #include <avr/interrupt.h>
 #include <string.h>
-//#include <util/delay.h>
 #include "gps.h"
 #include "display.h"
-#include "time.h"  // use ours, not Arduino's
 
 #include <WireRtcLib.h>
 
@@ -55,20 +53,12 @@ extern WireRtcLib rtc;
 
 void setRTCTime(time_t t)
 {
-	tmElements_t tm;
+	WireRtcLib::tm tm;
 	breakTime(t, &tm); // break time_t into elements
-  WireRtcLib::tm temp;
-	temp.hour = tm.Hour;
-	temp.min  = tm.Minute;
-	temp.sec  = tm.Second;
-	temp.mday = tm.Day;
-	temp.mon  = tm.Month;
-	temp.year = (1970+tm.Year)-2000;
-	temp.wday = tm.Wday;
-	rtc.setTime(&temp);
-	globals.dateyear = temp.year;
-	globals.datemonth = temp.mon;
-	globals.dateday = temp.mday;
+	rtc.setTime(&tm);
+	globals.dateyear = tm.year;
+	globals.datemonth = tm.mon;
+	globals.dateday = tm.mday;
 //	save_globals();
 }
 
@@ -162,7 +152,7 @@ char * ntok ( char *ptr ) {
 //    0     1       2    3    4     5    6   7     8      9     10  11 12
 void parseGPSdata(char *gpsBuffer) {
 	time_t tNow, tDelta;
-	tmElements_t tm;
+	WireRtcLib::tm tm;
 	uint8_t gpsCheck1, gpsCheck2;  // checksums
 //	char gpsTime[10];  // time including fraction hhmmss.fff
 	char gpsFixStat;  // fix status
@@ -202,9 +192,9 @@ void parseGPSdata(char *gpsBuffer) {
 			if (p2 < (ptr+6)) goto GPSerrorP;  // Time must be at least 6 chars
 //			strncpy(gpsTime, ptr, 10);  // copy time string hhmmss
 			tmp = parsedecimal(ptr, 6);   // parse integer portion
-			tm.Hour = tmp / 10000;
-			tm.Minute = (tmp / 100) % 100;
-			tm.Second = tmp % 100;
+			tm.hour = tmp / 10000;
+			tm.min = (tmp / 100) % 100;
+			tm.sec = tmp % 100;
 			ptr = ntok(ptr);  // Find the next token - Status
 			if (ptr == NULL) goto GPSerrorP;
 			gpsFixStat = ptr[0];
@@ -218,13 +208,13 @@ void parseGPSdata(char *gpsBuffer) {
 				if (p2 == NULL) goto GPSerrorP;
 				if (p2 != (ptr+6)) goto GPSerrorP;  // check date length
 				tmp = parsedecimal(ptr, 6); 
-				tm.Day = tmp / 10000;
-				tm.Month = (tmp / 100) % 100;
-				tm.Year = tmp % 100;
+				tm.mday = tmp / 10000;
+				tm.mon = (tmp / 100) % 100;
+				tm.year = tmp % 100;
 				ptr = strchr(ptr, '*');  // Find Checksum
 				if (ptr == NULL) goto GPSerrorP;
 				
-				tm.Year = y2kYearToTm(tm.Year);  // convert yy year to (yyyy-1970) (add 30)
+				tm.year = y2kYearToTm(tm.year);  // convert yy year to (yyyy-1970) (add 30)
 				tNow = makeTime(&tm);  // convert to time_t
 				
 // How long since we've heard from the GPS? If it's been more than 5 minutes, complain about it...
@@ -236,7 +226,7 @@ void parseGPSdata(char *gpsBuffer) {
 					tLast = tNow;
 					tDelta = tNow - tGPSupdate;
 //					if ((tm.Second == 0) || ((tNow - tGPSupdate)>=60)) {  // update RTC once/minute or if it's been 60 seconds
-					if (((tm.Second<5) && (tDelta>10)) || (tDelta>=60)) {  // update RTC once/minute or if it's been 60 seconds
+					if (((tm.sec<5) && (tDelta>10)) || (tDelta>=60)) {  // update RTC once/minute or if it's been 60 seconds
 						//beep(1000, 1);  // debugging
 						g_gps_updating = true;
 						tGPSupdate = tNow;  // remember time of this update
