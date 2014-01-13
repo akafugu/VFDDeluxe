@@ -382,25 +382,23 @@ void read_humidity()
 #endif
 }
 
+#ifdef HAVE_FLW
 void display_flw()
 {
-#ifdef HAVE_FLW
-#ifdef HAVE_RTC_SQW
   static uint8_t flw_counter = 2;
-#else
-  static uint8_t flw_counter = 5;
-#endif
   static uint8_t flw_offset = 0;
   static int8_t flw_offset_direction = 1;
 	flw_counter--;  
   if (flw_counter == 0) { // once a second
 //    set_string(flw.get_word(), flw_offset);  // fixme ???
     set_string(flw.get_word());
-#ifdef HAVE_RTC_SQW
+#endif
+#if (defined HAVE_FLW) && (defined HAVE_RTC_SQW)
 		if (globals.sqw_enabled)
 			flw_counter = 2;
 		else
 #endif
+#ifdef HAVE_FLW
     flw_counter = 5;
     
     if (get_digits() > 4)
@@ -412,8 +410,8 @@ void display_flw()
         flw_offset_direction = 1;
 
   }  
-#endif
 }
+#endif
 
 void update_display()
 {
