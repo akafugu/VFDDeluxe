@@ -112,7 +112,9 @@ FourLetterWord flw;
 
 WireRtcLib rtc;
 
+#ifdef HAVE_FLW
 uint8_t g_has_flw;  // does the unit have an EEPROM with the FLW database?
+#endif
 uint8_t g_second_dots_on = true;
 uint8_t g_alarm_switch;
 #define MENU_TIMEOUT 20 // 20*100 ms = 2 seconds
@@ -157,6 +159,7 @@ bool menu_b1_first = false;
 typedef enum {
     MODE_NORMAL = 0,  // Time mode 1 (HH:MM/HH:MM:SS)
     MODE_AMPM,        // Time mode 2 (SS/HH-MM)
+//    MODE_DATE,        // Scrolls date across the screen
 //#ifdef HAVE_FLW
     MODE_FLW,         // Time mode 3: Shows FLW with time and date scrolling
 //#endif
@@ -243,8 +246,8 @@ void initialize(void)
   g_has_flw = flw.has_eeprom();
   flw.setCensored(globals.flw_enabled == FLW_ON);
 #else
-  g_has_flw = false;
-  globals.flw_enabled = FLW_OFF;
+//  g_has_flw = false;
+//  globals.flw_enabled = FLW_OFF;
 #endif
 
   //g_alarm_switch = get_alarm_switch();
@@ -256,12 +259,12 @@ void initialize(void)
   */
   
 #ifdef HAVE_RTC_SQW
-    // set up interrupt for RTC SQW
-    PCICR |= (1 << PCIE0);
-    PCMSK0 |= (1 << PCINT4); // RTC SQW
-  
-    rtc.SQWSetFreq(WireRtcLib::FREQ_1);
-    rtc.SQWEnable(true);
+	// set up interrupt for RTC SQW
+	PCICR |= (1 << PCIE0);
+	PCMSK0 |= (1 << PCINT4); // RTC SQW
+
+	rtc.SQWSetFreq(WireRtcLib::FREQ_1);
+	rtc.SQWEnable(true);
 #endif
 
 #ifdef HAVE_GPS
@@ -379,17 +382,26 @@ void read_humidity()
 #endif
 }
 
-void read_flw()
+void display_flw()
 {
 #ifdef HAVE_FLW
-  static uint8_t flw_counter = 0;
+#ifdef HAVE_RTC_SQW
+  static uint8_t flw_counter = 2;
+#else
+  static uint8_t flw_counter = 5;
+#endif
   static uint8_t flw_offset = 0;
   static int8_t flw_offset_direction = 1;
-  
-  if (flw_counter++ == 1) {
-//    set_string(flw.get_word(), flw_offset);
+	flw_counter--;  
+  if (flw_counter == 0) { // once a second
+//    set_string(flw.get_word(), flw_offset);  // fixme ???
     set_string(flw.get_word());
-    flw_counter = 0;
+#ifdef HAVE_RTC_SQW
+		if (globals.sqw_enabled)
+			flw_counter = 2;
+		else
+#endif
+    flw_counter = 5;
     
     if (get_digits() > 4)
         flw_offset += flw_offset_direction;
@@ -462,25 +474,26 @@ void update_display()
     else if (have_humidity_sensor() && globals.show_humid && tt->sec >= 37 && tt->sec <= 39)
         read_humidity();
 #endif
+#ifdef HAVE_FLW
     else if (display_mode == MODE_AUTO_FLW) {
-       read_flw();    
+       display_flw();    
        if (tt->sec >= 50) pop_display_mode();
     }
-    else if (g_has_flw && globals.flw_enabled != FLW_OFF && tt->sec == 40) {
-        read_flw();
+    else if (g_has_flw && globals.flw_enabled != FLW_OFF && tt->sec == 40) { // start FLW at 40 seconds
+        display_flw();
         push_display_mode(MODE_AUTO_FLW);
     }
-    else if (g_has_flw && display_mode == MODE_FLW && tt->sec == 58) {
+    else if (g_has_flw && display_mode == MODE_FLW && tt->sec == 58) { // stop manual FLW at 58 seconds ???
         push_display_mode(MODE_AUTO_TIME);
         show_time(tt, globals.clock_24h, MODE_NORMAL);   
     }
+#endif
     else if (display_mode == MODE_AUTO_TIME) {
         show_time(tt, globals.clock_24h, MODE_NORMAL);
         if (tt->sec >= 4 && tt->sec < 5) pop_display_mode();
     }
-    else if (globals.AutoDate && display_mode < MODE_LAST && tt->sec == 55) {
+    else if (globals.AutoDate && display_mode < MODE_LAST && tt->sec == 55) { // display date at 55 seconds
         scroll_speed(300);  // display date at 3 cps
-
 #ifdef HAVE_MESSAGES
 				uint8_t sd = true; // show date if no message
 				for (uint8_t i=0; i<msg_Count; i++) {
@@ -499,7 +512,7 @@ void update_display()
     }
 #ifdef HAVE_FLW
     else if (display_mode == MODE_FLW) {
-        read_flw();
+        display_flw();
     }
 #endif
     else {
@@ -830,29 +843,28 @@ void loop()
 			if (time_to_set  < 0) time_to_set = 1439;
 
 			show_time_setting(time_to_set / 60, time_to_set % 60, 0);
+		} // STATE_SET_CLOCK or STATE_SET_ALARM
+		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
+				pop_display_mode();
+				update_display();
 		}
-                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
-                    pop_display_mode();
-                    update_display();
-                }
-                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_FLW && (buttons.b1_keyup || buttons.b2_keyup)) {
-                    pop_display_mode();
-                    update_display();
-                }
-                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TIME && (buttons.b1_keyup || buttons.b2_keyup)) {
-                    pop_display_mode();
-                    update_display();
-                }                
-                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && !scrolling()) {
-                    pop_display_mode();
-                    update_display();
-                }
-                else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && (buttons.b1_keyup || buttons.b2_keyup)) {
-        	    scroll_stop();
-
-                    pop_display_mode();
-                    update_display();
-                }
+		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_FLW && (buttons.b1_keyup || buttons.b2_keyup)) {
+				pop_display_mode();
+				update_display();
+		}
+		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TIME && (buttons.b1_keyup || buttons.b2_keyup)) {
+				pop_display_mode();
+				update_display();
+		}                
+		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && !scrolling()) {
+				pop_display_mode();
+				update_display();
+		}
+		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && (buttons.b1_keyup || buttons.b2_keyup)) {
+				scroll_stop();
+				pop_display_mode();
+				update_display();
+		}
 		// Left button enters menu
 		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
 			g_menu_state = STATE_MENU;
@@ -864,7 +876,7 @@ void loop()
 		else if (g_menu_state == STATE_CLOCK && buttons.b1_keyup) {
 			display_mode = (display_mode_t)((int)display_mode + 1);
 #ifdef HAVE_FLW
-                        if (!g_has_flw) display_mode = (display_mode_t)((int)display_mode + 1); // skip if no EEPROM
+			if (!g_has_flw) display_mode = (display_mode_t)((int)display_mode + 1); // skip if no EEPROM
 #endif
 			if (display_mode == MODE_LAST) display_mode = MODE_NORMAL;
 			buttons.b1_keyup = 0; // clear state
@@ -907,17 +919,23 @@ void loop()
 			}
 
 #ifdef HAVE_RTC_SQW
-			if (g_update_rtc) {
-				g_update_rtc = false;
-				update_display();  // read RTC and display time
-			}    
-#else
+			if (globals.sqw_enabled) {
+				if (g_update_rtc) {
+					g_update_rtc = false;
+//					tone(PinMap::piezo, 2000, 2); // make a tick sound
+					update_display();  // read RTC and display time
+				}    
+			}
+			else {
+#endif // HAVE_RTC_SQW
 			// read RTC approx every other time thru loop (every 200ms)
 			static uint8_t cnt = 0;
 			if (++cnt%2) {
 				update_display();  // read RTC and display time
 				}
-#endif // HAVE_RTC_SQW
+#ifdef HAVE_RTC_SQW
+			}
+#endif
 		}
 
                 uint8_t sw = DIRECT_PIN_READ(switch_pin.reg,  switch_pin.bitmask);

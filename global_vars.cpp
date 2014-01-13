@@ -26,7 +26,7 @@
 #include "global_vars.h"
 #include "display.h"
 
-#define EE_CHECK 42 // change this value if you change EE addresses
+#define EE_CHECK 43 // change this value if you change EE addresses
 #define EE_globals 0 // eeprom address
 
 __globals globals = {
@@ -41,7 +41,9 @@ __globals globals = {
 	13, 1, 1, // year, month, day
 	ALARM_NORMAL, // alarm type
 	false, // snooze enabled
+#ifdef HAVE_FLW
 	false, // flw enabled
+#endif
 #ifdef HAVE_GPS
 	false, // gps enabled
 	0, 0, // TZ hour, minute
@@ -65,6 +67,9 @@ __globals globals = {
 	7, 8, // auto dim1 hour, level
 	19, 5, // auto dim2 hour, level
 	22, 2, // auto dim3 hour, level
+#endif
+#ifdef HAVE_RTC_SQW
+	true, // sqw enabled
 #endif
 	EE_CHECK,
 };
