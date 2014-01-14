@@ -89,8 +89,9 @@ enum shield_t {
 #define FEATURE_LOWERCASE YES
 #define FEATURE_ALTERNATE_FONT YES
 #define FEATURE_SERIAL_DEBUG NO // Wait for serial console to open before booting
-#define FEATURE_SERIAL_DEBUG YES
+//#define FEATURE_SERIAL_DEBUG YES
 #define FEATURE_FLW YES
+//#define FEATURE_FLW NO
 #define FEATURE_RTC_SQW YES
 //#define FEATURE_RTC_SQW NO // wbp
 #define FEATURE_AUTO_DATE YES

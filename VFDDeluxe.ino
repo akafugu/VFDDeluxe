@@ -392,13 +392,11 @@ void display_flw()
   if (flw_counter == 0) { // once a second
 //    set_string(flw.get_word(), flw_offset);  // fixme ???
     set_string(flw.get_word());
-#endif
-#if (defined HAVE_FLW) && (defined HAVE_RTC_SQW)
+#ifdef HAVE_RTC_SQW
 		if (globals.sqw_enabled)
 			flw_counter = 2;
 		else
 #endif
-#ifdef HAVE_FLW
     flw_counter = 5;
     
     if (get_digits() > 4)
