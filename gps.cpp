@@ -54,7 +54,7 @@ extern WireRtcLib rtc;
 void setRTCTime(time_t t)
 {
 	WireRtcLib::tm tm;
-	breakTime(t, &tm); // break time_t into elements
+	rtc.breakTime(t, &tm); // break time_t into elements
 	rtc.setTime(&tm);
 	globals.dateyear = tm.year;
 	globals.datemonth = tm.mon;
@@ -215,7 +215,7 @@ void parseGPSdata(char *gpsBuffer) {
 				if (ptr == NULL) goto GPSerrorP;
 				
 				tm.year = y2kYearToTm(tm.year);  // convert yy year to (yyyy-1970) (add 30)
-				tNow = makeTime(&tm);  // convert to time_t
+				tNow = rtc.makeTime(&tm);  // convert to time_t
 				
 // How long since we've heard from the GPS? If it's been more than 5 minutes, complain about it...
 				if ( (tLast>0) && (abs(tNow - tLast)>60) )  // Beep if over 60 seconds since last GPRMC?
