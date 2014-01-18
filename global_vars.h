@@ -79,9 +79,9 @@ struct __globals
 	uint8_t AutoDimHour3;
 	uint8_t AutoDimLevel3;
 #endif
-#ifdef HAVE_RTC_SQW
-	uint8_t sqw_enabled;
-#endif
+//#ifdef HAVE_RTC_SQW
+//	uint8_t sqw_enabled;
+//#endif
 	uint8_t EEcheck2;
 };
 

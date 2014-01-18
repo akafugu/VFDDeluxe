@@ -102,9 +102,9 @@ const PROGMEM menu_item menuTime = {MENU_TIME,menu_hasSub+menu_time,"TIME","TIME
 const PROGMEM menu_item menuTimeHr = {MENU_TIMEHOUR,menu_num+menu_isSub,"HOUR","HOUR",&time_hour,0,23,{NULL}};
 const PROGMEM menu_item menuTimeMin = {MENU_TIMEMINUTE,menu_num+menu_isSub,"MIN","MIN ",&time_minute,0,59,{NULL}};
 #endif
-#if defined HAVE_RTC_SQW
-const PROGMEM menu_item menuSQW = {MENU_SQW,menu_offOn,"SQW","SQW",&globals.sqw_enabled,0,2,{NULL}};
-#endif
+//#if defined HAVE_RTC_SQW
+//const PROGMEM menu_item menuSQW = {MENU_SQW,menu_offOn,"SQW","SQW",&globals.sqw_enabled,0,2,{NULL}};
+//#endif
 const PROGMEM menu_item menuVol = {MENU_VOL,menu_list,"VOL","VOL",&globals.volume,0,2,{menu_volume}};
 
 // MENU TABLE, in mostly alphabetical order

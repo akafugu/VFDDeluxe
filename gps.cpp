@@ -251,7 +251,6 @@ GPSerrorC:
 		g_gps_cks_errors++;  // increment error count
 		goto GPSerror2a;
 GPSerrorP:
-//	  tone(PinMap::piezo, 2093, 100);  // test tone
 		g_gps_parse_errors++;  // increment error count
 		goto GPSerror2a;
 GPSerrorT:

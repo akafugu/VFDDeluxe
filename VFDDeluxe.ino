@@ -915,23 +915,23 @@ void loop()
 			}
 
 #ifdef HAVE_RTC_SQW
-			if (globals.sqw_enabled) {
-				if (g_update_rtc) {
+//			if (globals.sqw_enabled) {
+				if (g_update_rtc) { // flag set by SQW interrupt
 					g_update_rtc = false;
 //					tone(PinMap::piezo, 2000, 2); // make a tick sound
 					update_display();  // read RTC and display time
 				}    
-			}
-			else {
+//			}
+//			else {
 #endif // HAVE_RTC_SQW
 			// read RTC approx every other time thru loop (every 200ms)
 			static uint8_t cnt = 0;
 			if (++cnt%2) {
 				update_display();  // read RTC and display time
 				}
-#ifdef HAVE_RTC_SQW
-			}
-#endif
+//#ifdef HAVE_RTC_SQW
+//			}
+//#endif
 		}
 
                 uint8_t sw = DIRECT_PIN_READ(switch_pin.reg,  switch_pin.bitmask);

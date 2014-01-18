@@ -111,7 +111,7 @@ typedef enum {  // no ifdefs, no harm in defining unused items
 	MENU_TIMEMINUTE,
 	MENU_TIMESECOND,
 	MENU_VOL,
-	MENU_SQW,
+//	MENU_SQW,
 	MENU_END  // must be last
 } menu_number;
 
