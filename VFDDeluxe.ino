@@ -702,11 +702,11 @@ void loop()
 		}
 
 		if (snooze_count>0) {
-                    snooze_count--;
-//                    if (snooze_count == 0) {
-//			start_alarm();  // restart alarm sequence
-//			alarm();  // restart alarm sequence
-//                    }
+			snooze_count--;
+//      if (snooze_count == 0) {
+//        start_alarm();  // restart alarm sequence
+//        alarm();  // restart alarm sequence
+//      }
 		}
 
 		if (g_alarming) {
@@ -771,38 +771,7 @@ void loop()
 			}
 		} // g_alarming
 
-		// If both buttons are held:
-		//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
-		//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
-		else if (g_menu_state == STATE_CLOCK && buttons.both_held) {
-			//Serial.println("Both held");
-			stop_alarm();  // setting time or alarm, cancel alarm
-    
-			if (g_alarm_switch) {
-				g_menu_state = STATE_SET_ALARM;
-				show_set_alarm();
-				g_second_dots_on = false;
-				rtc.getAlarm_s(&hour, &min, &sec);
-				time_to_set = hour*60 + min;
-			}
-			else {
-				g_menu_state = STATE_SET_CLOCK;
-				show_set_time();		
-				g_second_dots_on = false;
-				rtc.getTime_s(&hour, &min, &sec);
-				time_to_set = hour*60 + min;
-			}
-
-			set_blink(true);
-			
-			// wait until both buttons are released
-			while (1) {
-				wDelay(50);
-				get_button_state(&buttons);
-				if (buttons.none_held)
-					break;
-			}
-		}
+////////////////////////   STATE_SET_CLOCK   ///////////////////////
 		// Set time or alarm
 		else if (g_menu_state == STATE_SET_CLOCK || g_menu_state == STATE_SET_ALARM) {
 			// Check if we should exit STATE_SET_CLOCK or STATE_SET_ALARM
@@ -847,52 +816,8 @@ void loop()
 
 			show_time_setting(time_to_set / 60, time_to_set % 60, 0);
 		} // STATE_SET_CLOCK or STATE_SET_ALARM
-		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
-				pop_display_mode();
-				update_display();
-		}
-		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_FLW && (buttons.b1_keyup || buttons.b2_keyup)) {
-				pop_display_mode();
-				update_display();
-		}
-		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_TIME && (buttons.b1_keyup || buttons.b2_keyup)) {
-				pop_display_mode();
-				update_display();
-		}                
-		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && !scrolling()) {
-				pop_display_mode();
-				update_display();
-		}
-		else if (g_menu_state == STATE_CLOCK && display_mode == MODE_AUTO_DATE && (buttons.b1_keyup || buttons.b2_keyup)) {
-				scroll_stop();
-				pop_display_mode();
-				update_display();
-		}
-		// Left button enters menu
-		else if (g_menu_state == STATE_CLOCK && buttons.b2_keyup) {
-			g_menu_state = STATE_MENU;
-			menu(0); // show first menu item
 
-			buttons.b2_keyup = 0; // clear state
-		}
-		// Right button toggles display mode
-		else if (g_menu_state == STATE_CLOCK && buttons.b1_keyup) {
-			display_mode = (display_mode_t)((int)display_mode + 1);
-			if (display_mode == MODE_DATE) {
-				scroll_date(tt, settings.date_format);  // start date scroll
-			}
-#ifdef HAVE_FLW
-			if (display_mode==MODE_FLW) {
-				if (!g_has_flw) // if no FLW eeprom
-					display_mode = (display_mode_t)((int)display_mode + 1); // skip FLW
-				else
-	       display_flw(); // start FLW
-			}
-#endif
-			if (display_mode >= MODE_LAST) display_mode = MODE_NORMAL;
-			buttons.b1_keyup = 0; // clear state
-//	Serial.print("mode = "); Serial.println(display_mode);
-		}
+////////////////////////   STATE_MENU   ///////////////////////
 		else if (g_menu_state == STATE_MENU) {
 			if (buttons.none_held)
 				button_released_timer++;
@@ -913,41 +838,127 @@ void loop()
 				buttons.b2_keyup = 0; // clear state
 			}
 		}
-		else { // no buttons, not in menu...
-			if (g_show_special_cnt>0) {
-				g_show_special_cnt--;
-				if (g_show_special_cnt == 0)
-					switch (display_mode) {
-						case MODE_ALARM_TEXT:
-							display_mode = MODE_ALARM_TIME;
-							g_show_special_cnt = SHOW_TIMEOUT;
-							break;
-						case MODE_ALARM_TIME:
-							display_mode = MODE_NORMAL;
-							break;
-						default:
-							display_mode = MODE_NORMAL;
-					}
+
+////////////////////////   STATE_CLOCK   ///////////////////////
+		else /* if (g_menu_state == STATE_CLOCK) */ {
+
+			// If both buttons are held:
+			//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
+			//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
+			if (buttons.both_held) {
+				//Serial.println("Both held");
+				stop_alarm();  // setting time or alarm, cancel alarm
+			
+				if (g_alarm_switch) {
+					g_menu_state = STATE_SET_ALARM;
+					show_set_alarm();
+					g_second_dots_on = false;
+					rtc.getAlarm_s(&hour, &min, &sec);
+					time_to_set = hour*60 + min;
+				}
+				else {
+					g_menu_state = STATE_SET_CLOCK;
+					show_set_time();		
+					g_second_dots_on = false;
+					rtc.getTime_s(&hour, &min, &sec);
+					time_to_set = hour*60 + min;
+				}
+
+				set_blink(true);
+				
+				// wait until both buttons are released
+				while (1) {
+					wDelay(50);
+					get_button_state(&buttons);
+					if (buttons.none_held)
+						break;
+				}
+			}
+			
+			else if (display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
+					pop_display_mode();
+					update_display();
+			}
+			else if (display_mode == MODE_AUTO_FLW && (buttons.b1_keyup || buttons.b2_keyup)) {
+					pop_display_mode();
+					update_display();
+			}
+			else if (display_mode == MODE_AUTO_TIME && (buttons.b1_keyup || buttons.b2_keyup)) {
+					pop_display_mode();
+					update_display();
+			}                
+			else if (display_mode == MODE_AUTO_DATE && !scrolling()) {
+					pop_display_mode();
+					update_display();
+			}
+			else if (display_mode == MODE_AUTO_DATE && (buttons.b1_keyup || buttons.b2_keyup)) {
+					scroll_stop();
+					pop_display_mode();
+					update_display();
+			}
+			// Left button enters menu
+			else if (buttons.b2_keyup) {
+				g_menu_state = STATE_MENU;
+				menu(0); // show first menu item
+
+				buttons.b2_keyup = 0; // clear state
+			}
+			// Right button toggles display mode
+			else if (buttons.b1_keyup) {
+				display_mode = (display_mode_t)((int)display_mode + 1);
+				if (display_mode == MODE_DATE) {
+					scroll_date(tt, settings.date_format);  // start date scroll
+				}
+#ifdef HAVE_FLW
+				if (display_mode==MODE_FLW) {
+					if (!g_has_flw) // if no FLW eeprom
+						display_mode = (display_mode_t)((int)display_mode + 1); // skip FLW
+					else
+					 display_flw(); // start FLW
+				}
+#endif
+				if (display_mode >= MODE_LAST) display_mode = MODE_NORMAL;
+				buttons.b1_keyup = 0; // clear state
+	//	Serial.print("mode = "); Serial.println(display_mode);
 			}
 
-			static uint8_t cnt = 0;
+			else { // no buttons, not in menu...
+				if (g_show_special_cnt>0) {
+					g_show_special_cnt--;
+					if (g_show_special_cnt == 0)
+						switch (display_mode) {
+							case MODE_ALARM_TEXT:
+								display_mode = MODE_ALARM_TIME;
+								g_show_special_cnt = SHOW_TIMEOUT;
+								break;
+							case MODE_ALARM_TIME:
+								display_mode = MODE_NORMAL;
+								break;
+							default:
+								display_mode = MODE_NORMAL;
+						}
+				}
+
+				static uint8_t cnt = 0;
 #ifdef HAVE_RTC_SQW
-			// read RTC approx when SQW interrupt sets flag
-			if (g_update_rtc) { // flag set by SQW interrupt
-				g_update_rtc = false;
-				update_time(); // update time
-			}
-			if (++cnt%2) // update display 5 times/second
-				update_display();  // update display (time, date, flw, etc)
+				// read RTC approx when SQW interrupt sets flag
+				if (g_update_rtc) { // flag set by SQW interrupt
+					g_update_rtc = false;
+					update_time(); // update time
+				}
+				if (++cnt%2) // update display 5 times/second
+					update_display();  // update display (time, date, flw, etc)
 #else
-			// read RTC & update display approx every other time thru loop (every 200ms)
-			if (++cnt%2) {
-				update_time();  // read RTC
-				update_display();  // update display 5 times/second (time, date, flw, etc)
-			}
+				// read RTC & update display approx every other time thru loop (every 200ms)
+				if (++cnt%2) {
+					update_time();  // read RTC
+					update_display();  // update display 5 times/second (time, date, flw, etc)
+				}
 #endif // HAVE_RTC_SQW
 
-		}
+			}
+
+	} // STATE_CLOCK
 
 		uint8_t sw = DIRECT_PIN_READ(switch_pin.reg,  switch_pin.bitmask);
 
