@@ -50,6 +50,7 @@
  * fix date - year off by 30 when set from GPS
  * restore FLW offset
  * rename "globals" to "settings"
+ * button1: time, ampm, date, flw
 */
 
 /*
