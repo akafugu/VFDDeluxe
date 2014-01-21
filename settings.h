@@ -1,7 +1,7 @@
 /*
  * Globals for VFD Modular Clock
- * (C) 2011-2012 Akafugu Corporation
- * (C) 2012 William B Phelps
+ * (C) 2011-2013 Akafugu Corporation
+ * (C) 2013 William B Phelps
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -17,12 +17,6 @@
 #ifndef GLOBALS_H_
 #define GLOBALS_H_
 
-#ifdef __FLASH
-#define FLASH __flash
-#else
-#define FLASH
-#endif
-
 // date format modes
 typedef enum {
   FORMAT_YMD = 0,
@@ -36,7 +30,7 @@ typedef enum {
   ALARM_PROGRESSIVE,
 } alarm_type_t;
 
-struct __globals
+struct __settings
 {
 	uint8_t EEcheck1;
 	uint8_t clock_24h;
@@ -96,9 +90,9 @@ extern uint8_t g_gps_parse_errors;  // gps parse error counter
 extern uint8_t g_gps_time_errors;  // gps time error counter
 #endif
 
-void globals_init(void);
-void save_globals(void);
-extern struct __globals globals; // can't put this here...
+void init_settings(void);
+void save_settings(uint8_t quiet);
+extern struct __settings settings; // can't put this here...
 
 #endif
 

@@ -18,7 +18,7 @@
 #ifdef HAVE_GPS
 
 #include "global.h"
-#include "global_vars.h"
+#include "settings.h"
 
 #include <avr/interrupt.h>
 #include <string.h>
@@ -55,11 +55,12 @@ void setRTCTime(time_t t)
 {
 	WireRtcLib::tm tm;
 	rtc.breakTime(t, &tm); // break time_t into elements
+	tm.year = tmYearToY2k(tm.year);  // remove 1970 offset
 	rtc.setTime(&tm);
-	globals.dateyear = tm.year;
-	globals.datemonth = tm.mon;
-	globals.dateday = tm.mday;
-//	save_globals();
+	settings.dateyear = tm.year;
+	settings.datemonth = tm.mon;
+	settings.dateday = tm.mday;
+//	save_settings();
 }
 
 void GPSread(void) 
@@ -67,10 +68,10 @@ void GPSread(void)
   char c = 0;
   
 #ifdef HAVE_LEONARDO
-  if ((globals.gps_enabled) && (UCSR1A & _BV(RXC1))) {
+  if ((settings.gps_enabled) && (UCSR1A & _BV(RXC1))) {
 		c=UDR1;  // get a byte from the port
 #else
-  if ((globals.gps_enabled) && (UCSR0A & _BV(RXC0))) {
+  if ((settings.gps_enabled) && (UCSR0A & _BV(RXC0))) {
 		c=UDR0;  // get a byte from the port
 #endif
 		if (c == '$') {
@@ -215,7 +216,7 @@ void parseGPSdata(char *gpsBuffer) {
 				if (ptr == NULL) goto GPSerrorP;
 				
 				tm.year = y2kYearToTm(tm.year);  // convert yy year to (yyyy-1970) (add 30)
-				tNow = rtc.makeTime(&tm);  // convert to time_t
+				tNow = rtc.makeTime(&tm);  // convert to time_t - seconds since 0/0/1970
 				
 // How long since we've heard from the GPS? If it's been more than 5 minutes, complain about it...
 				if ( (tLast>0) && (abs(tNow - tLast)>60) )  // Beep if over 60 seconds since last GPRMC?
@@ -230,11 +231,11 @@ void parseGPSdata(char *gpsBuffer) {
 						//beep(1000, 1);  // debugging
 						g_gps_updating = true;
 						tGPSupdate = tNow;  // remember time of this update
-						tNow = tNow + (long)(globals.TZ_hour + globals.DST_offset) * SECS_PER_HOUR;  // add time zone hour offset & DST offset
-						if (globals.TZ_hour < 0)  // add or subtract time zone minute offset
-							tNow = tNow - (long)globals.TZ_minute * SECS_PER_HOUR;
+						tNow = tNow + (long)(settings.TZ_hour + settings.DST_offset) * SECS_PER_HOUR;  // add time zone hour offset & DST offset
+						if (settings.TZ_hour < 0)  // add or subtract time zone minute offset
+							tNow = tNow - (long)settings.TZ_minute * SECS_PER_HOUR;
 						else
-							tNow = tNow + (long)globals.TZ_minute * SECS_PER_HOUR;
+							tNow = tNow + (long)settings.TZ_minute * SECS_PER_HOUR;
 						setRTCTime(tNow);  // set RTC from adjusted GPS time & date
 						if ((shield != SHIELD_IV18) && (shield != SHIELD_IV17))
 							flash_display(100);  // flash display to show GPS update 28oct12/wbp - shorter blink

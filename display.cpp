@@ -14,7 +14,7 @@
  */
 
 #include "global.h"
-#include "global_vars.h"
+#include "settings.h"
 
 #include "display.h"
 //#include "display_nixie.h"
@@ -68,7 +68,6 @@ pin_direct_t blank_pin;
 enum shield_t shield = SHIELD_NONE;
 uint8_t digits = 6;
 uint8_t segments = 7;
-byte dummy1;
 volatile char data[16]; // Digit data
 //uint8_t us_counter = 0; // microsecond counter
 uint8_t multiplex_counter = 0;
@@ -206,13 +205,13 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 // pin of the VFD driver.
 //byte brt[] = {2, 14, 27, 41, 58, 78, 103, 134, 179, 255};
 byte brt[] = {1, 3, 15, 27, 42, 59, 79, 103, 135, 179, 255}; // 11 values (0-10)
-// brightness value: 1 (low) - 10 (high)
+// brightness value: 0 (low) - 10 (high)
 // fixme: BLANK must always be set to GND when driving Nixies
 void set_brightness(uint8_t brightness) {
 
-	globals.brightness = brightness;  // update global so it stays consistent 16nov12/wbp
-//	save_globals();
   if (brightness > 10) brightness = 10;
+	settings.brightness = brightness;  // update global so it stays consistent 16nov12/wbp 
+//	save_settings();
 //  _brightness = brt[brightness-1];
   _brightness = brt[brightness];
   OCR4D = _brightness;  // set PWM comparand for given brightness 
@@ -464,7 +463,7 @@ uint8_t print_strn(const char* str, uint8_t offset, uint8_t n)
 // set dots based on mode and seconds
 void print_dots(uint8_t mode, uint8_t seconds)
 {
-	if (globals.show_dots) {
+	if (settings.show_dots) {
   		if (digits == 10 && mode == 0) {
 			sbi(dots, 3);
 			sbi(dots, 5);
@@ -704,18 +703,20 @@ void show_pressure(uint8_t pressure)
 	}
 }
 
-void set_string(const char* str)
+void set_string(const char* str, uint8_t offset /* =0 */)
 {
 	if (!str) return;
-
 	dots = 0;
-//	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
-        clear_data();
-	
-	for (int i = 0; i <= digits-1; i++) {
+	clear_data();
+	for (int i = offset; i <= digits-1; i++) {
 		if (!*str) break;
 		data[i] = *(str++);
 	}
+}
+
+void set_string(const char* str)
+{
+	set_string(str, 0);
 }
 
 void set_scroll(char* str)
@@ -1225,7 +1226,7 @@ ISR(TIMER1_COMPA_vect)
     }
 
 #ifdef HAVE_GPS
-	if (globals.gps_enabled)
+	if (settings.gps_enabled)
   GPSread();  // check for data on the serial port every 1 ms
 #endif // HAVE_GPS
 

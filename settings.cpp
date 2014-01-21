@@ -1,5 +1,5 @@
 /*
- * Globals for VFD Modular Clock
+ * Settings for VFD Modular Clock
  * (C) 2011-2013 Akafugu Corporation
  * (C) 2011-2013 William B Phelps
  *
@@ -23,13 +23,13 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "global_vars.h"
+#include "settings.h"
 #include "display.h"
 
 #define EE_CHECK 43 // change this value if you change EE addresses
-#define EE_globals 0 // eeprom address
+#define EE_settings 0 // eeprom address
 
-__globals globals = {
+__settings settings = {
 	EE_CHECK,
 	true, // clock_24h
 	false, // show temp
@@ -68,9 +68,9 @@ __globals globals = {
 	19, 5, // auto dim2 hour, level
 	22, 2, // auto dim3 hour, level
 #endif
-#ifdef HAVE_RTC_SQW
-	true, // sqw enabled
-#endif
+//#ifdef HAVE_RTC_SQW
+//	true, // sqw enabled
+//#endif
 	EE_CHECK,
 };
 
@@ -86,34 +86,35 @@ uint8_t g_gps_parse_errors = 0;  // gps parse error counter
 uint8_t g_gps_time_errors = 0;  // gps time error counter
 #endif
 
-void save_globals()
+void save_settings(uint8_t quiet)
 {
 uint8_t c1 = 0; // # of bytes written
 //  tone(PinMap::piezo, 3000, 20);  // tick
-	for (unsigned int p=0; p<sizeof(globals); p++) {
-		uint8_t b1 = eeprom_read_byte((uint8_t *)EE_globals + p);
-		uint8_t b2 = *((uint8_t *) &globals + p);
+	for (unsigned int p=0; p<sizeof(settings); p++) {
+		uint8_t b1 = eeprom_read_byte((uint8_t *)EE_settings + p);
+		uint8_t b2 = *((uint8_t *) &settings + p);
 		if (b1 != b2) {
-			eeprom_write_byte((uint8_t *)EE_globals + p, *((uint8_t*)&globals + p));
+			eeprom_write_byte((uint8_t *)EE_settings + p, *((uint8_t*)&settings + p));
 			c1++;
 		}
 	}
 	if (c1) {
-		tone(PinMap::piezo, 1760, 50);  // short beep
+		if (quiet==0)
+			tone(PinMap::piezo, 1760, 25);  // short beep (almost a tick)
 	}
 }
 
-void globals_init(void) 
+void init_settings(void) 
 {
-	uint8_t ee_check1 = eeprom_read_byte((uint8_t *)EE_globals + (&globals.EEcheck1-&globals.EEcheck1));
-	uint8_t ee_check2 = eeprom_read_byte((uint8_t *)EE_globals + (&globals.EEcheck2-&globals.EEcheck1));
+	uint8_t ee_check1 = eeprom_read_byte((uint8_t *)EE_settings + (&settings.EEcheck1-&settings.EEcheck1));
+	uint8_t ee_check2 = eeprom_read_byte((uint8_t *)EE_settings + (&settings.EEcheck2-&settings.EEcheck1));
 	if ((ee_check1!=EE_CHECK) || (ee_check2!=EE_CHECK)) { // has EE been initialized?
-		for (unsigned int p=0; p<sizeof(globals); p++) { // copy globals structure to EE memory
-			eeprom_write_byte((uint8_t *)EE_globals + p, *((uint8_t*)&globals + p));
+		for (unsigned int p=0; p<sizeof(settings); p++) { // copy settings structure to EE memory
+			eeprom_write_byte((uint8_t *)EE_settings + p, *((uint8_t*)&settings + p));
 		}
 	}
-	else { // read globals from EE
-		for (unsigned int p=0; p<sizeof(globals); p++) // read gloabls from EE
-			*((uint8_t*)&globals + p) = eeprom_read_byte((uint8_t *)EE_globals + p);
+	else { // read settings from EE
+		for (unsigned int p=0; p<sizeof(settings); p++) // read gloabls from EE
+			*((uint8_t*)&settings + p) = eeprom_read_byte((uint8_t *)EE_settings + p);
 	}
 }

@@ -21,11 +21,16 @@
 #include <Wire.h>
 #include <WireRtcLib.h>
 
-#include "global_vars.h"
+#include "settings.h"
 #include "display.h"
 #include "gps.h"
 #include "menu.h"
 #include "adst.h"
+
+//#ifdef HAVE_FLW
+//#include "flw.h"
+//extern FourLetterWord flw;
+//#endif
 
 extern WireRtcLib rtc;
 
@@ -40,12 +45,12 @@ void setDSToffset(uint8_t mode) {
 	if (mode == 2) {  // Auto DST
 		if (g_DST_updated) return;  // already done it once today
 		if (tt == NULL) return;  // safety check
-		newOffset = getDSToffset(tt, globals.DST_Rules);  // get current DST offset based on DST Rules
+		newOffset = getDSToffset(tt, settings.DST_Rules);  // get current DST offset based on DST Rules
 	}
 	else
 #endif // HAVE_AUTO_DST
 		newOffset = mode;  // 0 or 1
-	adjOffset = newOffset - globals.DST_offset;  // offset delta
+	adjOffset = newOffset - settings.DST_offset;  // offset delta
 	if (adjOffset == 0)  return;  // nothing to do
 	if (adjOffset > 0)
 		tone(PinMap::piezo, 1760, 100);  // spring ahead
@@ -59,8 +64,8 @@ void setDSToffset(uint8_t mode) {
 	tt->hour += adjOffset;
 	rtc.setTime(tt);  // adjust RTC
 	
-	globals.DST_offset = newOffset;
-//	save_globals();
+	settings.DST_offset = newOffset;
+//	save_settings();
 	g_DST_updated = true;
 	// save DST_updated in ee ???
 }
@@ -74,9 +79,9 @@ void set_date(uint8_t yy, uint8_t mm, uint8_t dd) {
 	tt->mday = dd;
 	rtc.setTime(tt);
 #ifdef HAVE_AUTO_DST
-	DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end for new date
+	DSTinit(tt, settings.DST_Rules);  // re-compute DST start, end for new date
 	g_DST_updated = false;  // allow automatic DST adjustment again
-	setDSToffset(globals.DST_mode);  // set DSToffset based on new date
+	setDSToffset(settings.DST_mode);  // set DSToffset based on new date
 #endif
 }
 #endif
@@ -91,8 +96,7 @@ void menu_action(menu_item * menuPtr)
 			rtc.setAlarm_s(alarm_hour, alarm_minute, 0);
 			break;
 		case MENU_BRIGHTNESS:
-//			set_brightness(*menuPtr->setting);
-      set_brightness(globals.brightness);
+      set_brightness(settings.brightness);
 			break;
 		case MENU_VOL:
 			//piezo_init();
@@ -103,7 +107,7 @@ void menu_action(menu_item * menuPtr)
 		case MENU_DATEYEAR:
 		case MENU_DATEMONTH:
 		case MENU_DATEDAY:
-			set_date(globals.dateyear, globals.datemonth, globals.dateday);
+			set_date(settings.dateyear, settings.datemonth, settings.dateday);
 			break;
 #endif
 #ifdef HAVE_AUTO_DST
@@ -120,13 +124,17 @@ void menu_action(menu_item * menuPtr)
 #if defined HAVE_GPS || defined HAVE_AUTO_DST
 		case MENU_DST_ENABLE:
 			g_DST_updated = false;  // allow automatic DST adjustment again
-			DSTinit(tt, globals.DST_Rules);  // re-compute DST start, end for new data
-			setDSToffset(globals.DST_mode);
+			DSTinit(tt, settings.DST_Rules);  // re-compute DST start, end for new data
+			setDSToffset(settings.DST_mode);
 			break;
 #endif		
+//#if defined HAVE_FLW
+//		case MENU_FLW:
+//			flw.setCensored(settings.flw_enabled == FLW_ON);
+//#endif
 #if defined HAVE_GPS
 		case MENU_GPS_ENABLE:
-			gps_init(globals.gps_enabled);  // change baud rate
+			gps_init(settings.gps_enabled);  // change baud rate
 			break;
 		case MENU_TZH:
 		case MENU_TZM:
@@ -228,7 +236,7 @@ uint8_t hour, min, sec;
 				if (valNum > menuPtr->hiLimit)
 					valNum = menuPtr->loLimit;
 				*menuPtr->setting = valNum;
-//				save_globals();
+//				save_settings();
 				menu_action(menuPtr);
 			}
 			show_setting_int(shortName, longName, valNum, show);
@@ -242,7 +250,7 @@ uint8_t hour, min, sec;
 			if (update) {
 				valNum = !valNum;
 				*menuPtr->setting = valNum;
-//				save_globals();
+//				save_settings();
 				menu_action(menuPtr);
 			}
 			if (valNum)
@@ -272,7 +280,7 @@ uint8_t hour, min, sec;
 				strncpy_P(valStr,(char *)&menuValues[idx].valName,4);  // item name
 				valStr[4] = '\0';  // null terminate string
 				*menuPtr->setting = valNum;
-//				save_globals();
+//				save_settings();
 				menu_action(menuPtr);
 			}
 			show_setting_string(shortName, longName, valStr, show);

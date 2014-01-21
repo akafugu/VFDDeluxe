@@ -56,6 +56,7 @@ void show_setting_int(const char* short_str, const char* long_str, int value, bo
 void show_set_time(void);
 void show_set_alarm(void);
 
+void set_string(const char* str, uint8_t offset);
 void set_string(const char* str);
 void set_scroll(char* str);
 void set_char_at(char c, uint8_t offset);

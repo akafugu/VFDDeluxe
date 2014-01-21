@@ -14,7 +14,6 @@
  */
 
 #include "global.h"
-#include "global_vars.h"
 
 #ifdef HAVE_AUTO_DST
 
