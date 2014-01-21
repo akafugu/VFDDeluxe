@@ -164,7 +164,7 @@ bool menu_b1_first = false;
 typedef enum {
     MODE_NORMAL = 0,  // Time mode 1 (HH:MM/HH:MM:SS)
     MODE_AMPM,        // Time mode 2 (SS/HH-MM)
-//    MODE_DATE,        // Scrolls date across the screen
+    MODE_DATE,        // Scrolls date across the screen
 //#ifdef HAVE_FLW
     MODE_FLW,         // Time mode 3: Shows FLW with time and date scrolling
 //#endif
@@ -506,10 +506,12 @@ void update_display()
 				}
 				if (sd)
 #endif
-				scroll_date(tt, settings.date_format);  // show date from last rtc_get_time() call
-//        while (scrolling())
-//          wDelay(100); // wait a bit (temp)
+					scroll_date(tt, settings.date_format);  // show date from last rtc_get_time() call
         push_display_mode(MODE_AUTO_DATE);
+    }
+    else if (display_mode == MODE_DATE) { // manual (button1) selected date display
+      if (!scrolling()) // has scroll finished?
+        display_mode = MODE_NORMAL; // back to time display
     }
 #ifdef HAVE_FLW
     else if (display_mode == MODE_FLW) {
@@ -876,11 +878,20 @@ void loop()
 		// Right button toggles display mode
 		else if (g_menu_state == STATE_CLOCK && buttons.b1_keyup) {
 			display_mode = (display_mode_t)((int)display_mode + 1);
+			if (display_mode == MODE_DATE) {
+				scroll_date(tt, settings.date_format);  // start date scroll
+			}
 #ifdef HAVE_FLW
-			if (!g_has_flw) display_mode = (display_mode_t)((int)display_mode + 1); // skip if no EEPROM
+			if (display_mode==MODE_FLW) {
+				if (!g_has_flw) // if no FLW eeprom
+					display_mode = (display_mode_t)((int)display_mode + 1); // skip FLW
+				else
+	       display_flw(); // start FLW
+			}
 #endif
-			if (display_mode == MODE_LAST) display_mode = MODE_NORMAL;
+			if (display_mode >= MODE_LAST) display_mode = MODE_NORMAL;
 			buttons.b1_keyup = 0; // clear state
+//	Serial.print("mode = "); Serial.println(display_mode);
 		}
 		else if (g_menu_state == STATE_MENU) {
 			if (buttons.none_held)
