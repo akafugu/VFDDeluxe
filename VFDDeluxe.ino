@@ -51,12 +51,14 @@
  * restore FLW offset
  * rename "globals" to "settings"
  * button1: time, ampm, date, flw
+ * save autobright changes in EE quietly
+ * restructure, simplify main loop
 */
 
 /*
  * TODO:
- * don't save autobright changes in EE, or save them without a beep
- * alarm beeps when enabled?
+ * alarm some times beeps when enabled
+ * menu looping number increment
  * fix button 1 to show date, flw, temp, press, etc
  * check AutoDim times/levels on boot?
  * verify GPS vs TZ vs DST
@@ -170,6 +172,7 @@ typedef enum {
     MODE_FLW,         // Time mode 3: Shows FLW with time and date scrolling
 //#endif
     MODE_LAST,
+// "AUTO" display modes (push & pop)
     MODE_ALARM_TEXT,  // Shows "ALRM" or "ALARM"
     MODE_ALARM_TIME,  // Shows Alarm time
     MODE_AUTO_DATE,   // Scrolls date across the screen
@@ -428,7 +431,6 @@ void update_display()
 #ifdef HAVE_AUTO_DST
         
 		if ((tt->hour == 0) && (tt->min == 0) && (tt->sec == 0)) {  // MIDNIGHT!
-//          Serial.println("Midnight");  // wbp debug
 				g_DST_updated = false;
 				if (settings.DST_mode)
 						DSTinit(tt, settings.DST_Rules);  // re-compute DST start, end
@@ -497,22 +499,18 @@ void update_display()
     else if (settings.AutoDate && display_mode < MODE_LAST && tt->sec == 55) { // display date at 55 seconds
         scroll_speed(300);  // display date at 3 cps
 #ifdef HAVE_MESSAGES
-				uint8_t sd = true; // show date if no message
+				uint8_t showDate = true; // show date if no message
 				for (uint8_t i=0; i<msg_Count; i++) {
 					if ((tt->mon == msg_Dates[i][0]) && (tt->mday == msg_Dates[i][1])) {
 						set_scroll(msg_Texts[i]);  // show message
 						scroll_speed(250);  // slower for messages
-						sd = false;
+						showDate = false;
 					}
 				}
-				if (sd)
+				if (showDate)
 #endif
 					scroll_date(tt, settings.date_format);  // show date from last rtc_get_time() call
         push_display_mode(MODE_AUTO_DATE);
-    }
-    else if (display_mode == MODE_DATE) { // manual (button1) selected date display
-      if (!scrolling()) // has scroll finished?
-        display_mode = MODE_NORMAL; // back to time display
     }
 #ifdef HAVE_FLW
     else if (display_mode == MODE_FLW) {
@@ -629,7 +627,6 @@ Serial.print("F_CPU="); Serial.println(F_CPU);
    }
 
   wDelay(1000);
-//  Serial.println("setup done");
   /*
   // test: write alphabet
   while (1) {
@@ -694,13 +691,6 @@ void loop()
 //			    alarm();
 //			}
 //		}
-
-		if (scrolling()) {
-			if (buttons.b1_keyup || buttons.b2_keyup) {  // either button down stops scrolling
-				scroll_stop();
-				buttons.b2_keyup = 0;  // don't change time display
-			}
-		}
 
 		if (snooze_count>0) {
 			snooze_count--;
@@ -847,7 +837,6 @@ void loop()
 			//  * If the ALARM BUTTON SWITCH is on the LEFT, go into set time mode
 			//  * If the ALARM BUTTON SWITCH is on the RIGHT, go into set alarm mode
 			if (buttons.both_held) {
-				//Serial.println("Both held");
 				stop_alarm();  // setting time or alarm, cancel alarm
 			
 				if (g_alarm_switch) {
@@ -874,71 +863,69 @@ void loop()
 					if (buttons.none_held)
 						break;
 				}
-			}
+			} // buttons.both_held
+				
+			else { // not both buttons
 			
-			else if (display_mode == MODE_AUTO_TEMP && (buttons.b1_keyup || buttons.b2_keyup)) {
-					pop_display_mode();
-					update_display();
-			}
-			else if (display_mode == MODE_AUTO_FLW && (buttons.b1_keyup || buttons.b2_keyup)) {
-					pop_display_mode();
-					update_display();
-			}
-			else if (display_mode == MODE_AUTO_TIME && (buttons.b1_keyup || buttons.b2_keyup)) {
-					pop_display_mode();
-					update_display();
-			}                
-			else if (display_mode == MODE_AUTO_DATE && !scrolling()) {
-					pop_display_mode();
-					update_display();
-			}
-			else if (display_mode == MODE_AUTO_DATE && (buttons.b1_keyup || buttons.b2_keyup)) {
-					scroll_stop();
-					pop_display_mode();
-					update_display();
-			}
-			// Left button enters menu
-			else if (buttons.b2_keyup) {
-				g_menu_state = STATE_MENU;
-				menu(0); // show first menu item
-
-				buttons.b2_keyup = 0; // clear state
-			}
-			// Right button toggles display mode
-			else if (buttons.b1_keyup) {
-				display_mode = (display_mode_t)((int)display_mode + 1);
-				if (display_mode == MODE_DATE) {
-					scroll_date(tt, settings.date_format);  // start date scroll
+				if ((display_mode == MODE_DATE) || (display_mode == MODE_AUTO_DATE)) {
+					if (!scrolling()) { // scrolling finished?
+						pop_display_mode();
+						update_display();
+					}
 				}
+				
+				if (buttons.b1_keyup || buttons.b2_keyup) { // either button kills auto display
+					scroll_stop(); // stop scrolling if running
+					if (display_mode > MODE_LAST) {
+						pop_display_mode(); // back to previous mode
+						update_display();
+					}
+				}
+				
+				// Left button enters menu
+				if (buttons.b2_keyup) {
+					g_menu_state = STATE_MENU;
+					menu(0); // show first menu item
+					buttons.b2_keyup = 0; // clear state
+				}
+				// Right button toggles display mode
+				else if (buttons.b1_keyup) {
+					display_mode = (display_mode_t)((int)display_mode + 1);
+					if (display_mode == MODE_DATE) {
+						saved_display_mode = MODE_NORMAL; // for pop
+						scroll_date(tt, settings.date_format);  // start date scroll
+					}
 #ifdef HAVE_FLW
-				if (display_mode==MODE_FLW) {
-					if (!g_has_flw) // if no FLW eeprom
-						display_mode = (display_mode_t)((int)display_mode + 1); // skip FLW
-					else
-					 display_flw(); // start FLW
-				}
-#endif
-				if (display_mode >= MODE_LAST) display_mode = MODE_NORMAL;
-				buttons.b1_keyup = 0; // clear state
-	//	Serial.print("mode = "); Serial.println(display_mode);
-			}
-
-			else { // no buttons, not in menu...
-				if (g_show_special_cnt>0) {
-					g_show_special_cnt--;
-					if (g_show_special_cnt == 0)
-						switch (display_mode) {
-							case MODE_ALARM_TEXT:
-								display_mode = MODE_ALARM_TIME;
-								g_show_special_cnt = SHOW_TIMEOUT;
-								break;
-							case MODE_ALARM_TIME:
-								display_mode = MODE_NORMAL;
-								break;
-							default:
-								display_mode = MODE_NORMAL;
+					if (display_mode==MODE_FLW) {
+						if (!g_has_flw) // if no FLW eeprom
+							display_mode = (display_mode_t)((int)display_mode + 1); // skip FLW
+						else {
+							display_flw(); // start FLW
 						}
+					}
+#endif
+					if (display_mode >= MODE_LAST) display_mode = MODE_NORMAL;
+					buttons.b1_keyup = 0; // clear state
 				}
+			
+				else { // no buttons, not in menu...
+					if (g_show_special_cnt>0) {
+						g_show_special_cnt--;
+						if (g_show_special_cnt == 0)
+							switch (display_mode) {
+								case MODE_ALARM_TEXT:
+									display_mode = MODE_ALARM_TIME;
+									g_show_special_cnt = SHOW_TIMEOUT;
+									break;
+								case MODE_ALARM_TIME:
+									display_mode = MODE_NORMAL;
+									break;
+								default:
+									display_mode = MODE_NORMAL;
+							}
+					}
+
+			} // 
 
 				static uint8_t cnt = 0;
 #ifdef HAVE_RTC_SQW
