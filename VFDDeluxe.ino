@@ -1,6 +1,7 @@
 /*
  * VFD Deluxe
- * (C) 2011-13 Akafugu Corporation
+ * (C) 2011-14 Akafugu Corporation
+ * (C) 2013-14 William B Phelps
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -29,6 +30,7 @@
  */
 
 /* DONE:
+ * fix bug: menu item "24H" sometimes not displayed
  * Implement brightness PWM
  * resolve speaker/tone
  * fix region
@@ -925,26 +927,28 @@ void loop()
 							}
 					}
 
-			} // 
+				} // 
 
 				static uint8_t cnt = 0;
+				if (g_menu_state == STATE_CLOCK) { // if we are still in clock state
 #ifdef HAVE_RTC_SQW
-				// read RTC approx when SQW interrupt sets flag
-				if (g_update_rtc) { // flag set by SQW interrupt
-					g_update_rtc = false;
-					update_time(); // update time
-				}
-				if (++cnt%2) // update display 5 times/second
-					update_display();  // update display (time, date, flw, etc)
+					// read RTC approx when SQW interrupt sets flag
+					if (g_update_rtc) { // flag set by SQW interrupt
+						g_update_rtc = false;
+						update_time(); // update time
+					}
+					if (++cnt%2) // update display 5 times/second
+						update_display();  // update display (time, date, flw, etc)
 #else
-				// read RTC & update display approx every other time thru loop (every 200ms)
-				if (++cnt%2) {
-					update_time();  // read RTC
-					update_display();  // update display 5 times/second (time, date, flw, etc)
-				}
+					// read RTC & update display approx every other time thru loop (every 200ms)
+					if (++cnt%2) {
+						update_time();  // read RTC
+						update_display();  // update display 5 times/second (time, date, flw, etc)
+					}
 #endif // HAVE_RTC_SQW
+				}  // if STATE_CLOCK
 
-			}
+			} // not both buttons
 
 	} // STATE_CLOCK
 
