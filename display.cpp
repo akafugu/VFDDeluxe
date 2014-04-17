@@ -194,7 +194,7 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 //  TCCR4D = (1<<WGM40); // Phase & frequency correct PWM
 //	TC4H = 1; // set OCR4C High byte for 9-bit TOP
 	TC4H = 3; // set OCR4C High byte for 10-bit TOP
-  OCR4C = 255;  // clear on compare match value
+  OCR4C = 255;  // clear on compare match value (1023)
   OCR4D = 255;  // set maximum brightness
   TCNT4 = 0;  // start count
   TCCR4B = (1<<CS40); // Start Timer 4 at 1x 

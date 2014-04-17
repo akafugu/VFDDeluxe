@@ -30,6 +30,7 @@
  */
 
 /* DONE:
+ * 10 bit pwm for display brightness
  * fix bug: menu item "24H" sometimes not displayed
  * Implement brightness PWM
  * resolve speaker/tone
