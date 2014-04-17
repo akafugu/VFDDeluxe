@@ -210,7 +210,10 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 // pin of the VFD driver.
 // these are approximately logarithmic values for the pwm setting (wbp)
 //uint16_t  brt[] = {1, 3, 15, 27, 42, 59, 79, 103, 135, 179, 255}; // 11 values (0-10)
-uint16_t  brt[] = {1, 5, 30, 54, 84, 118, 158, 206, 270, 358, 511}; // 11 values (0-10)
+//uint16_t  brt[] = {1, 3, 24, 50, 80, 114, 155, 204, 268, 357, 511}; // 11 values (0-10)
+uint16_t  brt[] = {1, 4, 14, 31, 57, 95, 145, 211, 292, 392, 511}; // 11 values (0-10) with gamma 2.8
+// double each successive pwm value ?
+//uint16_t  brt[] = {1, 2, 3, 5, 7, 15, 31, 63, 127, 255, 511}; // 11 values (0-10)
 // brightness value: 0 (low) - 10 (high)
 // fixme: BLANK must always be set to GND when driving Nixies
 void set_brightness(uint8_t brightness) {
