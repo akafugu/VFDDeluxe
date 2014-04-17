@@ -125,7 +125,7 @@ void wDelay(unsigned long ms)
 void clear_display(void);
 void clear_data(void);
 
-uint8_t _brightness = 255;  // current brightness level 0-255
+uint16_t _brightness = 511;  // current brightness level 0-511
 uint8_t brt_counter = 0;
 
 void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uint8_t brightness)
@@ -184,16 +184,21 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 //  TCCR3B |= (1<<CS30); // connect at 1x to start counter
 //  TIMSK3 |= (1<<TOIE3); // enable Timer1 overflow interrupt:
 
-// PWM on PD7/OC4D (digital 6)
-//  TCCR4E = 0; 
-  TCCR4D = 0; // (1<<WGM40); // fast pwm
-  TCCR4C = (1<<COM4D1) | (1<<COM4D0) | (1<<PWM4D);
-//  TCCR4B = 0;
+// Set up PWM on PD7/OC4D (digital 6)
 //  TCCR4A = 0;
+//  TCCR4B = 0;
+  TCCR4C = (1<<COM4D1) | (1<<COM4D0) | (1<<PWM4D);
+// COM4D1 + COM4D0 = Set on Compare Match, Clear when TCNT4 = 0x000.
+// PWM4D = Enable PWM mode
+  TCCR4D = 0; // (1<<WGM40); // fast pwm
+//  TCCR4D = (1<<WGM40); // Phase & frequency correct PWM
+	TC4H = 1; // set OCR4C High byte for 10-bit TOP
   OCR4C = 255;  // clear on compare match value
   OCR4D = 255;  // set maximum brightness
   TCNT4 = 0;  // start count
-  TCCR4B = (1<<CS40); // connect CK at 1x to start counter
+  TCCR4B = (1<<CS40); // Start Timer 4 at 1x 
+//  TCCR4B = (1<<CS41);  // Start Timer 4 at fcpu/2
+//	DT4 = 0XFF; // insert some dead time to see effect
 //  TIMSK4 |= (1<<OCIE4A); // no interrupt needed for Timer4
 
 #endif
@@ -203,8 +208,9 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 
 // Brightness is set by setting the PWM duty cycle for the blank
 // pin of the VFD driver.
-//byte brt[] = {2, 14, 27, 41, 58, 78, 103, 134, 179, 255};
-byte brt[] = {1, 3, 15, 27, 42, 59, 79, 103, 135, 179, 255}; // 11 values (0-10)
+// these are approximately logarithmic values for the pwm setting (wbp)
+//uint16_t  brt[] = {1, 3, 15, 27, 42, 59, 79, 103, 135, 179, 255}; // 11 values (0-10)
+uint16_t  brt[] = {1, 5, 30, 54, 84, 118, 158, 206, 270, 358, 511}; // 11 values (0-10)
 // brightness value: 0 (low) - 10 (high)
 // fixme: BLANK must always be set to GND when driving Nixies
 void set_brightness(uint8_t brightness) {
@@ -214,6 +220,7 @@ void set_brightness(uint8_t brightness) {
 //	save_settings();
 //  _brightness = brt[brightness-1];
   _brightness = brt[brightness];
+	TC4H = _brightness>>8;  // set high order byte value for 10-bit comparand
   OCR4D = _brightness;  // set PWM comparand for given brightness 
   TCNT4 = 0; // restart timer counter
 //  digitalWrite(blank_pin.pin, LOW);  // blanking off
