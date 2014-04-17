@@ -78,6 +78,7 @@ __settings settings = {
 //uint8_t hour, min, sec;
 
 uint8_t g_gps_updating = false;  // for signalling GPS update on some displays
+uint8_t g_gps_nosignal = false;  // no data received from GPS 
 uint8_t g_DST_updated = false;  // DST update flag = allow update only once per day
 uint8_t g_has_dots = false; // can current shield show dot (decimal points)
 #ifdef HAVE_GPS

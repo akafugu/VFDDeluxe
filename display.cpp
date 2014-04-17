@@ -192,7 +192,8 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 // PWM4D = Enable PWM mode
   TCCR4D = 0; // (1<<WGM40); // fast pwm
 //  TCCR4D = (1<<WGM40); // Phase & frequency correct PWM
-	TC4H = 1; // set OCR4C High byte for 10-bit TOP
+//	TC4H = 1; // set OCR4C High byte for 9-bit TOP
+	TC4H = 3; // set OCR4C High byte for 10-bit TOP
   OCR4C = 255;  // clear on compare match value
   OCR4D = 255;  // set maximum brightness
   TCNT4 = 0;  // start count
@@ -211,7 +212,7 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 // these are approximately logarithmic values for the pwm setting (wbp)
 //uint16_t  brt[] = {1, 3, 15, 27, 42, 59, 79, 103, 135, 179, 255}; // 11 values (0-10)
 //uint16_t  brt[] = {1, 3, 24, 50, 80, 114, 155, 204, 268, 357, 511}; // 11 values (0-10)
-uint16_t  brt[] = {1, 4, 14, 31, 57, 95, 145, 211, 292, 392, 511}; // 11 values (0-10) with gamma 2.8
+uint16_t  brt[] = {1, 7, 22, 52, 100, 172, 270, 400, 567, 773, 1023}; // 11 values (0-10), 10 bit, gamma (2.8, -0.5)
 // double each successive pwm value ?
 //uint16_t  brt[] = {1, 2, 3, 5, 7, 15, 31, 63, 127, 255, 511}; // 11 values (0-10)
 // brightness value: 0 (low) - 10 (high)
@@ -405,7 +406,7 @@ void set_display(bool on)
   display_on = on;
 }
 
-void flash_display(uint16_t ms)  // this does not work but why???
+void flash_display(uint16_t ms)  // flash display to show GPS update
 {
     display_on = false;
     clear_display();

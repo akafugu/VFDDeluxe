@@ -218,7 +218,7 @@ void parseGPSdata(char *gpsBuffer) {
 				tm.year = y2kYearToTm(tm.year);  // convert yy year to (yyyy-1970) (add 30)
 				tNow = rtc.makeTime(&tm);  // convert to time_t - seconds since 0/0/1970
 				
-// How long since we've heard from the GPS? If it's been more than 5 minutes, complain about it...
+// If time jumps by more than a minute, complain about it. Either poor GPS signal or an error in the data
 				if ( (tLast>0) && (abs(tNow - tLast)>60) )  // Beep if over 60 seconds since last GPRMC?
 				{
 					goto GPSerrorT;  // it's probably an error
@@ -237,8 +237,8 @@ void parseGPSdata(char *gpsBuffer) {
 						else
 							tNow = tNow + (long)settings.TZ_minute * SECS_PER_HOUR;
 						setRTCTime(tNow);  // set RTC from adjusted GPS time & date
-						if ((shield != SHIELD_IV18) && (shield != SHIELD_IV17))
-							flash_display(100);  // flash display to show GPS update 28oct12/wbp - shorter blink
+//						if ((shield != SHIELD_IV18) && (shield != SHIELD_IV17))
+//							flash_display(50);  // flash display to show GPS update 16apr15/wbp - even shorter blink
 					}
 					else
 						g_gps_updating = false;
