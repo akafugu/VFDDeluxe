@@ -622,9 +622,6 @@ Serial.print("F_CPU="); Serial.println(F_CPU);
     case(SHIELD_IV18):
       set_string("IV-18");
       break;
-    case(SHIELD_IV22):
-      set_string("IV22");
-      break;
     default:
       break;
    }

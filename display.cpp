@@ -277,16 +277,19 @@ void detect_shield()
         g_has_dots = true;
         reverse_display = false;
         break;
-        /*
-    case(6):  // IV-22 shield
-        shield = SHIELD_IV22;
-        digits = 4;
-        multiplex_limit = 4;
-        //mpx_count = 8;
-        g_has_dots = true;
+     case(5):  // IV-17 6-digit shield
+	shield = SHIELD_IV17_6D;
+        digits = 6;
+	multiplex_limit = 6;
+        g_has_dots = false;
         reverse_display = false;
-        break;
-        */
+        
+        pinMode(PinMap::extra1, OUTPUT);
+        pinMode(PinMap::extra2, OUTPUT);
+        digitalWrite(PinMap::extra1, LOW);
+        digitalWrite(PinMap::extra2, LOW);
+        
+	break;
     case(7):  // IV-18 shield (note: save value as no shield - all bits on)
         shield = SHIELD_IV18;
         digits = 8;
@@ -350,13 +353,6 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     g_has_dots = true;    
     reverse_display = true;
   }
-//  else if (shield_type == SHIELD_IV22) {
-//    shield = SHIELD_IV22;
-//    digits = 4;
-//    multiplex_limit = digits;
-//    g_has_dots = true;    
-//    reverse_display = false;
-//  }
   else if (shield_type == SHIELD_IN14) {
     shield = SHIELD_IN14;
     digits = 6;
@@ -985,6 +981,38 @@ void write_vfd_iv17(uint8_t digit, uint16_t segments)
 	LATCH_ENABLE;
 }
 
+// Writes to the HV5812 driver for IV-17 6-digit
+// HV1~4:  Digit grids, 4 bits
+// HV 5~2: VFD segments, 16-bits
+void write_vfd_iv17_6d(uint8_t digit, uint16_t segments)
+{
+    uint32_t val;
+    
+    if (digit == 0) {
+        digitalWrite(PinMap::extra1, LOW);
+        digitalWrite(PinMap::extra2, HIGH);
+	val = ((uint32_t)segments << 4);
+    }
+    else if (digit == 5) {
+        digitalWrite(PinMap::extra1, HIGH);
+        digitalWrite(PinMap::extra2, LOW);
+        val = ((uint32_t)segments << 4);
+    }
+    else {
+        digitalWrite(PinMap::extra1, LOW);
+        digitalWrite(PinMap::extra2, LOW);
+        val = (1 << (digit-1)) | ((uint32_t)segments << 4);
+    }
+
+    write_vfd_8bit(0);
+    write_vfd_8bit(val >> 16);
+    write_vfd_8bit(val >> 8);
+    write_vfd_8bit(val);
+
+    LATCH_DISABLE;
+    LATCH_ENABLE;
+}
+
 uint32_t t;
 
 // Writes to the HV5812 driver for IV-18
@@ -1006,24 +1034,6 @@ void write_vfd_iv18(uint8_t digit, uint8_t segments)
 	LATCH_DISABLE;
 	LATCH_ENABLE;	
 }
-
-// Writes to the HV5812 driver for IV-22
-// HV1~4:   Digit grids, 4 bits
-// HV5~6:   NC
-// HV7~14:  VFD segments, 8 bits
-// HV15~20: NC
-//void write_vfd_iv22(uint8_t digit, uint8_t segments)
-//{
-//	uint32_t val = (1 << digit) | ((uint32_t)segments << 6);
-//	
-//	write_vfd_8bit(0); // unused upper byte: for HV518P only
-//	write_vfd_8bit(val >> 16);
-//	write_vfd_8bit(val >> 8);
-//	write_vfd_8bit(val);
-//	
-//	LATCH_DISABLE;
-//	LATCH_ENABLE;	
-//}
 
 void write_nixie(uint8_t value1, uint8_t value2, uint8_t value3)
 {
@@ -1149,9 +1159,15 @@ void display_multiplex(void)
           }
           break;
       }
-//      case(SHIELD_IV22):
-//            write_vfd_iv22(multiplex_counter, calculate_segments_7(data[multiplex_counter]));
-//      break;
+      case(SHIELD_IV17_6D): {
+          uint16_t seg = segments_16[d];
+          if (multiplex_counter == 0) {
+            if (g_gps_updating)
+            seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));
+          }
+          write_vfd_iv17_6d(multiplex_counter, seg);
+          break;
+      }
 #ifdef HAVE_7SEG_SUPPORT
       case(SHIELD_7SEG):
           write_vfd_7seg(multiplex_counter, calculate_segments_7(d));

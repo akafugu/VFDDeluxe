@@ -42,7 +42,7 @@ enum shield_t {
 	SHIELD_IV6,   // VFD Modular Clock IV-6 shield
 	SHIELD_IV17,  // VFD Modular Clock IV-17 shield
 	SHIELD_IV18,  // VFD Modular Clock IV-18 shield
-	SHIELD_IV22,  // VFD Modular Clock IV-22 shield
+	SHIELD_IV17_6D, // VFD Modular Clock IV-17 6-digit shield
 	// Nixie displays
         SHIELD_IN8_2, // VFDDeluxe, IN-8-2 6-digit Nixie
 	SHIELD_IN14,  // VFDDeluxe IN-14 6-digit Nixie
