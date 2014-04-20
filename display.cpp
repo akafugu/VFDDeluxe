@@ -393,8 +393,10 @@ void set_blink(bool onOff)
 void set_dimming(bool onOff)
 {
   dimming = onOff;
-  if (!dimming)
+  if (!dimming) {
+		TC4H = _brightness>>8;  // set high order byte value for 10-bit comparand
     OCR4D = _brightness;  // restore brightness
+		}
 }
 
 void set_display(bool on)
@@ -1243,11 +1245,13 @@ ISR(TIMER1_COMPA_vect)
       if (dimming_on && dimming_counter >= 1000) {
         dimming_on = false;
         dimming_counter = 0;
+				TC4H = _brightness>>8;  // set high order byte value for 10-bit comparand
         OCR4D = _brightness;  // restore brightness
       }
       else if (!dimming_on && dimming_counter >= 1000) {
         dimming_on = true;
         dimming_counter = 0;
+				TC4H = _brightness>>9;  // half brightness
         OCR4D = _brightness >> 1;  // half brightness
       }
     }
