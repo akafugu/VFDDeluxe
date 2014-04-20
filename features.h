@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe - Firmware for VFD Modular Clock mk2
- * (C) 2011-13 Akafugu Corporation
+ * VFD Deluxe
+ * (C) 2011-12 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -42,7 +42,7 @@ enum shield_t {
 	SHIELD_IV6,   // VFD Modular Clock IV-6 shield
 	SHIELD_IV17,  // VFD Modular Clock IV-17 shield
 	SHIELD_IV18,  // VFD Modular Clock IV-18 shield
-	SHIELD_IV22,  // VFD Modular Clock IV-22 shield
+	SHIELD_IV17_6D, // VFD Modular Clock IV-17 6-digit shield
 	// Nixie displays
         SHIELD_IN8_2, // VFDDeluxe, IN-8-2 6-digit Nixie
 	SHIELD_IN14,  // VFDDeluxe IN-14 6-digit Nixie
@@ -79,19 +79,27 @@ enum shield_t {
 
 #define FEATURE_NIXIE_SUPPORT NO
 #define FEATURE_SHIELD_AUTODETECT YES
+#define FEATURE_RTC_TEMP YES // Get temperature from RTC
 #define FEATURE_MPL115A2 NO // Temperature and Atmospheric pressure sensor
 #define FEATURE_HIH6121 NO   // Temperature and Humidity sensor
 #define FEATURE_ROTARY NO
 #define FEATURE_GPS YES
-//#define FEATURE_GPS NO
+#define FEATURE_GPS_DEBUG YES
 #define FEATURE_RGB_BACKLIGHT NO
 #define FEATURE_LOWERCASE YES
 #define FEATURE_ALTERNATE_FONT YES
 #define FEATURE_SERIAL_DEBUG NO // Wait for serial console to open before booting
+//#define FEATURE_SERIAL_DEBUG YES
 #define FEATURE_FLW YES
+//#define FEATURE_FLW NO
 #define FEATURE_RTC_SQW YES
+//#define FEATURE_RTC_SQW NO // wbp
 #define FEATURE_AUTO_DATE YES
-#define FEATURE_AUTO_DST NO
+#define FEATURE_AUTO_DST YES
+#define FEATURE_AUTO_DIM YES
+#define FEATURE_SET_DATE YES // set date in menu?
+#define FEATURE_SET_TIME YES // add "TIME" to menu?
+#define FEATURE_MESSAGES YES // birthday, etc
 
 // Support for generic displays (excludes the standard shields)
 #define FEATURE_7SEG_SUPPORT NO
@@ -145,6 +153,8 @@ enum shield_t {
 
 #if FEATURE_MPL115A2 == YES
 #  define HAVE_MPL115A2
+#  define HAVE_TEMPERATURE
+#  define HAVE_PRESSURE
 #endif
 
 ///////////////////////////////////////////
@@ -155,6 +165,8 @@ enum shield_t {
 
 #if FEATURE_HIH6121 == YES
 #  define HAVE_HIH6121
+#  define HAVE_TEMPERATURE
+#  define HAVE_HUMIDITY
 #endif
 
 ///////////////////////////////////////////
@@ -179,6 +191,16 @@ enum shield_t {
 
 #if FEATURE_GPS == YES
 #  define HAVE_GPS
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_GPS_DEBUG) || FEATURE_GPS_DEBUG < NO || FEATURE_GPS_DEBUG > YES
+#  error Must define FEATURE_GPS_DEBUG to be YES or NO
+#endif
+
+#if FEATURE_GPS_DEBUG == YES
+#  define HAVE_GPS_DEBUG
 #endif
 
 ///////////////////////////////////////////
@@ -263,6 +285,17 @@ enum shield_t {
 
 ///////////////////////////////////////////
 
+#if !(defined FEATURE_RTC_TEMP) || FEATURE_RTC_TEMP < NO || FEATURE_RTC_TEMP > YES
+#  error Must define FEATURE_RTC_TEMP to be YES or NO
+#endif
+
+#if FEATURE_RTC_TEMP == YES
+#  define HAVE_RTC_TEMP
+#  define HAVE_TEMPERATURE
+#endif
+
+///////////////////////////////////////////
+
 #if !(defined FEATURE_AUTO_DATE) || FEATURE_AUTO_DATE < NO || FEATURE_AUTO_DATE > YES
 #  error Must define FEATURE_AUTO_DATE to be YES or NO
 #endif
@@ -279,6 +312,46 @@ enum shield_t {
 
 #if FEATURE_AUTO_DST == YES
 #  define HAVE_AUTO_DST
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_AUTO_DIM) || FEATURE_AUTO_DIM < NO || FEATURE_AUTO_DIM > YES
+#  error Must define FEATURE_AUTO_DIM to be YES or NO
+#endif
+
+#if FEATURE_AUTO_DIM == YES
+#  define HAVE_AUTO_DIM
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_SET_DATE) || FEATURE_SET_DATE < NO || FEATURE_SET_DATE > YES
+#  error Must define FEATURE_SET_DATE to be YES or NO
+#endif
+
+#if FEATURE_SET_DATE == YES
+#  define HAVE_SET_DATE
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_SET_TIME) || FEATURE_SET_TIME < NO || FEATURE_SET_TIME > YES
+#  error Must define FEATURE_SET_TIME to be YES or NO
+#endif
+
+#if FEATURE_SET_TIME == YES
+#  define HAVE_MENU_TIME
+#endif
+
+///////////////////////////////////////////
+
+#if !(defined FEATURE_MESSAGES) || FEATURE_MESSAGES < NO || FEATURE_MESSAGES > YES
+#  error Must define FEATURE_MESSAGES to be YES or NO
+#endif
+
+#if FEATURE_MESSAGES == YES
+#  define HAVE_MESSAGES
 #endif
 
 ///////////////////////////////////////////
@@ -312,4 +385,3 @@ enum shield_t {
 #endif
 
 #endif // FEATURES_H_
-

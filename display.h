@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe - Firmware for VFD Modular Clock mk2
- * (C) 2011-13 Akafugu Corporation
+ * VFD Deluxe
+ * (C) 2011-12 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -56,13 +56,15 @@ void show_setting_int(const char* short_str, const char* long_str, int value, bo
 void show_set_time(void);
 void show_set_alarm(void);
 
-void set_string(const char* str, uint8_t offset = 0);
+void set_string(const char* str, uint8_t offset);
+void set_string(const char* str);
 void set_scroll(char* str);
 void set_char_at(char c, uint8_t offset);
 
 void set_brightness(uint8_t brightness);
 
 void set_blink(bool on);
+void set_dimming(bool on);
 void set_display(bool on);
 void flash_display(uint16_t ms);
 

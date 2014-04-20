@@ -14,98 +14,21 @@
  */
 
 #include "global.h"
-#include "global_vars.h"
 
 #ifdef HAVE_AUTO_DST
 
 #include <avr/io.h>
 #include <string.h>
-//#include "Time.h"
 #include <Wire.h>
 #include <WireRtcLib.h>
 #include "adst.h"
 
-uint8_t mDays[]={
+const uint8_t mDays[]={
   31,28,31,30,31,30,31,31,30,31,30,31};
-uint16_t tmDays[]={
+const uint16_t tmDays[]={
   0,31,59,90,120,151,181,212,243,273,304,334}; // Number days at beginning of month if not leap year
 
 long DSTstart, DSTend;  // start and end of DST for this year, in Year Seconds
-
-void breakTime(unsigned long time, WireRtcLib::tm* tm)
-{
-// break the given time_t into time components
-// this is a more compact version of the C library localtime function
-// note that year is offset from 1970 !!!
-  uint8_t year;
-  uint8_t month, monthLength;
-  unsigned long days;
-  tm->sec = time % 60;
-  time /= 60; // now it is minutes
-  tm->min = time % 60;
-  time /= 60; // now it is hours
-  tm->hour = time % 24;
-  time /= 24; // now it is days
-  tm->wday = ((time + 4) % 7) + 1;  // Sunday is day 1 
-  year = 0;  
-  days = 0;
-  while((unsigned)(days += (LEAP_YEAR(year) ? 366 : 365)) <= time) {
-    year++;
-  }
-  tm->year = year; // year is offset from 1970 
-  days -= LEAP_YEAR(year) ? 366 : 365;
-  time  -= days; // now it is days in this year, starting at 0
-  days=0;
-  month=0;
-  monthLength=0;
-  for (month=0; month<12; month++) {
-    if (month==1) { // february
-      if (LEAP_YEAR(year)) {
-        monthLength=29;
-      } else {
-        monthLength=28;
-      }
-    } else {
-      monthLength = mDays[month];
-    }
-    if (time >= monthLength) {
-      time -= monthLength;
-    } else {
-        break;
-    }
-  }
-  tm->mon = month + 1;  // jan is month 1  
-  tm->mday = time + 1;     // day of month
-}
-
-unsigned long makeTime(WireRtcLib::tm* tm)
-{   
-// assemble time elements into time_t 
-// note year argument is offset from 1970 (see macros in time.h to convert to other formats)
-// previous version used full four digit year (or digits since 2000),i.e. 2009 was 2009 or 9
-  int i;
-  unsigned long seconds;
-  // seconds from 1970 till 1 jan 00:00:00 of the given year
-  seconds = tm->year*(SECS_PER_DAY * 365UL);
-  for (i = 0; i < tm->year; i++) {
-    if (LEAP_YEAR(i)) {
-      seconds +=  SECS_PER_DAY;   // add extra days for leap years
-    }
-  }
-  // add days for this year, months start from 1
-  for (i = 1; i < tm->mon; i++) {
-    if ( (i == 2) && LEAP_YEAR(tm->year)) { 
-      seconds += SECS_PER_DAY * 29;
-    } else {
-      seconds += SECS_PER_DAY * mDays[i-1];  //monthDay array starts from 0
-    }
-  }
-  seconds+= (tm->mday-1) * SECS_PER_DAY;
-  seconds+= tm->hour * SECS_PER_HOUR;
-  seconds+= tm->min * SECS_PER_MIN;
-  seconds+= tm->sec;
-  return seconds; 
-}
 
 // Calculate day of the week - Sunday=1, Saturday=7  (non ISO)
 uint8_t dotw(uint16_t year, uint8_t month, uint8_t day)
@@ -149,9 +72,8 @@ long DSTseconds(uint16_t year, uint8_t month, uint8_t doftw, uint8_t week, uint8
   return yearSeconds(year,month,day,hour,0,0);  // seconds til DST event this year
 }
 
-void DSTinit(WireRtcLib::tm* te, int8_t rules[9])
+void DSTinit(WireRtcLib::tm* te, uint8_t rules[9])
 {
-  Serial.println("DSTinit");  // wbp debug
   uint16_t yr = 2000 + te->year;  // Year as 20yy; te.Year is not 1970 based
   // seconds til start of DST this year
   DSTstart = DSTseconds(yr, rules[0], rules[1], rules[2], rules[3]);  
@@ -164,7 +86,7 @@ void DSTinit(WireRtcLib::tm* te, int8_t rules[9])
 // N is which occurrence of DOTW
 // Current US Rules: March, Sunday, 2nd, 2am, November, Sunday, 1st, 2 am, 1 hour
 // 		3,1,2,2,  11,1,1,2,  1
-uint8_t getDSToffset(WireRtcLib::tm* te, int8_t rules[9])
+uint8_t getDSToffset(WireRtcLib::tm* te, uint8_t rules[9])
 {
   uint16_t yr = 2000 + te->year;  // Year as 20yy; te.Year is not 1970 based
   // if current time & date is at or past the first DST rule and before the second, return 1
@@ -177,7 +99,7 @@ uint8_t getDSToffset(WireRtcLib::tm* te, int8_t rules[9])
       return(0);  // return 0
   }
   else {  // southern hemisphere
-    if ((seconds_now >= DSTend) || (seconds_now < DSTstart))  // spring ahead 14nov12/wbp
+		if ((seconds_now >= DSTstart) || (seconds_now < DSTend))  // fall ahead
       return(rules[8]);  // return Offset
     else  // fall back
       return(0);  // return 0
@@ -185,4 +107,3 @@ uint8_t getDSToffset(WireRtcLib::tm* te, int8_t rules[9])
 }
 
 #endif // HAVE_AUTO_DST
-

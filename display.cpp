@@ -1,6 +1,6 @@
 /*
- * VFD Deluxe - Firmware for VFD Modular Clock mk2
- * (C) 2011-13 Akafugu Corporation
+ * VFD Deluxe
+ * (C) 2011-12 Akafugu Corporation
  *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -14,7 +14,7 @@
  */
 
 #include "global.h"
-#include "global_vars.h"
+#include "settings.h"
 
 #include "display.h"
 //#include "display_nixie.h"
@@ -68,7 +68,6 @@ pin_direct_t blank_pin;
 enum shield_t shield = SHIELD_NONE;
 uint8_t digits = 6;
 uint8_t segments = 7;
-byte dummy1;
 volatile char data[16]; // Digit data
 //uint8_t us_counter = 0; // microsecond counter
 uint8_t multiplex_counter = 0;
@@ -90,9 +89,13 @@ uint8_t scroll_limit = 0;
 extern uint8_t g_alarm_switch;
 
 // variables for controlling display blink
-uint8_t blink;
+uint8_t blinking;
 uint16_t blink_counter = 0;
 volatile uint8_t display_on = 1;
+
+uint8_t dimming;
+uint16_t dimming_counter = 0;
+volatile uint8_t dimming_on = 0;
 
 extern uint8_t g_second_dots_on;
 
@@ -122,7 +125,7 @@ void wDelay(unsigned long ms)
 void clear_display(void);
 void clear_data(void);
 
-uint8_t _brightness = 255;  // current brightness level 0-255
+uint16_t _brightness = 511;  // current brightness level 0-511
 uint8_t brt_counter = 0;
 
 void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uint8_t brightness)
@@ -149,10 +152,10 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
     blank_pin.reg = PIN_TO_OUTPUT_REG(blank);
     blank_pin.bitmask = PIN_TO_BITMASK(blank);
 
-	LATCH_ENABLE;
+  LATCH_ENABLE;
 
-	clear_display();
-	clear_data();
+  clear_display();
+  clear_data();
 
 #ifdef HAVE_ATMEGA328
   // TIMER 2 overflow interrupt
@@ -181,16 +184,22 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 //  TCCR3B |= (1<<CS30); // connect at 1x to start counter
 //  TIMSK3 |= (1<<TOIE3); // enable Timer1 overflow interrupt:
 
-// PWM on PD7/OC4D (digital 6)
-//  TCCR4E = 0; 
-  TCCR4D = 0; // (1<<WGM40); // fast pwm
-  TCCR4C = (1<<COM4D1) | (1<<COM4D0) | (1<<PWM4D);
-//  TCCR4B = 0;
+// Set up PWM on PD7/OC4D (digital 6)
 //  TCCR4A = 0;
-  OCR4C = 255;  // clear on compare match value
+//  TCCR4B = 0;
+  TCCR4C = (1<<COM4D1) | (1<<COM4D0) | (1<<PWM4D);
+// COM4D1 + COM4D0 = Set on Compare Match, Clear when TCNT4 = 0x000.
+// PWM4D = Enable PWM mode
+  TCCR4D = 0; // (1<<WGM40); // fast pwm
+//  TCCR4D = (1<<WGM40); // Phase & frequency correct PWM
+//  TC4H = 1; // set OCR4C High byte for 9-bit TOP
+  TC4H = 3; // set OCR4C High byte for 10-bit TOP
+  OCR4C = 255;  // clear on compare match value (1023)
   OCR4D = 255;  // set maximum brightness
   TCNT4 = 0;  // start count
-  TCCR4B = (1<<CS40); // connect CK at 1x to start counter
+  TCCR4B = (1<<CS40); // Start Timer 4 at 1x 
+//  TCCR4B = (1<<CS41);  // Start Timer 4 at fcpu/2
+//  DT4 = 0XFF; // insert some dead time to see effect
 //  TIMSK4 |= (1<<OCIE4A); // no interrupt needed for Timer4
 
 #endif
@@ -200,15 +209,23 @@ void display_init(uint8_t data, uint8_t clock, uint8_t latch, uint8_t blank, uin
 
 // Brightness is set by setting the PWM duty cycle for the blank
 // pin of the VFD driver.
-//byte brt[] = {2, 14, 27, 41, 58, 78, 103, 134, 179, 255};
-byte brt[] = {3, 15, 27, 42, 59, 79, 103, 135, 179, 255};
-// brightness value: 1 (low) - 10 (high)
+// these are approximately logarithmic values for the pwm setting (wbp)
+//uint16_t  brt[] = {1, 3, 15, 27, 42, 59, 79, 103, 135, 179, 255}; // 11 values (0-10)
+//uint16_t  brt[] = {1, 3, 24, 50, 80, 114, 155, 204, 268, 357, 511}; // 11 values (0-10)
+uint16_t  brt[] = {1, 7, 22, 52, 100, 172, 270, 400, 567, 773, 1023}; // 11 values (0-10), 10 bit, gamma (2.8, -0.5)
+// double each successive pwm value ?
+//uint16_t  brt[] = {1, 2, 3, 5, 7, 15, 31, 63, 127, 255, 511}; // 11 values (0-10)
+// brightness value: 0 (low) - 10 (high)
 // fixme: BLANK must always be set to GND when driving Nixies
 void set_brightness(uint8_t brightness) {
 
   if (brightness > 10) brightness = 10;
+  settings.brightness = brightness;  // update global so it stays consistent 16nov12/wbp 
+//  save_settings();
 //  _brightness = brt[brightness-1];
-  OCR4D = brt[brightness-1];  // set PWM comparand for given brightness 
+  _brightness = brt[brightness];
+  TC4H = _brightness>>8;  // set high order byte value for 10-bit comparand
+  OCR4D = _brightness;  // set PWM comparand for given brightness 
   TCNT4 = 0; // restart timer counter
 //  digitalWrite(blank_pin.pin, LOW);  // blanking off
   PORTD &= B01111111; // set PD7 LOW
@@ -260,16 +277,19 @@ void detect_shield()
         g_has_dots = true;
         reverse_display = false;
         break;
-        /*
-    case(6):  // IV-22 shield
-        shield = SHIELD_IV22;
-        digits = 4;
-        multiplex_limit = 4;
-        //mpx_count = 8;
-        g_has_dots = true;
+     case(5):  // IV-17 6-digit shield
+  shield = SHIELD_IV17_6D;
+        digits = 6;
+  multiplex_limit = 6;
+        g_has_dots = false;
         reverse_display = false;
-        break;
-        */
+        
+        pinMode(PinMap::extra1, OUTPUT);
+        pinMode(PinMap::extra2, OUTPUT);
+        digitalWrite(PinMap::extra1, LOW);
+        digitalWrite(PinMap::extra2, LOW);
+        
+  break;
     case(7):  // IV-18 shield (note: save value as no shield - all bits on)
         shield = SHIELD_IV18;
         digits = 8;
@@ -333,13 +353,6 @@ void set_shield(shield_t shield_type, uint8_t _digits /* = 4 */)
     g_has_dots = true;    
     reverse_display = true;
   }
-//  else if (shield_type == SHIELD_IV22) {
-//    shield = SHIELD_IV22;
-//    digits = 4;
-//    multiplex_limit = digits;
-//    g_has_dots = true;    
-//    reverse_display = false;
-//  }
   else if (shield_type == SHIELD_IN14) {
     shield = SHIELD_IN14;
     digits = 6;
@@ -370,10 +383,18 @@ void clear_sData(void)
   }
 }
 
-void set_blink(bool on)
+void set_blink(bool onOff)
 {
-  blink = on;
-  if (!blink) display_on = 1;
+  blinking = onOff;
+  if (!blinking) display_on = 1;
+// Serial.print("blink "); Serial.println(blinking);
+}
+
+void set_dimming(bool onOff)
+{
+  dimming = onOff;
+  if (!dimming)
+    OCR4D = _brightness;  // restore brightness
 }
 
 void set_display(bool on)
@@ -381,11 +402,11 @@ void set_display(bool on)
   display_on = on;
 }
 
-void flash_display(uint16_t ms)  // this does not work but why???
+void flash_display(uint16_t ms)  // flash display to show GPS update
 {
     display_on = false;
     clear_display();
-//	_delay_ms(ms);
+//  _delay_ms(ms);
     wDelay(ms);
     display_on = true;
 }
@@ -418,54 +439,54 @@ uint8_t print_digits (int8_t num, uint8_t offset)
 
 uint8_t print_hour(uint8_t num, uint8_t offset, bool _24h_clock)
 {
-	data[offset+1] = num % 10;  // units
-	//num /= 10;
-	uint8_t h2 = num / 10 % 10;  // tens
-	data[offset] = h2;
-	if (!_24h_clock && (h2 == 0)) {
-		data[offset] = ' ';  // blank leading zero
-	}
-	return offset+2;
+  data[offset+1] = num % 10;  // units
+  //num /= 10;
+  uint8_t h2 = num / 10 % 10;  // tens
+  data[offset] = h2;
+  if (!_24h_clock && (h2 == 0)) {
+    data[offset] = ' ';  // blank leading zero
+  }
+  return offset+2;
 }
 
 uint8_t print_ch(char ch, uint8_t offset)
 {
-	data[offset++] = ch;
-	return offset;
+  data[offset++] = ch;
+  return offset;
 }
 
 uint8_t print_strn(const char* str, uint8_t offset, uint8_t n)
 {
-	uint8_t i = 0;
+  uint8_t i = 0;
 
-	while (n-- >= 0) {
-		data[offset++] = str[i++];
-		if (str[i] == '\0') break;
-	}
+  while (n-- >= 0) {
+    data[offset++] = str[i++];
+    if (str[i] == '\0') break;
+  }
 
-	return offset;
+  return offset;
 }
 
 // set dots based on mode and seconds
 void print_dots(uint8_t mode, uint8_t seconds)
 {
-	if (g_show_dots) {
-  		if (digits == 10 && mode == 0) {
-			sbi(dots, 3);
-			sbi(dots, 5);
-		}
-  		else if (digits == 8 && mode == 0) {
-			sbi(dots, 2);
-			sbi(dots, 4);
-		}
-		else if (digits == 6 && mode == 0) {
-			sbi(dots, 1);
-			sbi(dots, 3);
-		}
-		else if (digits == 4 && seconds % 2 && mode == 0) {
-			sbi(dots, 1);
-		}
-	}
+  if (settings.show_dots) {
+      if (digits == 10 && mode == 0) {
+      sbi(dots, 3);
+      sbi(dots, 5);
+    }
+      else if (digits == 8 && mode == 0) {
+      sbi(dots, 2);
+      sbi(dots, 4);
+    }
+    else if (digits == 6 && mode == 0) {
+      sbi(dots, 1);
+      sbi(dots, 3);
+    }
+    else if (digits == 4 && seconds % 2 && mode == 0) {
+      sbi(dots, 1);
+    }
+  }
 }
 
 // shows time based on mode
@@ -474,17 +495,17 @@ void print_dots(uint8_t mode, uint8_t seconds)
 // 8 digits: hour:min:sec / hour-min-sec
 void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
 {
-	dots = 0;
+  dots = 0;
 
-	uint8_t offset = 0;
-//	uint8_t hour = _24h_clock ? t->hour : t->twelveHour;
-	uint8_t hour = _24h_clock ? t->hour : t->hour%12;
+  uint8_t offset = 0;
+//  uint8_t hour = _24h_clock ? t->hour : t->twelveHour;
+  uint8_t hour = _24h_clock ? t->hour : t->hour%12;
         if (!_24h_clock && hour == 0)  // show 12 for midnight and noon
           hour = 12;  // wbp
 
-	print_dots(mode, t->sec);
+  print_dots(mode, t->sec);
 
-	if (mode == 0) { // normal display mode
+  if (mode == 0) { // normal display mode
 //            nixie_print(hour, t->min, t->sec);
 
             if (digits == 10) { // "  HH.MM.SS  "
@@ -515,113 +536,113 @@ void show_time(WireRtcLib::tm* t, bool _24h_clock, uint8_t mode)
             else if (digits == 6) { // "HH.MM.SS"
                 offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
-                offset = print_digits(t->sec, offset);			
+                offset = print_digits(t->sec, offset);      
             }
             else { // HH.MM
                 offset = print_hour(hour, offset, _24h_clock);
                 offset = print_digits(t->min, offset);
             }
-	}
-	else if (mode == 1) { // extra display mode
+  }
+  else if (mode == 1) { // extra display mode
 //            nixie_print_compact(hour, t->min, t->sec);
 
-		if (digits == 10) { // " HH-MM-SS "
-			offset = print_ch('-', offset);
-			offset = print_hour(hour, offset, _24h_clock);
-			offset = print_ch('-', offset);
-			offset = print_digits(t->min, offset);
-			offset = print_ch('-', offset);
-			offset = print_digits(t->sec, offset);
-			offset = print_ch('-', offset);
+    if (digits == 10) { // " HH-MM-SS "
+      offset = print_ch('-', offset);
+      offset = print_hour(hour, offset, _24h_clock);
+      offset = print_ch('-', offset);
+      offset = print_digits(t->min, offset);
+      offset = print_ch('-', offset);
+      offset = print_digits(t->sec, offset);
+      offset = print_ch('-', offset);
 
-		}
-		else if (digits == 8) { // "HH-MM-SS"
-			offset = print_hour(hour, offset, _24h_clock);
-			offset = print_ch('-', offset);
-			offset = print_digits(t->min, offset);
-			offset = print_ch('-', offset);
-			offset = print_digits(t->sec, offset);
-		}
-		else if (digits == 6) { // " HH-MM"
-			offset = print_hour(hour, offset, _24h_clock);
-			offset = print_ch('-', offset);
-			offset = print_digits(t->min, offset);
-			if (!_24h_clock && !t->am)
-				offset = print_ch('P', offset);
-			else
-				offset = print_ch(' ', offset); 
-		}
-		else { // HH.MM
-			if (_24h_clock) {
-				offset = print_ch(' ', offset);
-				offset = print_digits(t->sec, offset);
-				offset = print_ch(' ', offset);
-			}
-			else {
-				if (t->am)
-					offset = print_ch('A', offset);
-				else
-					offset = print_ch('P', offset);
+    }
+    else if (digits == 8) { // "HH-MM-SS"
+      offset = print_hour(hour, offset, _24h_clock);
+      offset = print_ch('-', offset);
+      offset = print_digits(t->min, offset);
+      offset = print_ch('-', offset);
+      offset = print_digits(t->sec, offset);
+    }
+    else if (digits == 6) { // " HH-MM"
+      offset = print_hour(hour, offset, _24h_clock);
+      offset = print_ch('-', offset);
+      offset = print_digits(t->min, offset);
+      if (!_24h_clock && !t->am)
+        offset = print_ch('P', offset);
+      else
+        offset = print_ch(' ', offset); 
+    }
+    else { // HH.MM
+      if (_24h_clock) {
+        offset = print_ch(' ', offset);
+        offset = print_digits(t->sec, offset);
+        offset = print_ch(' ', offset);
+      }
+      else {
+        if (t->am)
+          offset = print_ch('A', offset);
+        else
+          offset = print_ch('P', offset);
 
-				offset = print_ch('M', offset);
-				offset = print_digits(t->sec, offset);
-			}
-		}
-	}
+        offset = print_ch('M', offset);
+        offset = print_digits(t->sec, offset);
+      }
+    }
+  }
 }
 
 // shows time - used when setting time
 void show_time_setting(uint8_t hour, uint8_t min, uint8_t sec)
 {
-//	nixie_print_compact(hour, min, sec);
+//  nixie_print_compact(hour, min, sec);
 
-	dots = 0;
-	uint8_t offset = 0;
-	
-	switch (digits) {
-	case 8:
-		offset = print_ch(' ', offset);
-		offset = print_ch(' ', offset);
-		// fall-through
-	case 6:
-		offset = print_digits(hour, offset);
-		offset = print_ch('-', offset);
-		offset = print_digits(min, offset);
-		offset = print_ch(' ', offset);
-		break;
-	case 4:
-		offset = print_digits(hour, offset);
-		offset = print_digits(min, offset);		
-	}
+  dots = 0;
+  uint8_t offset = 0;
+  
+  switch (digits) {
+  case 8:
+    offset = print_ch(' ', offset);
+    offset = print_ch(' ', offset);
+    // fall-through
+  case 6:
+    offset = print_digits(hour, offset);
+    offset = print_ch('-', offset);
+    offset = print_digits(min, offset);
+    offset = print_ch(' ', offset);
+    break;
+  case 4:
+    offset = print_digits(hour, offset);
+    offset = print_digits(min, offset);   
+  }
 }
 
 void show_temp(int8_t t, uint8_t f)
 {
-	dots = 0;
-	uint8_t offset = 0;
+  dots = 0;
+  uint8_t offset = 0;
 
-//	nixie_print(0, t, f);
-	
-	switch (digits) {
-	case 10:
-		offset = print_ch(' ', offset);
-		offset = print_ch(' ', offset);
-		// fall-through
-	case 8:
-		offset = print_ch(' ', offset);
-		offset = print_ch(' ', offset);
-		// fall-through
-	case 6:
-		offset = print_ch(' ', offset);
-		offset = print_digits(t, offset);
-		offset = print_digits(f, offset);
-		offset = print_ch('C', offset);
-		break;
-	case 4:
-		offset = print_digits(t, offset);
-		offset = print_ch('&', offset);		
-		offset = print_ch('C', offset);  
-	}
+//  nixie_print(0, t, f);
+  
+  switch (digits) {
+  case 10:
+    offset = print_ch(' ', offset);
+    offset = print_ch(' ', offset);
+    // fall-through
+  case 8:
+    offset = print_ch(' ', offset);
+    offset = print_ch(' ', offset);
+    // fall-through
+  case 6:
+    offset = print_ch(' ', offset);
+    offset = print_digits(t, offset);
+    offset = print_digits(f, offset);
+    offset = print_ch('C', offset);
+    break;
+  case 4:
+    offset = print_digits(t, offset);
+    offset = print_ch('&', offset);   
+    offset = print_ch('C', offset);  
+  }
 
   if (digits == 10) dots = (1<<3);
   else if (digits == 8) dots = (1<<3);
@@ -631,167 +652,176 @@ void show_temp(int8_t t, uint8_t f)
 
 void show_humidity(uint8_t hum)
 {
-	dots = 0;
-	uint8_t offset = 0;
-	
-//	nixie_print(0, 0, hum);
+  dots = 0;
+  uint8_t offset = 0;
+  
+//  nixie_print(0, 0, hum);
 
-	switch (digits) {
-	case 10:
-		offset = print_ch(' ', offset);
-		offset = print_ch(' ', offset);
-		// fall-through
-	case 8:
-		offset = print_ch(' ', offset);
-		offset = print_ch(' ', offset);
-		// fall-through
-	case 6:
-		offset = print_ch(' ', offset);
-		offset = print_digits(hum, offset);
-		offset = print_ch('R', offset);
-		offset = print_ch('H', offset);
-		break;
-	case 4:
-		offset = print_digits(hum, offset);
-		offset = print_ch(' ', offset);
-		offset = print_ch('H', offset);
-	}
+  switch (digits) {
+  case 10:
+    offset = print_ch(' ', offset);
+    offset = print_ch(' ', offset);
+    // fall-through
+  case 8:
+    offset = print_ch(' ', offset);
+    offset = print_ch(' ', offset);
+    // fall-through
+  case 6:
+    offset = print_ch(' ', offset);
+    offset = print_digits(hum, offset);
+    offset = print_ch('R', offset);
+    offset = print_ch('H', offset);
+    break;
+  case 4:
+    offset = print_digits(hum, offset);
+    offset = print_ch(' ', offset);
+    offset = print_ch('H', offset);
+  }
 }
 
 void show_pressure(uint8_t pressure)
 {
-	dots = 0;
-	uint8_t offset = 0;
-	
-	switch (digits) {
-	case 10:
-		offset = print_ch(' ', offset);
-		offset = print_ch(' ', offset);
-		// fall-through
-	case 8:
-		offset = print_ch(' ', offset);
-		offset = print_ch(' ', offset);
-		// fall-through
-	case 6:
-		offset = print_digits(pressure, offset);
-		offset = print_ch('k', offset);
-		offset = print_ch('P', offset);
-		offset = print_ch('a', offset);
-		break;
-	case 4:
-		offset = print_digits(pressure, offset);
-		offset = print_ch('P', offset);
-	}
+  dots = 0;
+  uint8_t offset = 0;
+  
+  uint8_t temp  = pressure % 10;
+  uint8_t temp2 = pressure/= 10;
+
+//  nixie_print(0, temp2, temp);
+
+  switch (digits) {
+  case 10:
+    offset = print_ch(' ', offset);
+    offset = print_ch(' ', offset);
+    // fall-through
+  case 8:
+    offset = print_ch(' ', offset);
+    offset = print_ch(' ', offset);
+    // fall-through
+  case 6:
+    offset = print_digits(pressure, offset);
+    offset = print_ch('k', offset);
+    offset = print_ch('P', offset);
+    offset = print_ch('a', offset);
+    break;
+  case 4:
+    offset = print_digits(pressure, offset);
+    offset = print_ch('P', offset);
+  }
 }
 
 void set_string(const char* str, uint8_t offset /* =0 */)
 {
-	if (!str) return;
+  if (!str) return;
+  dots = 0;
+  clear_data();
+  for (int i = offset; i <= digits-1; i++) {
+    if (!*str) break;
+    data[i] = *(str++);
+  }
+}
 
-	dots = 0;
-//	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
-        clear_data();
-	
-	for (int i = offset; i <= digits-1; i++) {
-		if (!*str) break;
-		data[i] = *(str++);
-	}
+void set_string(const char* str)
+{
+  set_string(str, 0);
 }
 
 void set_scroll(char* str)
 {
-	uint8_t i = 0;
-	if (!str) return;
-	dots = 0;
-	clear_sData();
-	for (i = 0; i <25; i++) {
-		if (!*str) break;
-		sData[i] = *(str++);
-	}
-	scroll_limit = i+1;
-	scroll_index = 0;
-
-	scroll_counter = scroll_time;  // start scrolling
-	_scrolling = true;
+  uint8_t i = 0;
+  if (!str) return;
+  dots = 0;
+  clear_sData();
+  for (i = 0; i <25; i++) {
+    if (!*str) break;
+    sData[i] = *(str++);
+  }
+  scroll_limit = i+1;
+  scroll_index = 0;
+//  display_scroll(0);
+  scroll_counter = scroll_time;  // start scrolling
+  _scrolling = true;
+//  while (scrolling)  // wait for scrolling to finish
+//    ;
 }
 
 // shows setting string
 void show_setting_string(const char* short_str, const char* long_str, const char* value, bool show_setting)
 {
-//	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
-	clear_data();
+//  data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
+  clear_data();
 
-	if (get_digits() == 8) {
-		set_string(short_str);
-		print_strn(value, 4, 3);
-	}
-	else if (get_digits() == 6) {
-		if (show_setting)
-			print_strn(value, 2, 3);
-		else
-			set_string(long_str);
-	}
-	else {
-		if (show_setting)
-			print_strn(value, 0, 3);
-		else
-			set_string(short_str);
-	}
+  if (get_digits() == 8) {
+    set_string(short_str);
+    print_strn(value, 4, 3);
+  }
+  else if (get_digits() == 6) {
+    if (show_setting)
+      print_strn(value, 2, 3);
+    else
+      set_string(long_str);
+  }
+  else {
+    if (show_setting)
+      print_strn(value, 0, 3);
+    else
+      set_string(short_str);
+  }
 }
 
 #ifdef FEATURE_AUTO_DATE
 // scroll the date - called every 100 ms
 void scroll_date(WireRtcLib::tm* te_, uint8_t region)
 {
-	dots = 0;
-//	uint8_t di;
-	char sl;
-	char sd[13]; // = "  03/14/1947";
-	sd[0] = sd[1] = ' ';
-//	clr_sData();
-	if (shield == SHIELD_IV17)
-		sl = '/';
-	else
-		sl = '-';
-	switch (region) {
-		case FORMAT_DMY:
-			sd[2] = te_->mday / 10 + '0';
-			sd[3] = te_->mday % 10 + '0';
-			sd[4] = sd[7] = sl;
-			sd[5] = te_->mon / 10 + '0';
-			sd[6] = te_->mon % 10 + '0';
-			sd[8] = '2';
-			sd[9] = '0';
-			sd[10] = te_->year / 10 + '0';
-			sd[11] = te_->year % 10 + '0';
-			break;
-		case FORMAT_MDY:
-			sd[2] = te_->mon / 10 + '0';
-			sd[3] = te_->mon % 10 + '0';
-			sd[4] = sd[7] = sl;
-			sd[5] = te_->mday / 10 + '0';
-			sd[6] = te_->mday % 10 + '0';
-			sd[8] = '2';
-			sd[9] = '0';
-			sd[10] = te_->year / 10 + '0';
-			sd[11] = te_->year % 10 + '0';
-			break;
-		case FORMAT_YMD:
-		default:  
-			sd[2] = '2';
-			sd[3] = '0';
-			sd[4] = te_->year / 10 + '0';
-			sd[5] = te_->year % 10 + '0';
-			sd[6] = sd[9] = sl;
-			sd[7] = te_->mon / 10 + '0';
-			sd[8] = te_->mon % 10 + '0';
-			sd[10] = te_->mday / 10 + '0';
-			sd[11] = te_->mday % 10 + '0';
-			break;
-		}
-	sd[12] = 0;  // null terminate
+  dots = 0;
+//  uint8_t di;
+  char sl;
+  char sd[13]; // = "  03/14/1947";
+  sd[0] = sd[1] = ' ';
+//  clr_sData();
+  if (shield == SHIELD_IV17)
+    sl = '/';
+  else
+    sl = '-';
+  switch (region) {
+    case FORMAT_DMY:
+      sd[2] = te_->mday / 10 + '0';
+      sd[3] = te_->mday % 10 + '0';
+      sd[4] = sd[7] = sl;
+      sd[5] = te_->mon / 10 + '0';
+      sd[6] = te_->mon % 10 + '0';
+      sd[8] = '2';
+      sd[9] = '0';
+      sd[10] = te_->year / 10 + '0';
+      sd[11] = te_->year % 10 + '0';
+      break;
+    case FORMAT_MDY:
+      sd[2] = te_->mon / 10 + '0';
+      sd[3] = te_->mon % 10 + '0';
+      sd[4] = sd[7] = sl;
+      sd[5] = te_->mday / 10 + '0';
+      sd[6] = te_->mday % 10 + '0';
+      sd[8] = '2';
+      sd[9] = '0';
+      sd[10] = te_->year / 10 + '0';
+      sd[11] = te_->year % 10 + '0';
+      break;
+    case FORMAT_YMD:
+    default:  
+      sd[2] = '2';
+      sd[3] = '0';
+      sd[4] = te_->year / 10 + '0';
+      sd[5] = te_->year % 10 + '0';
+      sd[6] = sd[9] = sl;
+      sd[7] = te_->mon / 10 + '0';
+      sd[8] = te_->mon % 10 + '0';
+      sd[10] = te_->mday / 10 + '0';
+      sd[11] = te_->mday % 10 + '0';
+      break;
+    }
+  sd[12] = 0;  // null terminate
 //  Serial.print("date: "); Serial.println(sd);
-	set_scroll(sd);
+  set_scroll(sd);
 }
 #endif
 
@@ -800,111 +830,111 @@ void show_setting_int(const char* short_str, const char* long_str, int value, bo
 //  Serial.print("show_setting_int ");
 //  Serial.println(value);
   
-//	data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
+//  data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = ' ';
         clear_data();
 
-	if (get_digits() == 8) {
-		set_string(long_str);
-		print_digits(value, 6);
-	}
-	else if (get_digits() == 6) {
-		set_string(long_str);
-		print_digits(value, 4);
-	}
-	else {
-		if (show_setting)
-			print_digits(value, 2);
-		else
-			set_string(short_str);
-	}
+  if (get_digits() == 8) {
+    set_string(long_str);
+    print_digits(value, 6);
+  }
+  else if (get_digits() == 6) {
+    set_string(long_str);
+    print_digits(value, 4);
+  }
+  else {
+    if (show_setting)
+      print_digits(value, 2);
+    else
+      set_string(short_str);
+  }
 }
 
 void show_set_time(void)
 {
-	if (get_digits() == 8)
-		set_string("Set Time");
-	else if (get_digits() == 6)
-		set_string(" Time ");
-	else
-		set_string("Time");
+  if (get_digits() == 8)
+    set_string("Set Time");
+  else if (get_digits() == 6)
+    set_string(" Time ");
+  else
+    set_string("Time");
 }
 
 void show_set_alarm(void)
 {
-	if (get_digits() == 8)
-		set_string("Set Alrm");
-	else if (get_digits() == 6)
-		set_string("Alarm");
-	else
-		set_string("Alrm");
+  if (get_digits() == 8)
+    set_string("Set Alrm");
+  else if (get_digits() == 6)
+    set_string("Alarm");
+  else
+    set_string("Alrm");
 }
 
 // Write 8 bits to HV5812 driver
 void write_vfd_8bit(uint8_t data)
 {
-	// shift out MSB first
-	for (uint8_t i = 0; i < 8; i++)  {
-		if (!!(data & (1 << (7 - i))))
-			DATA_HIGH;
-		else
-			DATA_LOW;
+  // shift out MSB first
+  for (uint8_t i = 0; i < 8; i++)  {
+    if (!!(data & (1 << (7 - i))))
+      DATA_HIGH;
+    else
+      DATA_LOW;
 
-		CLOCK_HIGH;
-		CLOCK_LOW;
+    CLOCK_HIGH;
+    CLOCK_LOW;
   }
 }
 
 void write_vfd_7seg(uint8_t digit, uint8_t segments)
 {
-	// temporary correction for incorrectly wired display
-	uint8_t x = 0;
+  // temporary correction for incorrectly wired display
+  uint8_t x = 0;
   
-	if (segments & (1<<0)) x |= (1<<0);
-	if (segments & (1<<1)) x |= (1<<1);
-	if (segments & (1<<5)) x |= (1<<2);
-	if (segments & (1<<6)) x |= (1<<3);
-	if (segments & (1<<2)) x |= (1<<4);
-	if (segments & (1<<4)) x |= (1<<5);
-	if (segments & (1<<3)) x |= (1<<6);
-	if (segments & (1<<7)) x |= (1<<7);
+  if (segments & (1<<0)) x |= (1<<0);
+  if (segments & (1<<1)) x |= (1<<1);
+  if (segments & (1<<5)) x |= (1<<2);
+  if (segments & (1<<6)) x |= (1<<3);
+  if (segments & (1<<2)) x |= (1<<4);
+  if (segments & (1<<4)) x |= (1<<5);
+  if (segments & (1<<3)) x |= (1<<6);
+  if (segments & (1<<7)) x |= (1<<7);
   
-	segments = x;
+  segments = x;
 
-	uint8_t segments_hi = 0;
+  uint8_t segments_hi = 0;
   
-	if (dots & (1<<digit))
-		segments_hi |= (1<<0);
-		//segments |= (1<<7); // DP is at bit 7
+  if (dots & (1<<digit))
+    segments_hi |= (1<<0);
+    //segments |= (1<<7); // DP is at bit 7
   
-	write_vfd_8bit(segments_hi);
-	write_vfd_8bit(segments);
+  write_vfd_8bit(segments_hi);
+  write_vfd_8bit(segments);
 
-	if (digit > 7) {
-		write_vfd_8bit(1<<(digit-8));  
-		write_vfd_8bit(0);
-	}
-	else {
-		write_vfd_8bit(0);
-		write_vfd_8bit(1<<digit);
-	}
-	
-	LATCH_DISABLE;
-	LATCH_ENABLE;
+  if (digit > 7) {
+    write_vfd_8bit(1<<(digit-8));  
+    write_vfd_8bit(0);
+  }
+  else {
+    write_vfd_8bit(0);
+    write_vfd_8bit(1<<digit);
+  }
+  
+  LATCH_DISABLE;
+  LATCH_ENABLE;
 }
 
 // fixme: need to determine placement of dots
 // fixme: need to determine placement of second dot (if present)
 void write_vfd_standard(uint8_t digit, uint16_t segments)
 {
-	uint16_t d = 1<<digit;
+  uint16_t d = 1<<digit;
 
-	write_vfd_8bit(segments >> 8);
+  write_vfd_8bit(segments >> 8);
         write_vfd_8bit(segments);
-	write_vfd_8bit(d >> 8);
-	write_vfd_8bit(d);
+  write_vfd_8bit(d >> 8);
+  write_vfd_8bit(d);
 
-	LATCH_DISABLE;
-	LATCH_ENABLE;
+  LATCH_DISABLE;
+  LATCH_ENABLE;
 }
 
 // Writes to the HV5812 driver for IV-6
@@ -913,18 +943,18 @@ void write_vfd_standard(uint8_t digit, uint16_t segments)
 // HV15~20: NC
 void write_vfd_iv6(uint8_t digit, uint8_t segments)
 {
-	if (dots & (1<<digit))
-		segments |= (1<<7); // DP is at bit 7
-	
-	uint32_t val = (1 << digit) | ((uint32_t)segments << 6);
-	
-	write_vfd_8bit(0); // unused upper byte: for HV518P only
-	write_vfd_8bit(val >> 16);
-	write_vfd_8bit(val >> 8);
-	write_vfd_8bit(val);
-	
-	LATCH_DISABLE;
-	LATCH_ENABLE;	
+  if (dots & (1<<digit))
+    segments |= (1<<7); // DP is at bit 7
+  
+  uint32_t val = (1 << digit) | ((uint32_t)segments << 6);
+  
+  write_vfd_8bit(0); // unused upper byte: for HV518P only
+  write_vfd_8bit(val >> 16);
+  write_vfd_8bit(val >> 8);
+  write_vfd_8bit(val);
+  
+  LATCH_DISABLE;
+  LATCH_ENABLE; 
 }
 
 #define IV17_LEFT_DOT  0b00010000
@@ -935,60 +965,74 @@ void write_vfd_iv6(uint8_t digit, uint8_t segments)
 // HV 5~2: VFD segments, 16-bits
 void write_vfd_iv17(uint8_t digit, uint16_t segments)
 {
-	uint32_t val = (1 << digit) | ((uint32_t)segments << 4);
+  uint32_t val = (1 << digit) | ((uint32_t)segments << 4);
 
-	//write_vfd_8bit(val >> 24);
+  //write_vfd_8bit(val >> 24);
         write_vfd_8bit(0);
         
         if (dots & (1<<digit))
-	  write_vfd_8bit(val >> 16 | IV17_RIGHT_DOT);
+    write_vfd_8bit(val >> 16 | IV17_RIGHT_DOT);
         else
           write_vfd_8bit(val >> 16);
-	write_vfd_8bit(val >> 8);
-	write_vfd_8bit(val);
+  write_vfd_8bit(val >> 8);
+  write_vfd_8bit(val);
 
-	LATCH_DISABLE;
-	LATCH_ENABLE;
+  LATCH_DISABLE;
+  LATCH_ENABLE;
+}
+
+// Writes to the HV5812 driver for IV-17 6-digit
+// HV1~4:  Digit grids, 4 bits
+// HV 5~2: VFD segments, 16-bits
+void write_vfd_iv17_6d(uint8_t digit, uint16_t segments)
+{
+    uint32_t val;
+    
+    if (digit == 0) {
+        digitalWrite(PinMap::extra1, LOW);
+        digitalWrite(PinMap::extra2, HIGH);
+  val = ((uint32_t)segments << 4);
+    }
+    else if (digit == 5) {
+        digitalWrite(PinMap::extra1, HIGH);
+        digitalWrite(PinMap::extra2, LOW);
+        val = ((uint32_t)segments << 4);
+    }
+    else {
+        digitalWrite(PinMap::extra1, LOW);
+        digitalWrite(PinMap::extra2, LOW);
+        val = (1 << (digit-1)) | ((uint32_t)segments << 4);
+    }
+
+    write_vfd_8bit(0);
+    write_vfd_8bit(val >> 16);
+    write_vfd_8bit(val >> 8);
+    write_vfd_8bit(val);
+
+    LATCH_DISABLE;
+    LATCH_ENABLE;
 }
 
 uint32_t t;
 
-// Writes to the HV5812 driver for IV-6
+// Writes to the HV5812 driver for IV-18
 // HV1~10:  Digit grids, 10 bits
 // HV11~18: VFD segments, 8 bits
 // HV19~20: NC
 void write_vfd_iv18(uint8_t digit, uint8_t segments)
 {
-	if (dots & (1<<digit))
-		segments |= (1<<7); // DP is at bit 7
-	
-	uint32_t val = (1 << digit) | ((uint32_t)segments << 10);
+  if (dots & (1<<digit))
+    segments |= (1<<7); // DP is at bit 7
+  
+  uint32_t val = (1 << digit) | ((uint32_t)segments << 10);
 
-	write_vfd_8bit(0); // unused upper byte: for HV518P only
-	write_vfd_8bit(val >> 16);
-	write_vfd_8bit(val >> 8);
-	write_vfd_8bit(val);
-	
-	LATCH_DISABLE;
-	LATCH_ENABLE;	
-}
-
-// Writes to the HV5812 driver for IV-22
-// HV1~4:   Digit grids, 4 bits
-// HV5~6:   NC
-// HV7~14:  VFD segments, 8 bits
-// HV15~20: NC
-void write_vfd_iv22(uint8_t digit, uint8_t segments)
-{
-	uint32_t val = (1 << digit) | ((uint32_t)segments << 6);
-	
-	write_vfd_8bit(0); // unused upper byte: for HV518P only
-	write_vfd_8bit(val >> 16);
-	write_vfd_8bit(val >> 8);
-	write_vfd_8bit(val);
-	
-	LATCH_DISABLE;
-	LATCH_ENABLE;	
+  write_vfd_8bit(0); // unused upper byte: for HV518P only
+  write_vfd_8bit(val >> 16);
+  write_vfd_8bit(val >> 8);
+  write_vfd_8bit(val);
+  
+  LATCH_DISABLE;
+  LATCH_ENABLE; 
 }
 
 void write_nixie(uint8_t value1, uint8_t value2, uint8_t value3)
@@ -1038,18 +1082,18 @@ void write_nixie_dots()
 
 void set_char_at(char c, uint8_t offset)
 {
-	data[offset] = c;
+  data[offset] = c;
 }
 
 void clear_display(void)
 {
-	write_vfd_8bit(0);
-	write_vfd_8bit(0);
-	write_vfd_8bit(0);
-	write_vfd_8bit(0);
+  write_vfd_8bit(0);
+  write_vfd_8bit(0);
+  write_vfd_8bit(0);
+  write_vfd_8bit(0);
 
-	LATCH_DISABLE;
-	LATCH_ENABLE;
+  LATCH_DISABLE;
+  LATCH_ENABLE;
 }
 
 volatile uint8_t nixie_multiplex_counter;
@@ -1058,10 +1102,10 @@ extern uint16_t segments_16[];
 
 void display_multiplex(void)
 {
-    multiplex_counter++;	
+    multiplex_counter++;  
     if (multiplex_counter > multiplex_limit)
         multiplex_counter = 0;  
-//    clear_display();  // not needed?
+    clear_display();  // not needed?
 //    nixie_multiplex_counter = !nixie_multiplex_counter;
     char d;
     if (_scrolling) {
@@ -1077,12 +1121,23 @@ void display_multiplex(void)
         d = data[multiplex_counter];
     }
     switch (shield) {
-      case(SHIELD_IV6):
-          write_vfd_iv6(multiplex_counter, calculate_segments_7(d));
+      case(SHIELD_IV6): {
+//          write_vfd_iv6(multiplex_counter, calculate_segments_7(d));
+          uint8_t seg = calculate_segments_7(d);
+          if (multiplex_counter == 0) { // digit 0
+            if (g_gps_updating)
+              seg |= (1<<7); // DP is at bit 7
+          }
+          if (multiplex_counter == 5) { // digit 5
+            if (g_alarm_switch)
+              seg |= (1<<7); // DP is at bit 7
+          }
+          write_vfd_iv6(multiplex_counter, seg);
           break;
+      }
       case(SHIELD_IV17): {
 //          uint16_t seg = calculate_segments_16(d);
-          uint16_t seg = segments_16[(uint8_t)d];
+          uint16_t seg = segments_16[d];
           if (multiplex_counter == 0) {
             if (g_gps_updating)
             seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));
@@ -1104,9 +1159,15 @@ void display_multiplex(void)
           }
           break;
       }
-//      case(SHIELD_IV22):
-//            write_vfd_iv22(multiplex_counter, calculate_segments_7(data[multiplex_counter]));
-//      break;
+      case(SHIELD_IV17_6D): {
+          uint16_t seg = segments_16[d];
+          if (multiplex_counter == 0) {
+            if (g_gps_updating)
+            seg |= ((1<<5)|(1<<4)|(1<<13)|(1<<14)|(1<<15));
+          }
+          write_vfd_iv17_6d(multiplex_counter, seg);
+          break;
+      }
 #ifdef HAVE_7SEG_SUPPORT
       case(SHIELD_7SEG):
           write_vfd_7seg(multiplex_counter, calculate_segments_7(d));
@@ -1164,20 +1225,35 @@ ISR(TIMER1_COMPA_vect)
     cli();
 
     // control blinking: on time is slightly longer than off time
-    if (blink) {
+    if (blinking) {
       blink_counter++;
       if (display_on && blink_counter >= 550) { // on time 0.55 secs
         display_on = false;
-        blink_counter = 0;
         clear_display();
+        blink_counter = 0;
         }
       else if (!display_on && blink_counter >= 450) { // off time 0.45 secs
         display_on = true;
         blink_counter = 0;
       }
     }
+    
+    if (dimming) {
+      dimming_counter++;
+      if (dimming_on && dimming_counter >= 1000) {
+        dimming_on = false;
+        dimming_counter = 0;
+        OCR4D = _brightness;  // restore brightness
+      }
+      else if (!dimming_on && dimming_counter >= 1000) {
+        dimming_on = true;
+        dimming_counter = 0;
+        OCR4D = _brightness >> 1;  // half brightness
+      }
+    }
 
 #ifdef HAVE_GPS
+  if (settings.gps_enabled)
   GPSread();  // check for data on the serial port every 1 ms
 #endif // HAVE_GPS
 
@@ -1227,4 +1303,3 @@ void scroll_speed(uint16_t speed)
 {
   scroll_time = speed;
 }
-

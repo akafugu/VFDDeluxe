@@ -56,7 +56,7 @@ struct PinMap
     static const uint8_t sig0 = 3;
     static const uint8_t sig1 = 4;
     static const uint8_t sig2 = 5;
-    
+
     static const uint8_t piezo = 10;
     static const uint8_t piezo2 = 9;
 };
@@ -92,9 +92,12 @@ struct PinMap
     static const uint8_t sqw = 8; // PB4 / PCINT4
     
     // other
-    static const uint8_t piezo  = 11;
+    static const uint8_t piezo = 11;
     static const uint8_t piezo2 = 10;
+
+    // iv-17 shield 6-digit support
+    static const uint8_t extra1 = 4;
+    static const uint8_t extra2 = A5;
 };
 
 #endif
-

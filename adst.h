@@ -16,6 +16,7 @@
 #ifndef ADST_H_
 #define ADST_H_
 
+#include "features.h"
 #ifdef HAVE_AUTO_DST
 
 #include <Wire.h>
@@ -32,13 +33,10 @@
 #define SECS_PER_HOUR (3600UL)
 #define SECS_PER_DAY  (SECS_PER_HOUR * 24UL)
 
-void breakTime(unsigned long time, WireRtcLib::tm* tm);
-unsigned long makeTime(WireRtcLib::tm* tm);
-
 char* dst_setting(uint8_t dst);
 uint8_t dotw(uint16_t year, uint8_t month, uint8_t day);
-void DSTinit(WireRtcLib::tm* te, int8_t rules[9]);
-uint8_t getDSToffset(WireRtcLib::tm* te, int8_t rules[9]);
+void DSTinit(WireRtcLib::tm* te, uint8_t rules[9]);
+uint8_t getDSToffset(WireRtcLib::tm* te, uint8_t rules[9]);
 
 #endif // HAVE_AUTO_DST
 #endif // ADST_H
