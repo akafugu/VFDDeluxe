@@ -24,48 +24,48 @@
 
 #include <avr/pgmspace.h>
 
-prog_char word_0[]  PROGMEM = "NAHF";
-prog_char word_1[]  PROGMEM = "NEFR";
-prog_char word_2[]  PROGMEM = "PNJX";
-prog_char word_3[]  PROGMEM = "PYVG";
-prog_char word_4[]  PROGMEM = "PBPX";
-prog_char word_5[]  PROGMEM = "PBBA";
-prog_char word_6[]  PROGMEM = "PENC";
-prog_char word_7[]  PROGMEM = "PHAG";
-prog_char word_8[]  PROGMEM = "QNTB";
-prog_char word_9[]  PROGMEM = "QNZA";
-prog_char word_10[] PROGMEM = "QVPX";
-prog_char word_11[] PROGMEM = "QLXR";
-prog_char word_12[] PROGMEM = "SNTF";
-prog_char word_13[] PROGMEM = "SNEG";
-prog_char word_14[] PROGMEM = "SHPX";
-prog_char word_15[] PROGMEM = "TBBX";
-prog_char word_16[] PROGMEM = "URYY";
-prog_char word_17[] PROGMEM = "WRJF";
-prog_char word_18[] PROGMEM = "WVFZ";
-prog_char word_19[] PROGMEM = "WVMZ";
-prog_char word_20[] PROGMEM = "WVMM";
-prog_char word_21[] PROGMEM = "XVXR";
-prog_char word_22[] PROGMEM = "ZHSS";
-prog_char word_23[] PROGMEM = "ANMV";
-prog_char word_24[] PROGMEM = "CNXV";
-prog_char word_25[] PROGMEM = "CVFF";
-prog_char word_26[] PROGMEM = "CBBA";
-prog_char word_27[] PROGMEM = "CBBC";
-prog_char word_28[] PROGMEM = "CBEA";
-prog_char word_29[] PROGMEM = "ENCR";
-prog_char word_30[] PROGMEM = "FUVG";
-prog_char word_31[] PROGMEM = "FZHG";
-prog_char word_32[] PROGMEM = "FCVP";
-prog_char word_33[] PROGMEM = "FYHG";
-prog_char word_34[] PROGMEM = "GVGF";
-prog_char word_35[] PROGMEM = "GHEQ";
-prog_char word_36[] PROGMEM = "GJNG";
-prog_char word_37[] PROGMEM = "JNAX";
+const char word_0[]  PROGMEM = "NAHF";
+const char word_1[]  PROGMEM = "NEFR";
+const char word_2[]  PROGMEM = "PNJX";
+const char word_3[]  PROGMEM = "PYVG";
+const char word_4[]  PROGMEM = "PBPX";
+const char word_5[]  PROGMEM = "PBBA";
+const char word_6[]  PROGMEM = "PENC";
+const char word_7[]  PROGMEM = "PHAG";
+const char word_8[]  PROGMEM = "QNTB";
+const char word_9[]  PROGMEM = "QNZA";
+const char word_10[] PROGMEM = "QVPX";
+const char word_11[] PROGMEM = "QLXR";
+const char word_12[] PROGMEM = "SNTF";
+const char word_13[] PROGMEM = "SNEG";
+const char word_14[] PROGMEM = "SHPX";
+const char word_15[] PROGMEM = "TBBX";
+const char word_16[] PROGMEM = "URYY";
+const char word_17[] PROGMEM = "WRJF";
+const char word_18[] PROGMEM = "WVFZ";
+const char word_19[] PROGMEM = "WVMZ";
+const char word_20[] PROGMEM = "WVMM";
+const char word_21[] PROGMEM = "XVXR";
+const char word_22[] PROGMEM = "ZHSS";
+const char word_23[] PROGMEM = "ANMV";
+const char word_24[] PROGMEM = "CNXV";
+const char word_25[] PROGMEM = "CVFF";
+const char word_26[] PROGMEM = "CBBA";
+const char word_27[] PROGMEM = "CBBC";
+const char word_28[] PROGMEM = "CBEA";
+const char word_29[] PROGMEM = "ENCR";
+const char word_30[] PROGMEM = "FUVG";
+const char word_31[] PROGMEM = "FZHG";
+const char word_32[] PROGMEM = "FCVP";
+const char word_33[] PROGMEM = "FYHG";
+const char word_34[] PROGMEM = "GVGF";
+const char word_35[] PROGMEM = "GHEQ";
+const char word_36[] PROGMEM = "GJNG";
+const char word_37[] PROGMEM = "JNAX";
 
 #define BLACKLIST_SIZE 37
 
-PROGMEM const char *flw_blacklist[] =
+PGM_P const flw_blacklist[] PROGMEM =
 {   
 	word_0, word_1, word_2, word_3, word_4, word_5, word_6, word_7, word_8, word_9, 
 	word_10, word_11, word_12, word_13, word_14, word_15, word_16, word_17, word_18, word_19,
