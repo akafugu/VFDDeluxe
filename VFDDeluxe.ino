@@ -56,24 +56,19 @@
  * button1: time, ampm, date, flw
  * save autobright changes in EE quietly
  * restructure, simplify main loop
+ * FLW mode when FLW is on/full
+ * IV-18/8+ digit improvements
+ * scroll time with date
+ * Menu item length - IV-22 or other 6 tube displays
+ * check AutoDim times/levels on boot?
+ * verify GPS vs TZ vs DST
 */
 
 /*
  * TODO:
  * alarm some times beeps when enabled
- * menu looping number increment
- * fix button 1 to show date, flw, temp, press, etc
- * check AutoDim times/levels on boot?
- * verify GPS vs TZ vs DST
  * if GPS changes date/time, recompute DST offset???
- * Menu item length - IV-22 or other 6 tube displays
- * FLW mode when FLW is on/full
- * IV-18/8+ digit improvements:
- * - FLW movement
- * - Show "Alarm off" on one screen
- * - dot blinks when showing temperature 
  * reveille alarm?
- * scroll time with date
  * Rewrite display file to be a class with more features to support effects (scroll/fade/etc.)
  * serial slave feature
  */
