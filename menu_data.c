@@ -1,7 +1,7 @@
-//#define FEATURE_GPS_DEBUG  // enables GPS debugging counters & menu items
-//#define FEATURE_AUTO_DIM  // moved to Makefile
+// #define FEATURE_GPS_DEBUG  // enables GPS debugging counters & menu items
+// #define FEATURE_AUTO_DIM  // moved to Makefile
 
-#include <arduino.h>
+#include <Arduino.h>
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 #include <string.h>

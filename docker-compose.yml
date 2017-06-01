@@ -1,0 +1,5 @@
+vfddeluxe:
+  build: .
+  dockerfile: Dockerfile
+  volumes:
+    - ./builds:/builds
